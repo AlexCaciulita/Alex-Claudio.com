@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alex Claudio Photography | Documentary Wedding Photography</title>
+    <meta name="description" content="Capturing authentic moments and timeless memories through documentary wedding photography. Based in [Location], serving couples who value genuine emotion and beautiful storytelling.">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Alex Claudio Photography | Documentary Wedding Photography">
+    <meta property="og:description" content="Capturing authentic moments and timeless memories through documentary wedding photography.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://alexclaudio.com">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css?v=3">
+    <!-- Belinda Font for Logo -->
+    <link href="https://fonts.cdnfonts.com/css/belinda" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="top-nav" id="topNav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="portfolio/" class="nav-link">Portfolio</a>
+                <a href="#about" class="nav-link">About</a>
+            </div>
+            
+            <div class="nav-center">
+                <a href="/" class="logo">Alex Claudio</a>
+            </div>
+            
+            <div class="nav-right">
+                <a href="#reviews" class="nav-link">Reviews</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </div>
+            
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="portfolio/" class="mobile-nav-link">Portfolio</a>
+            <a href="#about" class="mobile-nav-link">About</a>
+            <a href="#reviews" class="mobile-nav-link">Reviews</a>
+            <a href="#contact" class="mobile-nav-link">Contact</a>
+        </div>
+    </nav>
+
+    <!-- Hero Carousel -->
+    <section class="hero-carousel" id="heroCarousel">
+        <div class="hero-slide active" style="background-image: url('hero-image-4.jpg?v=2')">
+            <div class="hero-overlay">
+                <div class="hero-content">
+                    <p class="hero-eyebrow">Documentary Wedding Photography</p>
+                    <h1 class="hero-title">Capturing Your Love Story</h1>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-slide" style="background-image: url('hero-image-2.jpg?v=2')">
+            <div class="hero-overlay">
+                <div class="hero-content">
+                    <p class="hero-eyebrow">Authentic Moments</p>
+                    <h1 class="hero-title">Timeless Memories</h1>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-slide" style="background-image: url('hero-image-3.jpg?v=2')">
+            <div class="hero-overlay">
+                <div class="hero-content">
+                    <p class="hero-eyebrow">Cinematic Storytelling</p>
+                    <h1 class="hero-title">Your Perfect Day</h1>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-slide" style="background-image: url('hero-image-5.jpg?v=2')">
+            <div class="hero-overlay">
+                <div class="hero-content">
+                    <p class="hero-eyebrow">Celebrating Love</p>
+                    <h1 class="hero-title">Magical Moments</h1>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-controls">
+            <button class="hero-dot active" data-slide="0"></button>
+            <button class="hero-dot" data-slide="1"></button>
+            <button class="hero-dot" data-slide="2"></button>
+            <button class="hero-dot" data-slide="3"></button>
+        </div>
+        
+        <button class="hero-arrow hero-prev" id="heroPrev">‹</button>
+        <button class="hero-arrow hero-next" id="heroNext">›</button>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="intro-section">
+        <div class="container">
+            <div class="intro-content">
+                <p class="intro-eyebrow">About Alex Claudio</p>
+                <h2 class="intro-title">Documentary Wedding Photography</h2>
+                <p class="intro-text">
+                    I believe your wedding day should be captured as it naturally unfolds—the genuine laughter, 
+                    the quiet moments, the overwhelming joy. My approach is documentary-style photography that 
+                    tells your unique love story through authentic, candid moments and beautifully composed images.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Grid -->
+    <section class="portfolio-section" id="portfolio">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-eyebrow">Featured Work</p>
+                <h2 class="section-title">Recent Weddings</h2>
+            </div>
+            
+            <div class="portfolio-grid">
+                <div class="portfolio-tile">
+                    <div class="tile-image" style="background-image: url('https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                        <div class="tile-overlay">
+                            <h3 class="tile-title">Sarah & Michael</h3>
+                            <p class="tile-subtitle">Charlotte, North Carolina</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="portfolio-tile">
+                    <div class="tile-image" style="background-image: url('https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                        <div class="tile-overlay">
+                            <h3 class="tile-title">Emma & James</h3>
+                            <p class="tile-subtitle">Seattle, Washington</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="portfolio-tile">
+                    <div class="tile-image" style="background-image: url('https://images.unsplash.com/photo-1519225421980-715cb0215aed?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                        <div class="tile-overlay">
+                            <h3 class="tile-title">Maria & David</h3>
+                            <p class="tile-subtitle">Bucharest, Romania</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="portfolio-tile">
+                    <div class="tile-image" style="background-image: url('https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                        <div class="tile-overlay">
+                            <h3 class="tile-title">Jessica & Ryan</h3>
+                            <p class="tile-subtitle">Maui, Hawaii</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="portfolio-tile">
+                    <div class="tile-image" style="background-image: url('https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                        <div class="tile-overlay">
+                            <h3 class="tile-title">Amanda & Chris</h3>
+                            <p class="tile-subtitle">Aspen, Colorado</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="portfolio-tile">
+                    <div class="tile-image" style="background-image: url('https://images.unsplash.com/photo-1519225421980-715cb0215aed?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                        <div class="tile-overlay">
+                            <h3 class="tile-title">Rachel & Tom</h3>
+                            <p class="tile-subtitle">Charleston, South Carolina</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="portfolio-cta">
+                <a href="portfolio/" class="btn btn-primary">View Full Portfolio</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section" id="reviews">
+        <div class="container">
+            <div class="testimonial-strip">
+                <div class="testimonial-content">
+                    <blockquote class="testimonial-quote">
+                        "Alex captured our wedding day exactly as we remember it—full of genuine emotion and beautiful moments. 
+                        His documentary approach meant we could truly enjoy our day while he captured every special moment."
+                    </blockquote>
+                    <cite class="testimonial-author">— Sarah & Michael</cite>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2 class="about-title">About Alex Claudio</h2>
+                    <p class="about-description">
+                        With over 14 years of experience in documentary wedding photography, I've had the privilege 
+                        of capturing hundreds of love stories across the country and around the world. My approach 
+                        is rooted in photojournalism.I blend into the background to capture authentic moments while 
+                        also creating beautifully composed portraits that showcase your unique connection.
+                    </p>
+                    <p class="about-description">
+                        I believe every couple deserves to have their wedding day documented with artistry and care. 
+                        Whether you're planning an intimate elopement or a grand celebration, I'm here to tell your 
+                        story through images that will be treasured for generations.
+                    </p>
+                </div>
+                <div class="about-image">
+                    <img src="alex.jpg" alt="Alex Claudio" class="photographer-portrait">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="cta-banner">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Tell Your Story?</h2>
+                <p class="cta-text">Let's create beautiful memories together</p>
+                <a href="#contact" class="btn btn-ghost-light">Get In Touch</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <div class="contact-content centered">
+                <div class="contact-form">
+                    <form id="contactForm" class="ds-form" method="POST" data-netlify="true" data-netlify-honeypot="company" name="contact" novalidate>
+                        <input type="hidden" name="form-name" value="contact">
+                        <p class="ds-required-hint" id="requiredHint">* indicates required</p>
+
+                        <div class="ds-field">
+                            <label for="names" class="ds-label">Names <span class="ds-required" aria-hidden="true">*</span></label>
+                            <input type="text" id="names" name="names" class="ds-input" autocomplete="name" placeholder="First and last names" aria-required="true" aria-describedby="namesHelp" required>
+                            <div class="ds-help" id="namesHelp" aria-live="polite"></div>
+                        </div>
+
+                        <div class="ds-field">
+                            <label for="email" class="ds-label">Email address <span class="ds-required" aria-hidden="true">*</span></label>
+                            <input type="email" id="email" name="email" class="ds-input" autocomplete="email" placeholder="me@email.com" aria-required="true" aria-describedby="emailHelp" required>
+                            <div class="ds-help" id="emailHelp" aria-live="polite"></div>
+                        </div>
+
+                        <div class="ds-field">
+                            <label for="phone" class="ds-label">Your phone number</label>
+                            <input type="tel" id="phone" name="phone" class="ds-input" autocomplete="tel" placeholder="+1 (555) 555-5555" aria-describedby="phoneHelp">
+                            <div class="ds-help" id="phoneHelp" aria-live="polite"></div>
+                        </div>
+
+                        <fieldset class="ds-field" aria-describedby="servicesHelp" aria-required="true">
+                            <legend class="ds-label">What services are you interested in? <span class="ds-required" aria-hidden="true">*</span></legend>
+                            <div class="ds-checkbox-group" id="servicesGroup">
+                                <label class="ds-checkbox"><input type="checkbox" name="services" value="wedding" required> <span>Wedding Photography</span></label>
+                                <label class="ds-checkbox"><input type="checkbox" name="services" value="engagement"> <span>Engagement Session</span></label>
+                                <label class="ds-checkbox"><input type="checkbox" name="services" value="bridal"> <span>Bridal Session</span></label>
+                                <label class="ds-checkbox"><input type="checkbox" name="services" value="proposal"> <span>Proposal Photography</span></label>
+                                <label class="ds-checkbox"><input type="checkbox" name="services" value="family"> <span>Family Photography</span></label>
+                                <label class="ds-checkbox"><input type="checkbox" name="services" value="headshots"> <span>Headshots</span></label>
+                                <label class="ds-checkbox ds-checkbox-other"><input type="checkbox" id="servicesOther" name="services" value="other"> <span>Other</span></label>
+                                <input type="text" id="servicesOtherText" class="ds-input ds-input-inline hidden" placeholder="Please specify" aria-label="Other service">
+                            </div>
+                            <div class="ds-help" id="servicesHelp" aria-live="polite"></div>
+                        </fieldset>
+
+                        <div class="ds-field">
+                            <label for="event_date" class="ds-label">Event date <span class="ds-required" aria-hidden="true">*</span></label>
+                            <input type="date" id="event_date" name="event_date" class="ds-input ds-date" aria-required="true" aria-describedby="dateHelp" required>
+                            <div class="ds-help" id="dateHelp" aria-live="polite"></div>
+                        </div>
+
+                        <div class="ds-field">
+                            <label for="location" class="ds-label">Location <span class="ds-required" aria-hidden="true">*</span></label>
+                            <input type="text" id="location" name="location" class="ds-input" aria-required="true" aria-describedby="locationHelp" required>
+                            <div class="ds-help" id="locationHelp" aria-live="polite"></div>
+                        </div>
+
+                        <div class="ds-field">
+                            <label for="budget" class="ds-label">Estimated budget</label>
+                            <input type="text" id="budget" name="budget" class="ds-input" inputmode="numeric" placeholder="$4,000 - $6,000" aria-describedby="budgetHelp">
+                            <div class="ds-help" id="budgetHelp" aria-live="polite"></div>
+                        </div>
+
+                        <div class="ds-field">
+                            <label for="referral" class="ds-label">How did you hear about us? <span class="ds-required" aria-hidden="true">*</span></label>
+                            <select id="referral" name="referral" class="ds-input ds-select" aria-required="true" aria-describedby="referralHelp" required>
+                                <option value="" selected disabled>Select an option</option>
+                                <option value="search">Search</option>
+                                <option value="social">Social</option>
+                                <option value="friend">Friend</option>
+                                <option value="vendor">Vendor</option>
+                                <option value="ad">Ad</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="ds-help" id="referralHelp" aria-live="polite"></div>
+                        </div>
+
+                        <div class="ds-field">
+                            <label for="message" class="ds-label">Tell us about you and your event <span class="ds-required" aria-hidden="true">*</span></label>
+                            <textarea id="message" name="message" class="ds-textarea" rows="6" aria-required="true" aria-describedby="messageHelp" placeholder="Share date, venue, vibe and any must-haves." required></textarea>
+                            <div class="ds-help" id="messageHelp" aria-live="polite"></div>
+                        </div>
+
+                        <!-- Honeypot for bots -->
+                        <div class="hidden" aria-hidden="true">
+                            <label for="company">Company</label>
+                            <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
+                        </div>
+
+                        <!-- Captcha removed temporarily -->
+
+                        <div class="ds-submit-row">
+                            <button type="submit" class="ds-submit" id="submitButton">SEND</button>
+                        </div>
+
+                        <div class="ds-panel ds-success hidden" id="formSuccess" role="status" aria-live="polite">
+                            <strong>Thank you</strong>
+                            <p>We received your inquiry and will respond soon.</p>
+                        </div>
+                        <div class="ds-panel ds-error hidden" id="formError" role="alert" aria-live="assertive">
+                            <strong>Something went wrong</strong>
+                            <p>Please try again or email us directly.</p>
+                        </div>
+
+                        <p class="ds-consent">
+                           
+                        </p>
+                        <p class="ds-consent-secondary"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3 class="footer-logo">Alex Claudio</h3>
+                    <p class="footer-tagline">Documentary Wedding Photography</p>
+                </div>
+                
+                <div class="footer-nav">
+                    <a href="portfolio/">Portfolio</a>
+                    <a href="#about">About</a>
+                    <a href="#reviews">Reviews</a>
+                    <a href="#contact">Contact</a>
+                </div>
+                
+                <div class="footer-social">
+                    <a href="#" class="social-link">Instagram</a>
+                    <a href="#" class="social-link">Pinterest</a>
+                    <a href="#" class="social-link">Facebook</a>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Alex Claudio Photography. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>

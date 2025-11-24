@@ -1,0 +1,249 @@
+{
+    "profile_name": "Warm Documentary Wedding Photography – Design System",
+    "version": "1.0",
+    "goal": "Replicate an elegant, candid, photo-first wedding site with a cinematic, warm look and clean editorial typography.",
+    "style_tags": ["documentary", "cinematic", "editorial", "warm", "minimal", "lgbtq+ friendly"],
+    "brand_voice": {
+      "tone": "warm, inclusive, calm confidence",
+      "microcopy_rules": {
+        "case": "sentence for body, small caps or uppercase for headings/subheads when needed",
+        "length": "short, clear phrases; avoid exclamation points",
+        "cta_examples": ["View Portfolio", "See Full Story", "Get In Touch"]
+      }
+    },
+    "design_tokens": {
+      "colors": {
+        "base": {
+          "canvas": "#0F0F12",
+          "paper": "#F7F5F2",
+          "ink": "#161617",
+          "muted_ink": "#4A4A4F"
+        },
+        "brand": {
+          "accent": "#D1A574",
+          "accent_muted": "#B78B5D",
+          "link": "#2A6379",
+          "success": "#7BA27D",
+          "warning": "#DCAC6B",
+          "danger": "#B05A5A"
+        },
+        "overlays": {
+          "hero_scrim_top": "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.0) 45%)",
+          "tile_scrim_bottom": "linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.0) 60%)"
+        }
+      },
+      "typography": {
+        "heading_family": ["'Cormorant Garamond'", "'Playfair Display'", "Georgia", "serif"],
+        "body_family": ["'Inter'", "'Source Sans 3'", "system-ui", "sans-serif"],
+        "scale": {
+          "display": "clamp(42px, 5vw, 64px)",
+          "h1": "clamp(32px, 4vw, 40px)",
+          "h2": "clamp(26px, 3vw, 32px)",
+          "h3": "22px",
+          "body": "18px",
+          "small": "15px",
+          "nav": "14px",
+          "caption": "13px"
+        },
+        "weights": { "light": 300, "regular": 400, "medium": 500, "semibold": 600 },
+        "letterspacing": { "wide_caps": "0.08em", "normal": "0em" },
+        "leading": { "tight": 1.15, "normal": 1.5, "loose": 1.7 }
+      },
+      "radii": { "none": "0px", "sm": "4px", "md": "8px", "lg": "16px", "pill": "999px" },
+      "shadows": {
+        "soft": "0 10px 30px rgba(0,0,0,0.18)",
+        "raised": "0 6px 18px rgba(0,0,0,0.22)",
+        "text_glow": "0 2px 12px rgba(0,0,0,0.55)"
+      },
+      "spacing": {
+        "scale": [0, 4, 8, 12, 16, 24, 32, 48, 64, 96],
+        "container_gutters": { "mobile": 16, "tablet": 24, "desktop": 40, "wide": 72 }
+      },
+      "breakpoints": {
+        "xs": 360,
+        "sm": 640,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280,
+        "xxl": 1536
+      },
+      "transitions": {
+        "duration": { "fast": "150ms", "base": "250ms", "slow": "500ms" },
+        "easing": { "in_out": "cubic-bezier(0.4, 0.0, 0.2, 1)" },
+        "effects": {
+          "fade": { "opacity": [0, 1] },
+          "scale_in": { "transform": ["scale(0.98)", "scale(1)"] }
+        }
+      }
+    },
+    "layout_system": {
+      "grid": {
+        "columns": 12,
+        "gutter": { "mobile": 16, "tablet": 24, "desktop": 32 },
+        "max_widths": { "text": 840, "content": 1160, "wide": 1440 }
+      },
+      "image_aspect_ratios": { "hero": "16:9", "tile_primary": "4:5", "tile_alt": "1:1", "blog_card": "3:2" },
+      "image_treatments": {
+        "global": ["slight warm balance", "soft contrast", "filmic highlights", "crush blacks minimally"],
+        "overlays": ["scrim bottom for legibility", "subtle grain optional (6–8%)"],
+        "hover": ["+3% brightness", "+2% scale", "caption rise"]
+      },
+      "page_blueprints": {
+        "home": [
+          "TopNav",
+          "HeroCarousel (full-bleed)",
+          "IntroEyebrow + H1 + short paragraph (centered, narrow)",
+          "PortfolioGrid (3 columns desktop, 2 tablet, 1 mobile) with overlay titles",
+          "FeaturedStories / Journal teasers",
+          "TestimonialStrip",
+          "CTA_Banner",
+          "Footer"
+        ],
+        "portfolio_index": ["TopNav", "PageHeader", "PortfolioGrid (dense masonry or uniform row grid)", "Pagination", "Footer"],
+        "portfolio_detail": ["TopNav", "HeroImage", "StoryMeta (location, season, vendor tags)", "StoryBody (alternating image/text sections)", "CTA_NextProject", "Footer"],
+        "blog_index": ["TopNav", "PageHeader", "CardGrid (3 columns desktop)", "Pagination", "Footer"],
+        "contact": ["TopNav", "PageHeader", "TwoColumn (Form + Info/Photo)", "FAQ_Accordion", "Footer"]
+      }
+    },
+    "components": {
+      "TopNav": {
+        "style": "transparent over hero; switches to solid on scroll",
+        "logo_position": "center",
+        "menu_layout": "links split left/right of logo on desktop; hamburger on mobile",
+        "link_style": {
+          "case": "uppercase",
+          "size": "nav",
+          "weight": "medium",
+          "color_default": "#FFFFFF",
+          "color_scrolled": "#161617",
+          "hover": "underline-offset: 6px; opacity: 0.85"
+        },
+        "behavior": { "sticky": true, "backdrop_blur_on_scroll": true }
+      },
+      "HeroCarousel": {
+        "height": { "mobile_vh": 75, "desktop_vh": 90 },
+        "slides": {
+          "autoplay": true,
+          "interval_ms": 4500,
+          "transition": "fade",
+          "controls": "minimal dots at right, arrows on hover"
+        },
+        "overlay": {
+          "scrim": "hero_scrim_top",
+          "content_alignment": "center",
+          "text_theme": "light",
+          "optional_text": ["eyebrow small caps", "display or h1"]
+        }
+      },
+      "SectionHeader": {
+        "eyebrow": { "caps": true, "tracking": "wide_caps", "weight": "medium", "color": "accent" },
+        "title": { "font": "heading_family", "weight": "light", "align": "center" },
+        "subtitle": { "max_width_px": 720, "align": "center", "tone": "soft" }
+      },
+      "PortfolioGrid": {
+        "layout": "uniform tiles (no gutters on mobile, 24px on desktop)",
+        "columns": { "mobile": 1, "tablet": 2, "desktop": 3 },
+        "tile": {
+          "corner_radius": "md",
+          "shadow": "soft",
+          "overlay": "tile_scrim_bottom",
+          "title_style": {
+            "font": "heading_family",
+            "size": "h3",
+            "weight": "regular",
+            "color": "#FFFFFF",
+            "text_shadow": "text_glow"
+          },
+          "subtitle_style": { "size": "small", "color": "rgba(255,255,255,0.9)" },
+          "hover": { "scale": 1.02, "shadow": "raised" }
+        }
+      },
+      "StoryCard": {
+        "image_ratio": "3:2",
+        "layout": "image top, text below",
+        "meta": { "use_caps": true, "tracking": "wide_caps", "color": "muted_ink" },
+        "hover": "image slight zoom; title underline"
+      },
+      "TestimonialStrip": {
+        "background": "#F7F5F2",
+        "typography": { "font": "heading_family", "style": "italic optional" },
+        "decor": "thin rule in accent color"
+      },
+      "CTA_Banner": {
+        "background": "#161617",
+        "text": "#FFFFFF",
+        "button_style": "ghost_light",
+        "padding_y": 48,
+        "align": "center"
+      },
+      "Buttons": {
+        "primary": {
+          "bg": "accent",
+          "text": "#1A1A1A",
+          "radius": "pill",
+          "padding": "12px 22px",
+          "hover": { "bg": "accent_muted" }
+        },
+        "ghost_light": {
+          "bg": "transparent",
+          "border": "1px solid rgba(255,255,255,0.6)",
+          "text": "#FFFFFF",
+          "hover": { "bg": "rgba(255,255,255,0.08)" }
+        },
+        "link": { "underline": true, "offset": 6 }
+      },
+      "Footer": {
+        "theme": "dark",
+        "columns": { "mobile": 1, "desktop": 3 },
+        "elements": ["logo", "navigation", "socials", "copyright"]
+      },
+      "Forms": {
+        "fields": ["name", "email", "event_date", "message"],
+        "style": {
+          "border": "1px solid #E6E3DE",
+          "radius": "md",
+          "focus": "outline: 2px solid #D1A574; outline-offset: 2px"
+        }
+      },
+      "Pagination": {
+        "style": "minimal dots or numbers centered",
+        "hover": "accent underline"
+      }
+    },
+    "accessibility": {
+      "min_contrast_ratio": "WCAG AA",
+      "focus_states": "visible + 2px outline in accent",
+      "image_text_legibility": "use overlays for any text over images",
+      "motion_reduction": "respect prefers-reduced-motion by disabling slide autoplay"
+    },
+    "interaction_rules": {
+      "scroll_behavior": "smooth",
+      "nav_on_scroll": "becomes solid paper with ink links after 80px",
+      "lazy_loading": "defer offscreen images; use responsive srcset with 1x/2x"
+    },
+    "seo_performance": {
+      "meta_pattern": {
+        "title": "Brand | Page",
+        "description_max_chars": 155,
+        "open_graph": "use hero image variant without heavy overlay"
+      },
+      "image": { "formats": ["AVIF", "WebP", "JPEG fallback"], "sizes_attr": "100vw for hero; (min-width:1024px) 33vw for grid" }
+    },
+    "content_governance": {
+      "navigation_labels": ["About", "Portfolio", "Album", "Reviews", "Blog", "Contact"],
+      "home_section_order": ["Hero", "Tagline", "Featured Work Grid", "Testimonials", "CTA"],
+      "portfolio_tile_text": { "title_case": "title", "subtitle_case": "caps small" }
+    },
+    "implementation_hints": {
+      "framework": ["Next.js or Nuxt", "Tailwind or CSS variables"],
+      "tailwind_tokens_map": {
+        "fontHeading": "font-[Cormorant_Garamond]",
+        "fontBody": "font-inter",
+        "colorAccent": "#D1A574",
+        "shadowSoft": "shadow-[0_10px_30px_rgba(0,0,0,0.18)]",
+        "radiusMd": "rounded-lg",
+        "container": "max-w-[1160px] mx-auto px-4 md:px-6 lg:px-10"
+      }
+    }
+  }
+  
