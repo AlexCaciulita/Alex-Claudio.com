@@ -9,6 +9,11 @@ const heroPrev = document.getElementById('heroPrev');
 const heroNext = document.getElementById('heroNext');
 const contactForm = document.getElementById('contactForm');
 const submitButtonEl = document.getElementById('submitButton');
+const testimonialSlider = document.getElementById('testimonialSlider');
+const testimonialSlides = document.querySelectorAll('.testimonial-slide');
+const testimonialDots = document.querySelectorAll('.testimonial-dot');
+const testimonialPrev = document.getElementById('testimonialPrev');
+const testimonialNext = document.getElementById('testimonialNext');
 const portfolioGallery = document.getElementById('portfolioGallery');
 const lightboxOverlay = document.getElementById('lightboxOverlay');
 const lightboxImage = document.getElementById('lightboxImage');
@@ -30,6 +35,7 @@ function handleNavScroll() {
 // ===== MOBILE MENU =====
 function toggleMobileMenu() {
     mobileMenu.classList.toggle('active');
+    mobileMenuToggle.setAttribute('aria-expanded', mobileMenu.classList.contains('active').toString());
     
     // Toggle hamburger animation
     const spans = mobileMenuToggle.querySelectorAll('span');
@@ -46,6 +52,7 @@ function toggleMobileMenu() {
 
 function closeMobileMenu() {
     mobileMenu.classList.remove('active');
+    mobileMenuToggle.setAttribute('aria-expanded', 'false');
     const spans = mobileMenuToggle.querySelectorAll('span');
     spans[0].style.transform = 'none';
     spans[1].style.opacity = '1';
@@ -58,6 +65,8 @@ let autoplayInterval;
 const slideInterval = 4500; // 4.5 seconds as per design system
 let currentLightboxIndex = 0;
 let currentGalleryOrder = [];
+let currentTestimonial = 0;
+let testimonialInterval;
 const portfolioImages = [
     '5DM30850.jpg',
     '5DM30897.jpg',
@@ -120,6 +129,7 @@ const portfolioImages = [
 ];
 
 function showSlide(index) {
+    if (heroSlides.length === 0) return;
     // Remove active class from all slides and dots
     heroSlides.forEach(slide => slide.classList.remove('active'));
     heroDots.forEach(dot => dot.classList.remove('active'));
@@ -132,16 +142,19 @@ function showSlide(index) {
 }
 
 function nextSlide() {
+    if (heroSlides.length === 0) return;
     const nextIndex = (currentSlide + 1) % heroSlides.length;
     showSlide(nextIndex);
 }
 
 function prevSlide() {
+    if (heroSlides.length === 0) return;
     const prevIndex = (currentSlide - 1 + heroSlides.length) % heroSlides.length;
     showSlide(prevIndex);
 }
 
 function startAutoplay() {
+    if (!heroCarousel || heroSlides.length === 0) return;
     // Check if user prefers reduced motion
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         return;
@@ -222,13 +235,13 @@ async function handleFormSubmit(event) {
     submitButtonEl.textContent = 'Sending...';
     submitButtonEl.disabled = true;
 
-    const formData = new FormData(contactForm);
-    const encodedData = new URLSearchParams();
-    formData.forEach((value, key) => {
-        encodedData.append(key, value.toString());
-    });
-
     try {
+        const formData = new FormData(contactForm);
+        const encodedData = new URLSearchParams();
+        formData.forEach((value, key) => {
+            encodedData.append(key, value.toString());
+        });
+
         const response = await fetch('/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -238,7 +251,7 @@ async function handleFormSubmit(event) {
         if (response.ok) {
             contactForm.reset();
             submitButtonEl.textContent = originalText;
-            submitButtonEl.disabled = true;
+            submitButtonEl.disabled = false;
             showFormSuccess('We received your inquiry and will respond soon.');
             trackFormSubmission();
         } else {
@@ -249,6 +262,43 @@ async function handleFormSubmit(event) {
         submitButtonEl.textContent = originalText;
         submitButtonEl.disabled = false;
         showFormError('Something went wrong. Please try again.');
+    }
+}
+
+// ===== TESTIMONIAL SLIDER =====
+function showTestimonial(index) {
+    if (!testimonialSlides.length) return;
+    testimonialSlides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+    });
+    testimonialDots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+    currentTestimonial = index;
+}
+
+function nextTestimonial() {
+    if (!testimonialSlides.length) return;
+    const nextIndex = (currentTestimonial + 1) % testimonialSlides.length;
+    showTestimonial(nextIndex);
+}
+
+function prevTestimonial() {
+    if (!testimonialSlides.length) return;
+    const prevIndex = (currentTestimonial - 1 + testimonialSlides.length) % testimonialSlides.length;
+    showTestimonial(prevIndex);
+}
+
+function startTestimonialAutoplay() {
+    if (!testimonialSlides.length) return;
+    if (testimonialInterval) clearInterval(testimonialInterval);
+    testimonialInterval = setInterval(nextTestimonial, 6500);
+}
+
+function stopTestimonialAutoplay() {
+    if (testimonialInterval) {
+        clearInterval(testimonialInterval);
+        testimonialInterval = null;
     }
 }
 
@@ -413,30 +463,36 @@ const debouncedNavScroll = debounce(handleNavScroll, 10);
 // ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded', () => {
     // Navigation
+    if (mobileMenuToggle) {
+        mobileMenuToggle.setAttribute('aria-expanded', 'false');
+    }
     window.addEventListener('scroll', debouncedNavScroll);
     mobileMenuToggle.addEventListener('click', toggleMobileMenu);
     
     // Hero carousel
-    heroDots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            showSlide(index);
+    const hasCarousel = heroCarousel && heroSlides.length > 0 && heroPrev && heroNext;
+    if (hasCarousel) {
+        heroDots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                showSlide(index);
+                handleCarouselInteraction();
+            });
+        });
+        
+        heroPrev.addEventListener('click', () => {
+            prevSlide();
             handleCarouselInteraction();
         });
-    });
-    
-    heroPrev.addEventListener('click', () => {
-        prevSlide();
-        handleCarouselInteraction();
-    });
-    
-    heroNext.addEventListener('click', () => {
-        nextSlide();
-        handleCarouselInteraction();
-    });
-    
-    // Pause autoplay on hover
-    heroCarousel.addEventListener('mouseenter', stopAutoplay);
-    heroCarousel.addEventListener('mouseleave', startAutoplay);
+        
+        heroNext.addEventListener('click', () => {
+            nextSlide();
+            handleCarouselInteraction();
+        });
+        
+        // Pause autoplay on hover
+        heroCarousel.addEventListener('mouseenter', stopAutoplay);
+        heroCarousel.addEventListener('mouseleave', startAutoplay);
+    }
     
     // Smooth scrolling for navigation links
     document.querySelectorAll('a[href^="#"], a[href^="/#"]').forEach(link => {
@@ -507,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize features
     renderPortfolioGallery();
-    startAutoplay();
+    if (hasCarousel) startAutoplay();
     lazyLoadImages();
     initPortfolioHoverEffects();
 
@@ -531,7 +587,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'ArrowRight') showNextLightbox();
     });
     enhanceAccessibility();
-    
+
+    // Testimonials slider
+    if (testimonialSlider && testimonialSlides.length) {
+        showTestimonial(0);
+        testimonialDots.forEach((dot, idx) => {
+            dot.addEventListener('click', () => {
+                showTestimonial(idx);
+                stopTestimonialAutoplay();
+                startTestimonialAutoplay();
+            });
+        });
+        if (testimonialPrev) {
+            testimonialPrev.addEventListener('click', () => {
+                prevTestimonial();
+                stopTestimonialAutoplay();
+                startTestimonialAutoplay();
+            });
+        }
+        if (testimonialNext) {
+            testimonialNext.addEventListener('click', () => {
+                nextTestimonial();
+                stopTestimonialAutoplay();
+                startTestimonialAutoplay();
+            });
+        }
+        testimonialSlider.addEventListener('mouseenter', stopTestimonialAutoplay);
+        testimonialSlider.addEventListener('mouseleave', startTestimonialAutoplay);
+        startTestimonialAutoplay();
+    }
+
     // Handle window resize
     window.addEventListener('resize', debounce(() => {
         // Recalculate any layout-dependent features
@@ -646,6 +731,9 @@ function initScrollAnimations() {
     
     // Observe elements that should animate on scroll
     const animateElements = document.querySelectorAll('.portfolio-tile, .testimonial-quote, .about-content');
+    animateElements.forEach((el, idx) => {
+        el.style.setProperty('--animate-delay', `${idx * 80}ms`);
+    });
     animateElements.forEach(el => observer.observe(el));
 }
 
