@@ -94,7 +94,7 @@
   --max-width-text: 840px;
   --max-width-content: 1160px;
   --max-width-wide: 1440px;
-  --nav-height: 80px;
+  --nav-height: 88px;
 }
 
 /* ===== RESET & BASE STYLES ===== */
@@ -116,7 +116,7 @@ body {
   background-color: var(--color-paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding-top: var(--nav-height);
+  padding-top: calc(var(--nav-height) + var(--space-12));
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -299,7 +299,7 @@ a:hover {
 
 @media (max-width: 767px) {
   :root {
-    --nav-height: 72px;
+    --nav-height: 76px;
   }
 }
 
@@ -1278,4 +1278,3 @@ a:focus {
   0% { transform: scale(1); }
   100% { transform: scale(1.05); }
 }
-
