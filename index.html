@@ -20,7 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css?v=10">
+    <link rel="stylesheet" href="styles.css?v=11">
     <!-- Belinda Font for Logo -->
     <link href="https://fonts.cdnfonts.com/css/belinda" rel="stylesheet">
     
@@ -72,9 +72,6 @@
         <div class="hero-controls">
             <button class="hero-dot active" data-slide="0"></button>
         </div>
-        
-        <button class="hero-arrow hero-prev" id="heroPrev">&#10094;</button>
-        <button class="hero-arrow hero-next" id="heroNext">&#10095;</button>
     </section>
 
     <!-- Intro Section -->
@@ -323,8 +320,8 @@
                         </div>
 
                         <div class="ds-field">
-                            <label for="phone" class="ds-label">Your phone number</label>
-                            <input type="tel" id="phone" name="phone" class="ds-input" autocomplete="tel" placeholder="+1 (555) 555-5555" aria-describedby="phoneHelp">
+                            <label for="phone" class="ds-label">Your phone number <span class="ds-required" aria-hidden="true">*</span></label>
+                            <input type="tel" id="phone" name="phone" class="ds-input" autocomplete="tel" placeholder="+1 (555) 555-5555" aria-describedby="phoneHelp" aria-required="true" required>
                             <div class="ds-help" id="phoneHelp" aria-live="polite"></div>
                         </div>
 
