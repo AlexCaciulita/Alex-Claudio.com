@@ -94,7 +94,7 @@
   --max-width-text: 840px;
   --max-width-content: 1160px;
   --max-width-wide: 1440px;
-  --nav-height: 88px;
+  --nav-height: 76px;
 }
 
 /* ===== RESET & BASE STYLES ===== */
@@ -177,36 +177,36 @@ a:hover {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(180deg, rgba(15, 15, 18, 0.65) 0%, rgba(15, 15, 18, 0.4) 45%, rgba(15, 15, 18, 0) 100%);
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(22, 22, 23, 0.08);
   transition: background-color var(--transition-base) var(--easing-in-out), backdrop-filter var(--transition-base) var(--easing-in-out), box-shadow var(--transition-base) var(--easing-in-out);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(6px);
   min-height: var(--nav-height);
 }
 
 .top-nav.scrolled {
-  background: rgba(247, 245, 242, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-soft);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .nav-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-16) var(--gutter-mobile);
+  padding: 12px var(--gutter-mobile);
   max-width: var(--max-width-content);
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .nav-container {
-    padding: var(--space-16) var(--gutter-tablet);
+    padding: 14px var(--gutter-tablet);
   }
 }
 
 @media (min-width: 1024px) {
   .nav-container {
-    padding: var(--space-16) var(--gutter-desktop);
+    padding: 14px var(--gutter-desktop);
   }
 }
 
@@ -220,12 +220,8 @@ a:hover {
   font-weight: var(--weight-medium);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide-caps);
-  color: #FFFFFF;
-  transition: all var(--transition-base) var(--easing-in-out);
-}
-
-.top-nav.scrolled .nav-link {
   color: var(--color-ink);
+  transition: all var(--transition-base) var(--easing-in-out);
 }
 
 .nav-link:hover {
@@ -239,10 +235,6 @@ a:hover {
   color: #FFFFFF;
   text-decoration: none;
   letter-spacing: 0.5px;
-}
-
-.top-nav.scrolled .logo {
-  color: var(--color-ink);
 }
 
 .mobile-menu-toggle {
@@ -298,7 +290,7 @@ a:hover {
 
 @media (max-width: 767px) {
   :root {
-    --nav-height: 76px;
+    --nav-height: 68px;
   }
 }
 
