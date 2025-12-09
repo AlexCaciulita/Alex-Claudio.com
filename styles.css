@@ -94,6 +94,7 @@
   --max-width-text: 840px;
   --max-width-content: 1160px;
   --max-width-wide: 1440px;
+  --nav-height: 80px;
 }
 
 /* ===== RESET & BASE STYLES ===== */
@@ -115,6 +116,7 @@ body {
   background-color: var(--color-paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-top: var(--nav-height);
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -179,6 +181,7 @@ a:hover {
   background: rgba(10, 10, 12, 0.5);
   transition: background-color var(--transition-base) var(--easing-in-out), backdrop-filter var(--transition-base) var(--easing-in-out);
   backdrop-filter: blur(12px);
+  min-height: var(--nav-height);
 }
 
 .top-nav.scrolled {
@@ -291,6 +294,12 @@ a:hover {
   
   .mobile-menu-toggle {
     display: flex;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --nav-height: 72px;
   }
 }
 
@@ -1269,5 +1278,4 @@ a:focus {
   0% { transform: scale(1); }
   100% { transform: scale(1.05); }
 }
-
 
