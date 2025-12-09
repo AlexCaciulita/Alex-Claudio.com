@@ -116,7 +116,6 @@ body {
   background-color: var(--color-paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding-top: calc(var(--nav-height) + var(--space-12));
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -178,9 +177,9 @@ a:hover {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(10, 10, 12, 0.5);
-  transition: background-color var(--transition-base) var(--easing-in-out), backdrop-filter var(--transition-base) var(--easing-in-out);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, rgba(15, 15, 18, 0.65) 0%, rgba(15, 15, 18, 0.4) 45%, rgba(15, 15, 18, 0) 100%);
+  transition: background-color var(--transition-base) var(--easing-in-out), backdrop-filter var(--transition-base) var(--easing-in-out), box-shadow var(--transition-base) var(--easing-in-out);
+  backdrop-filter: blur(8px);
   min-height: var(--nav-height);
 }
 
@@ -306,7 +305,7 @@ a:hover {
 /* ===== HERO CAROUSEL ===== */
 .hero-carousel {
   position: relative;
-  height: clamp(420px, calc(100vw / 1.85), 90vh);
+  height: clamp(560px, 90vh, 960px);
   overflow: hidden;
 }
 
@@ -317,7 +316,7 @@ a:hover {
   width: 100%;
   height: 100%;
   background-size: cover;
-  background-position: center 42%;
+  background-position: center center;
   background-repeat: no-repeat;
   opacity: 0;
   transition: opacity var(--transition-slow) var(--easing-in-out);
@@ -357,7 +356,7 @@ a:hover {
 .hero-content {
   color: #FFFFFF;
   max-width: var(--max-width-text);
-  padding: 0 var(--space-16);
+  padding: calc(var(--nav-height) + var(--space-32)) var(--space-16) var(--space-32);
 }
 .hero-subtext {
   margin-top: var(--space-12);
