@@ -205,7 +205,6 @@ async function handleFormSubmit(event) {
     if (!validateEmail(data.email || '')) errors.email = 'Please enter a valid email.';
     if (!data.event_date) errors.event_date = 'Please select your event date.';
     if (!data.location) errors.location = 'Please enter a location.';
-    if (!data.phone) errors.phone = 'Please enter your phone number.';
     if (!data.message) errors.message = 'Please share a bit about your event.';
 
     // At least one service
