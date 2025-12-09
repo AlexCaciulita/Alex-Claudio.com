@@ -423,20 +423,23 @@ function initPortfolioHoverEffects() {
 
 // ===== ACCESSIBILITY ENHANCEMENTS =====
 function enhanceAccessibility() {
-    // Add ARIA labels to carousel controls
-    heroPrev.setAttribute('aria-label', 'Previous slide');
-    heroNext.setAttribute('aria-label', 'Next slide');
-    
-    // Add keyboard navigation for carousel
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowLeft') {
-            prevSlide();
-            handleCarouselInteraction();
-        } else if (event.key === 'ArrowRight') {
-            nextSlide();
-            handleCarouselInteraction();
-        }
-    });
+    const hasCarouselControls = heroSlides.length > 1 && heroPrev && heroNext;
+    if (hasCarouselControls) {
+        // Add ARIA labels to carousel controls
+        heroPrev.setAttribute('aria-label', 'Previous slide');
+        heroNext.setAttribute('aria-label', 'Next slide');
+        
+        // Add keyboard navigation for carousel
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                prevSlide();
+                handleCarouselInteraction();
+            } else if (event.key === 'ArrowRight') {
+                nextSlide();
+                handleCarouselInteraction();
+            }
+        });
+    }
     
     // Add focus management for mobile menu
     const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
@@ -465,12 +468,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigation
     if (mobileMenuToggle) {
         mobileMenuToggle.setAttribute('aria-expanded', 'false');
+        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
     }
     window.addEventListener('scroll', debouncedNavScroll);
-    mobileMenuToggle.addEventListener('click', toggleMobileMenu);
     
     // Hero carousel
-    const hasCarousel = heroCarousel && heroSlides.length > 0 && heroPrev && heroNext;
+    const hasCarousel = heroCarousel && heroSlides.length > 1;
     if (hasCarousel) {
         heroDots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
@@ -479,15 +482,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        heroPrev.addEventListener('click', () => {
-            prevSlide();
-            handleCarouselInteraction();
-        });
+        if (heroPrev) {
+            heroPrev.addEventListener('click', () => {
+                prevSlide();
+                handleCarouselInteraction();
+            });
+        }
         
-        heroNext.addEventListener('click', () => {
-            nextSlide();
-            handleCarouselInteraction();
-        });
+        if (heroNext) {
+            heroNext.addEventListener('click', () => {
+                nextSlide();
+                handleCarouselInteraction();
+            });
+        }
         
         // Pause autoplay on hover
         heroCarousel.addEventListener('mouseenter', stopAutoplay);

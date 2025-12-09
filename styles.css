@@ -392,6 +392,10 @@ a:hover {
   gap: var(--space-8);
 }
 
+.hero-arrow {
+  display: none;
+}
+
 .hero-dot {
   width: 12px;
   height: 12px;
