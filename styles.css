@@ -306,7 +306,9 @@ a:hover {
 /* ===== HERO CAROUSEL ===== */
 .hero-carousel {
   position: relative;
-  height: clamp(420px, calc(100vw / 1.85), 90vh);
+  margin-top: var(--nav-height);
+  height: calc(100vh - var(--nav-height));
+  min-height: clamp(520px, calc(100vw / 1.85), 92vh);
   overflow: hidden;
 }
 
@@ -317,7 +319,7 @@ a:hover {
   width: 100%;
   height: 100%;
   background-size: cover;
-  background-position: center 42%;
+  background-position: center center;
   background-repeat: no-repeat;
   opacity: 0;
   transition: opacity var(--transition-slow) var(--easing-in-out);
