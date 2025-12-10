@@ -16,10 +16,10 @@
   --color-danger: #B05A5A;
   
   /* Typography */
-  --font-heading: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', 'Source Sans 3', system-ui, sans-serif;
-  --font-script: 'Caveat', 'Belinda', cursive;
-  --font-display-serif: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  --font-heading: 'Cormorant Garamond', 'Garamond', Georgia, serif;
+  --font-body: 'Cormorant Garamond', 'Garamond', Georgia, serif;
+  --font-script: 'Dancing Script', 'Sweely Broken', cursive;
+  --font-display-serif: 'Cormorant Garamond', 'Garamond', Georgia, serif;
   
   /* Font Sizes */
   --text-display: clamp(42px, 5vw, 64px);
@@ -229,7 +229,7 @@ a:hover {
 }
 
 .logo {
-  font-family: 'Belinda', 'Cormorant Garamond', serif;
+  font-family: 'Dancing Script', 'Sweely Broken', 'Cormorant Garamond', serif;
   font-size: var(--text-h3);
   font-weight: 400;
   color: #FFFFFF;
@@ -784,49 +784,76 @@ section + section {
 }
 
 /* ===== FAQ WITH IMAGES ===== */
-.faq-layout {
+.faq-stories {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(0, 1.6fr) minmax(180px, 1fr);
-  gap: var(--space-24);
-  align-items: stretch;
+  gap: var(--space-48);
 }
 
-.faq-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-24);
+.faq-feature {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-48);
+  align-items: center;
 }
 
-.faq-image {
+.faq-feature.reverse {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.faq-feature.reverse .faq-feature-image {
+  order: 2;
+}
+
+.faq-feature.reverse .faq-feature-copy {
+  order: 1;
+}
+
+.faq-feature-image {
   border-radius: var(--radius-md);
   background-size: cover;
   background-position: center;
-  min-height: 360px;
+  width: 100%;
+  max-width: 420px;
+  height: 340px;
   box-shadow: var(--shadow-soft);
+  justify-self: center;
 }
 
-.faq-image::after {
-  content: "";
-  display: block;
-  padding-top: 6%;
+.faq-feature-copy h3 {
+  font-size: var(--text-h2);
+  margin-bottom: var(--space-16);
+}
+
+.faq-feature-copy p {
+  margin-bottom: var(--space-12);
+  color: var(--color-muted-ink);
+  line-height: var(--leading-loose);
+}
+
+.faq-feature-note {
+  font-style: italic;
+  color: var(--color-ink);
 }
 
 @media (max-width: 1023px) {
-  .faq-layout {
+  .faq-feature {
     grid-template-columns: 1fr;
+    gap: var(--space-24);
   }
-  .faq-image {
-    min-height: 260px;
+  .faq-feature.reverse .faq-feature-image,
+  .faq-feature.reverse .faq-feature-copy {
+    order: unset;
   }
-  .faq-image-right {
-    order: 3;
+  .faq-feature-image {
+    max-width: 100%;
+    height: 260px;
   }
 }
 
 /* ===== CTA BANNER ===== */
 .cta-banner {
-  background: rgba(22, 22, 23, 0.18);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, rgba(209, 165, 116, 0.18) 0%, rgba(183, 139, 93, 0.2) 50%, rgba(209, 165, 116, 0.18) 100%);
+  color: var(--color-ink);
   text-align: center;
   padding: var(--space-48) 0;
 }
@@ -834,18 +861,18 @@ section + section {
 .cta-title {
   font-size: var(--text-h2);
   font-weight: var(--weight-light);
-  color: #FFFFFF;
+  color: var(--color-ink);
   margin-bottom: var(--space-16);
 }
 
 .cta-text {
   font-size: var(--text-body);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(22, 22, 23, 0.85);
   margin-bottom: var(--space-32);
 }
 .cta-subtext {
   margin-top: var(--space-16);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(22, 22, 23, 0.75);
   font-family: var(--font-script);
   font-size: var(--text-small);
   letter-spacing: 0.03em;
@@ -884,6 +911,16 @@ section + section {
 .btn-ghost-light:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.85);
+}
+.cta-banner .btn-ghost-light {
+  background: rgba(183, 139, 93, 0.6);
+  border-color: rgba(183, 139, 93, 0.9);
+  color: var(--color-ink);
+}
+.cta-banner .btn-ghost-light:hover {
+  background: rgba(183, 139, 93, 0.8);
+  border-color: rgba(183, 139, 93, 1);
+  color: var(--color-ink);
 }
 .btn-secondary {
   background: var(--color-accent-2);
