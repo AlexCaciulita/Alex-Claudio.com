@@ -867,6 +867,21 @@ section + section {
   }
 }
 
+.contact-split {
+  align-items: start;
+}
+
+.contact-note {
+  font-size: var(--text-body);
+  line-height: var(--leading-loose);
+  color: var(--color-muted-ink);
+  max-width: 620px;
+}
+
+.contact-note p {
+  margin-bottom: var(--space-16);
+}
+
 /* Centered single-column contact layout */
 .contact-content.centered {
   grid-template-columns: 1fr;
