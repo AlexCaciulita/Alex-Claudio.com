@@ -315,10 +315,17 @@ function renderPortfolioGallery() {
     currentGalleryOrder = [...portfolioImages];
     portfolioGallery.innerHTML = '';
 
-    // Keep quote cards pinned at the top.
-    portfolioQuotes.forEach(q => portfolioGallery.appendChild(createQuoteFigure(q)));
+    // Insert quotes at fixed spots: after first row, and mid of fourth row.
+    const quoteInsertions = [3, 8]; // zero-based counts of images already placed
+    let nextQuoteIndex = 0;
+    let imagesPlaced = 0;
 
     currentGalleryOrder.forEach((file, idx) => {
+        if (nextQuoteIndex < quoteInsertions.length && imagesPlaced === quoteInsertions[nextQuoteIndex]) {
+            portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
+            nextQuoteIndex += 1;
+        }
+
         const figure = document.createElement('figure');
         figure.className = 'portfolio-photo masonry-item';
 
@@ -331,7 +338,14 @@ function renderPortfolioGallery() {
 
         figure.appendChild(img);
         portfolioGallery.appendChild(figure);
+        imagesPlaced += 1;
     });
+
+    // Append any remaining quotes if gallery shorter than expected.
+    while (nextQuoteIndex < portfolioQuotes.length) {
+        portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
+        nextQuoteIndex += 1;
+    }
 }
 
 function shuffleArray(array) {
