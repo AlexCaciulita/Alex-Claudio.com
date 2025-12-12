@@ -238,12 +238,12 @@ a:hover {
 }
 
 .logo {
-  font-family: 'Dancing Script', 'Sweely Broken', 'Cormorant Garamond', serif;
-  font-size: var(--text-h3);
-  font-weight: 400;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
   color: #FFFFFF;
   text-decoration: none;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.6px;
 }
 
 .mobile-menu-toggle {
