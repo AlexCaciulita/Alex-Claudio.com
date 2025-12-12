@@ -254,10 +254,11 @@ a:hover {
 
 .logo-smallcaps {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 18px;
+  font-size: 19px;
   font-variant: small-caps;
-  letter-spacing: 0.22em;
-  font-weight: 600;
+  letter-spacing: 0.24em;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .mobile-menu-toggle {
