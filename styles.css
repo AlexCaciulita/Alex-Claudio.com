@@ -1209,6 +1209,28 @@ fieldset[aria-required="true"] .ds-label .ds-required { display: inline; }
   filter: brightness(0.9);
 }
 
+.portfolio-quote {
+  height: 100%;
+}
+
+.portfolio-quote-card {
+  height: 100%;
+  padding: 28px 24px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(209, 165, 116, 0.14), rgba(209, 165, 116, 0.05));
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(209, 165, 116, 0.35);
+  display: grid;
+  align-items: center;
+}
+
+.portfolio-quote-text {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  line-height: 1.6;
+  color: #1a1a1a;
+}
+
 @media (max-width: 640px) {
   .portfolio-gallery-section {
     padding: 60px 0;

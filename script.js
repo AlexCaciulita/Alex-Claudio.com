@@ -67,6 +67,7 @@ let currentLightboxIndex = 0;
 let currentGalleryOrder = [];
 let currentTestimonial = 0;
 let testimonialInterval;
+const portfolioQuote = 'I specialise in capturing raw, natural, and candid moments, allowing your special day to unfold organically while we discreetly document every detail, emotion, and outpouring of love that will narrate your story.';
 const portfolioImages = [
     '5DM30850.jpg',
     '5DM30897.jpg',
@@ -309,7 +310,13 @@ function renderPortfolioGallery() {
     currentGalleryOrder = shuffled;
     portfolioGallery.innerHTML = '';
 
+    const quotePosition = Math.floor(shuffled.length / 2);
+
     shuffled.forEach((file, idx) => {
+        if (idx === quotePosition) {
+            portfolioGallery.appendChild(createQuoteFigure());
+        }
+
         const figure = document.createElement('figure');
         figure.className = 'portfolio-photo masonry-item';
 
@@ -323,6 +330,11 @@ function renderPortfolioGallery() {
         figure.appendChild(img);
         portfolioGallery.appendChild(figure);
     });
+
+    // If the quote lands after the final image due to rounding, append it at the end.
+    if (quotePosition >= shuffled.length) {
+        portfolioGallery.appendChild(createQuoteFigure());
+    }
 }
 
 function shuffleArray(array) {
@@ -348,6 +360,22 @@ function openLightbox(index) {
     updateLightboxImage();
     lightboxOverlay.classList.remove('hidden');
     document.body.classList.add('lightbox-open');
+}
+
+function createQuoteFigure() {
+    const figure = document.createElement('figure');
+    figure.className = 'portfolio-quote masonry-item';
+
+    const card = document.createElement('div');
+    card.className = 'portfolio-quote-card';
+
+    const text = document.createElement('p');
+    text.className = 'portfolio-quote-text';
+    text.textContent = portfolioQuote;
+
+    card.appendChild(text);
+    figure.appendChild(card);
+    return figure;
 }
 
 function closeLightbox() {
