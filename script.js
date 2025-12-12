@@ -67,7 +67,10 @@ let currentLightboxIndex = 0;
 let currentGalleryOrder = [];
 let currentTestimonial = 0;
 let testimonialInterval;
-const portfolioQuote = 'I specialise in capturing raw, natural, and candid moments, allowing your special day to unfold organically while we discreetly document every detail, emotion, and outpouring of love that will narrate your story.';
+const portfolioQuotes = [
+    'I specialise in capturing raw, natural, and candid moments, allowing your special day to unfold organically while we discreetly document every detail, emotion, and outpouring of love that will narrate your story.',
+    'I love awesome couples who are totally in love; we revel in telling their love stories and can’t wait to be a part of your epic wedding adventure.'
+];
 const portfolioImages = [
     '5DM30850.jpg',
     '5DM30897.jpg',
@@ -310,11 +313,16 @@ function renderPortfolioGallery() {
     currentGalleryOrder = shuffled;
     portfolioGallery.innerHTML = '';
 
-    const quotePosition = Math.floor(shuffled.length / 2);
+    const quotePositions = [
+        Math.floor(shuffled.length / 3),
+        Math.floor((shuffled.length * 2) / 3)
+    ];
+    let nextQuoteIndex = 0;
 
     shuffled.forEach((file, idx) => {
-        if (idx === quotePosition) {
-            portfolioGallery.appendChild(createQuoteFigure());
+        if (idx === quotePositions[nextQuoteIndex]) {
+            portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
+            nextQuoteIndex += 1;
         }
 
         const figure = document.createElement('figure');
@@ -331,9 +339,10 @@ function renderPortfolioGallery() {
         portfolioGallery.appendChild(figure);
     });
 
-    // If the quote lands after the final image due to rounding, append it at the end.
-    if (quotePosition >= shuffled.length) {
-        portfolioGallery.appendChild(createQuoteFigure());
+    // Append any remaining quotes if the gallery is very short.
+    while (nextQuoteIndex < portfolioQuotes.length) {
+        portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
+        nextQuoteIndex += 1;
     }
 }
 
@@ -362,7 +371,7 @@ function openLightbox(index) {
     document.body.classList.add('lightbox-open');
 }
 
-function createQuoteFigure() {
+function createQuoteFigure(message) {
     const figure = document.createElement('figure');
     figure.className = 'portfolio-quote masonry-item';
 
@@ -371,7 +380,7 @@ function createQuoteFigure() {
 
     const text = document.createElement('p');
     text.className = 'portfolio-quote-text';
-    text.textContent = portfolioQuote;
+    text.textContent = message;
 
     card.appendChild(text);
     figure.appendChild(card);
