@@ -1,0 +1,13 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .ring { stroke: #D1A574; stroke-width: 6; }
+      .initials { font-family: 'Cormorant Garamond', 'Times New Roman', serif; font-weight: 500; font-size: 84px; letter-spacing: 2px; fill: #141414; }
+      .tag { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 6px; fill: #4A433B; }
+    </style>
+  </defs>
+  <circle class="ring" cx="160" cy="160" r="140" fill="none" />
+  <circle class="ring" cx="160" cy="160" r="108" fill="none" stroke-width="4" opacity="0.5" />
+  <text class="initials" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">AC</text>
+  <text class="tag" x="50%" y="210" text-anchor="middle">PHOTOGRAPHY</text>
+</svg>
