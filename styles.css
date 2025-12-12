@@ -238,29 +238,26 @@ a:hover {
 }
 
 .logo {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 24px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
   color: #FFFFFF;
   text-decoration: none;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
 }
 
-.logo-word {
-  letter-spacing: 0.28em;
+.logo-script {
+  font-family: 'Dancing Script', 'Sweely Broken', 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.logo-dot {
-  display: inline-flex;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #D1A574;
-  flex-shrink: 0;
+.logo-smallcaps {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  font-variant: small-caps;
+  letter-spacing: 0.22em;
+  font-weight: 600;
 }
 
 .mobile-menu-toggle {
