@@ -71,7 +71,20 @@ const portfolioQuotes = [
     'I specialise in capturing raw, natural, and candid moments, allowing your special day to unfold organically while we discreetly document every detail, emotion, and outpouring of love that will narrate your story.',
     'I love awesome couples who are totally in love; we revel in telling their love stories and can’t wait to be a part of your epic wedding adventure.'
 ];
+// Curated ordering: favorites first, then remaining set.
 const portfolioImages = [
+    // Hero picks
+    '5DM32249.jpg',
+    '5DM32274.jpg',
+    '5DM32811.jpg',
+    '5DM34024.jpg',
+    'Sarah&Michael - Wedding Day-278.jpg',
+    'Dawn & Richard - Wedding Day-207.jpg',
+    'Devin&Laura - Engagement Session  (14).jpg',
+    'Nunta Madalina & Catalin - 2 Iulie 2016 (387).jpg',
+    'Amy&Paul - Wedding Day-423.jpg',
+    'resized.jpg',
+    // Rest of the gallery
     '5DM30850.jpg',
     '5DM30897.jpg',
     '5DM31222.jpg',
@@ -80,18 +93,13 @@ const portfolioImages = [
     '5DM31821.jpg',
     '5DM32209.jpg',
     '5DM32240.jpg',
-    '5DM32249.jpg',
     '5DM32262.jpg',
-    '5DM32274.jpg',
-    '5DM32811.jpg',
     '5DM32928.jpg',
     '5DM32943.jpg',
     '5DM33137.jpg',
     '5DM34020.jpg',
-    '5DM34024.jpg',
     '5DM34202.jpg',
     'Amy&Paul - Wedding Day-179.jpg',
-    'Amy&Paul - Wedding Day-423.jpg',
     'Amy&Paul - Wedding Day-424.jpg',
     'Amy&Paul - Wedding Day-426.jpg',
     'Amy&Paul - Wedding Day-437.jpg',
@@ -106,10 +114,8 @@ const portfolioImages = [
     'Ana&Iulian - Nunta - 22 August 2015 (397).jpg',
     'Ana&Iulian - Nunta - 22 August 2015 (399).jpg',
     'Ana&Iulian - Nunta - 22 August 2015 (488).jpg',
-    'Dawn & Richard - Wedding Day-207.jpg',
     'Devin&Laura - Engagement Session  (10).jpg',
     'Devin&Laura - Engagement Session  (102).jpg',
-    'Devin&Laura - Engagement Session  (14).jpg',
     'Devin&Laura - Engagement Session  (58).jpg',
     'Devin&Laura - Engagement Session  (68).jpg',
     'Diane & Chris - Engagement Session-100.jpg',
@@ -124,11 +130,8 @@ const portfolioImages = [
     'Nunta Madalina & Catalin - 2 Iulie 2016 (337).jpg',
     'Nunta Madalina & Catalin - 2 Iulie 2016 (354).jpg',
     'Nunta Madalina & Catalin - 2 Iulie 2016 (371).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (387).jpg',
-    'resized.jpg',
     'resized222.jpg',
     'Sarah&Michael - Wedding Day-275.jpg',
-    'Sarah&Michael - Wedding Day-278.jpg',
     'Sarah&Michael - Wedding Day-286.jpg'
 ];
 
@@ -309,22 +312,13 @@ function stopTestimonialAutoplay() {
 function renderPortfolioGallery() {
     if (!portfolioGallery || !Array.isArray(portfolioImages)) return;
 
-    const shuffled = shuffleArray(portfolioImages);
-    currentGalleryOrder = shuffled;
+    currentGalleryOrder = [...portfolioImages];
     portfolioGallery.innerHTML = '';
 
-    const quotePositions = [
-        Math.floor(shuffled.length / 3),
-        Math.floor((shuffled.length * 2) / 3)
-    ];
-    let nextQuoteIndex = 0;
+    // Keep quote cards pinned at the top.
+    portfolioQuotes.forEach(q => portfolioGallery.appendChild(createQuoteFigure(q)));
 
-    shuffled.forEach((file, idx) => {
-        if (idx === quotePositions[nextQuoteIndex]) {
-            portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
-            nextQuoteIndex += 1;
-        }
-
+    currentGalleryOrder.forEach((file, idx) => {
         const figure = document.createElement('figure');
         figure.className = 'portfolio-photo masonry-item';
 
@@ -338,12 +332,6 @@ function renderPortfolioGallery() {
         figure.appendChild(img);
         portfolioGallery.appendChild(figure);
     });
-
-    // Append any remaining quotes if the gallery is very short.
-    while (nextQuoteIndex < portfolioQuotes.length) {
-        portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
-        nextQuoteIndex += 1;
-    }
 }
 
 function shuffleArray(array) {
