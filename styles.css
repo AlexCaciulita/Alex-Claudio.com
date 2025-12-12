@@ -213,6 +213,15 @@ a:hover {
 .nav-left, .nav-right {
   display: flex;
   gap: var(--space-32);
+  align-items: center;
+}
+
+.nav-left {
+  flex: 1;
+}
+
+.nav-right {
+  margin-left: auto;
 }
 
 .nav-link {
@@ -279,7 +288,7 @@ a:hover {
 }
 
 @media (max-width: 1023px) {
-  .nav-left, .nav-right {
+  .nav-right {
     display: none;
   }
   
