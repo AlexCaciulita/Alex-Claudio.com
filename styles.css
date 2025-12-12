@@ -243,13 +243,15 @@ a:hover {
   gap: 10px;
   color: #FFFFFF;
   text-decoration: none;
+  text-transform: uppercase;
 }
 
 .logo-script {
-  font-family: 'Dancing Script', 'Sweely Broken', 'Cormorant Garamond', serif;
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 19px;
+  font-variant: small-caps;
+  letter-spacing: 0.24em;
+  font-weight: 700;
 }
 
 .logo-smallcaps {
@@ -258,7 +260,6 @@ a:hover {
   font-variant: small-caps;
   letter-spacing: 0.24em;
   font-weight: 700;
-  text-transform: uppercase;
 }
 
 .mobile-menu-toggle {
