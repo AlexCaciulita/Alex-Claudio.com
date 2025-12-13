@@ -246,20 +246,13 @@ a:hover {
   text-transform: uppercase;
 }
 
-.logo-script {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 19px;
-  font-variant: small-caps;
-  letter-spacing: 0.24em;
-  font-weight: 700;
-}
-
+.logo-script,
 .logo-smallcaps {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 19px;
   font-variant: small-caps;
-  letter-spacing: 0.24em;
-  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-weight: 400;
 }
 
 .mobile-menu-toggle {
