@@ -251,8 +251,8 @@ a:hover {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 19px;
   font-variant: small-caps;
-  letter-spacing: 0.18em;
-  font-weight: 400;
+  letter-spacing: 0.2em;
+  font-weight: 300;
 }
 
 .mobile-menu-toggle {
