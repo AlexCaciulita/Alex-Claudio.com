@@ -1422,8 +1422,8 @@ a:focus {
 
 .links-hero {
   position: relative;
-  height: 48vh;
-  min-height: 340px;
+  height: 20vh;
+  min-height: 160px;
   background: url('../hero-image-5.jpg') center/cover no-repeat;
   isolation: isolate;
 }
@@ -1510,7 +1510,7 @@ a:focus {
   transition: transform var(--transition-base) var(--easing-in-out), box-shadow var(--transition-base) var(--easing-in-out), border-color var(--transition-base) var(--easing-in-out);
   backdrop-filter: blur(6px);
   width: 100%;
-  max-width: 540px;
+  max-width: 730px;
 }
 
 .link-card::after {
@@ -1536,7 +1536,7 @@ a:focus {
   position: relative;
   background-size: cover;
   background-position: center;
-  min-height: 120px;
+  min-height: 162px;
 }
 
 .link-thumb::after {
@@ -1572,6 +1572,6 @@ a:focus {
   }
   
   .link-thumb {
-    min-height: 200px;
+    min-height: 270px;
   }
 }
