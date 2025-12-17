@@ -1490,14 +1490,10 @@ a:focus {
 }
 
 .links-grid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--space-16);
-}
-
-@media (min-width: 640px) {
-  .links-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 .link-card {
@@ -1513,6 +1509,8 @@ a:focus {
   color: #ffffff;
   transition: transform var(--transition-base) var(--easing-in-out), box-shadow var(--transition-base) var(--easing-in-out), border-color var(--transition-base) var(--easing-in-out);
   backdrop-filter: blur(6px);
+  width: 100%;
+  max-width: 540px;
 }
 
 .link-card::after {
@@ -1574,6 +1572,6 @@ a:focus {
   }
   
   .link-thumb {
-    min-height: 180px;
+    min-height: 200px;
   }
 }
