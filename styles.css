@@ -1441,18 +1441,20 @@ a:focus {
   z-index: 1;
   height: 100%;
   display: flex;
-  align-items: flex-end;
-  padding: 0 var(--gutter-mobile) var(--space-48);
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--gutter-mobile) var(--space-32);
 }
 
 @media (min-width: 768px) {
   .links-hero-overlay {
-    padding: 0 var(--gutter-desktop) var(--space-64);
+    padding: 0 var(--gutter-desktop) var(--space-48);
   }
 }
 
 .links-hero-content {
   max-width: 720px;
+  text-align: center;
 }
 
 .links-eyebrow {
@@ -1477,6 +1479,7 @@ a:focus {
   color: rgba(255, 255, 255, 0.78);
   font-size: 18px;
   line-height: 1.6;
+  margin: 0 auto;
 }
 
 .links-grid-section {
