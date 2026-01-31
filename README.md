@@ -198,3 +198,19 @@ Update the Open Graph URL in `index.html` to match your domain:
 ---
 
 **Built with ❤️ for Alex Claudio Photography**
+
+## Lead capture to Excel/Sheets
+Netlify is configured with a serverless function `netlify/functions/submission-created.js` that runs on every form submission (home contact + wedding-show lead). To log each submission to a spreadsheet (easy to export to Excel), set these Netlify environment variables:
+
+- `GOOGLE_SHEET_ID` — the target Google Sheet ID (create a sheet with a tab named `Leads` or set `GOOGLE_SHEET_RANGE`)
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL` — service account email
+- `GOOGLE_SERVICE_ACCOUNT_KEY` — service account private key (paste with `\n` for newlines)
+- `GOOGLE_SHEET_RANGE` (optional) — e.g. `Leads!A:F`
+
+Columns saved: timestamp, form name, name, email, phone, source/referral. Netlify will install the `googleapis` dependency during build via `package.json`.
+
+Quick setup steps:
+1) Create a Google Cloud service account with Sheets access; share the target sheet with that service account email.
+2) Add the credentials as environment variables in the Netlify site settings.
+3) Deploy; new submissions will append rows automatically.
+4) Download as Excel (`File → Download → Microsoft Excel (.xlsx)`) anytime.

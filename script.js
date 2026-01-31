@@ -9,6 +9,10 @@ const heroPrev = document.getElementById('heroPrev');
 const heroNext = document.getElementById('heroNext');
 const contactForm = document.getElementById('contactForm');
 const submitButtonEl = document.getElementById('submitButton');
+const leadForm = document.getElementById('leadForm');
+const leadSubmitButton = document.getElementById('leadSubmit');
+const leadSuccessPanel = document.getElementById('leadSuccess');
+const leadErrorPanel = document.getElementById('leadError');
 const testimonialSlider = document.getElementById('testimonialSlider');
 const testimonialSlides = document.querySelectorAll('.testimonial-slide');
 const testimonialDots = document.querySelectorAll('.testimonial-dot');
@@ -64,75 +68,13 @@ let currentSlide = 0;
 let autoplayInterval;
 const slideInterval = 4500; // 4.5 seconds as per design system
 let currentLightboxIndex = 0;
-let currentGalleryOrder = [];
+let currentLightboxItems = [];
+let galleries = [];
 let currentTestimonial = 0;
 let testimonialInterval;
 const portfolioQuotes = [
     'I specialise in capturing raw, natural, and candid moments, allowing your special day to unfold organically while we discreetly document every detail, emotion, and outpouring of love that will narrate your story.',
     'I love awesome couples who are totally in love; we revel in telling their love stories and can’t wait to be a part of your epic wedding adventure.'
-];
-// Curated ordering: favorites first, then remaining set.
-const portfolioImages = [
-    // Hero picks
-    '5DM32249.jpg',
-    '5DM32274.jpg',
-    '5DM32811.jpg',
-    '5DM34024.jpg',
-    'Sarah&Michael - Wedding Day-278.jpg',
-    'Dawn & Richard - Wedding Day-207.jpg',
-    'Devin&Laura - Engagement Session  (14).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (387).jpg',
-    'Amy&Paul - Wedding Day-423.jpg',
-    'resized.jpg',
-    // Rest of the gallery
-    '5DM30850.jpg',
-    '5DM30897.jpg',
-    '5DM31222.jpg',
-    '5DM31468.jpg',
-    '5DM31542.jpg',
-    '5DM31821.jpg',
-    '5DM32209.jpg',
-    '5DM32240.jpg',
-    '5DM32262.jpg',
-    '5DM32928.jpg',
-    '5DM32943.jpg',
-    '5DM33137.jpg',
-    '5DM34020.jpg',
-    '5DM34202.jpg',
-    'Amy&Paul - Wedding Day-179.jpg',
-    'Amy&Paul - Wedding Day-424.jpg',
-    'Amy&Paul - Wedding Day-426.jpg',
-    'Amy&Paul - Wedding Day-437.jpg',
-    'Amy&Paul - Wedding Day-485.jpg',
-    'Amy&Paul - Wedding Day-491.jpg',
-    'Amy&Paul - Wedding Day-595.jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (129).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (170).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (193).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (199).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (379).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (397).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (399).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (488).jpg',
-    'Devin&Laura - Engagement Session  (10).jpg',
-    'Devin&Laura - Engagement Session  (102).jpg',
-    'Devin&Laura - Engagement Session  (58).jpg',
-    'Devin&Laura - Engagement Session  (68).jpg',
-    'Diane & Chris - Engagement Session-100.jpg',
-    'Diane & Chris - Engagement Session-103.jpg',
-    'Diane & Chris - Engagement Session-115.jpg',
-    'Diane & Chris - Engagement Session-122.jpg',
-    'Diane & Chris - Engagement Session-140.jpg',
-    'Diane & Chris - Engagement Session-145.jpg',
-    'Iuliana & Florin 27.07 (41).jpg',
-    'Iuliana & Florin 27.07 (49).jpg',
-    'Iuliana & Florin 27.07 (60).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (337).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (354).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (371).jpg',
-    'resized222.jpg',
-    'Sarah&Michael - Wedding Day-275.jpg',
-    'Sarah&Michael - Wedding Day-286.jpg'
 ];
 
 function showSlide(index) {
@@ -309,43 +251,76 @@ function stopTestimonialAutoplay() {
     }
 }
 
-function renderPortfolioGallery() {
-    if (!portfolioGallery || !Array.isArray(portfolioImages)) return;
+function getImagePath(gallery, file) {
+    if (!file) return null;
+    return `content/${gallery.category}/${gallery.id}/${encodeURIComponent(file)}`;
+}
 
-    currentGalleryOrder = [...portfolioImages];
+function renderPortfolioGallery(list) {
+    if (!portfolioGallery || !Array.isArray(list)) return;
+
     portfolioGallery.innerHTML = '';
 
-    // Insert quotes at fixed spots: after first row, and mid of fourth row.
-    const quoteInsertions = [3, 8]; // zero-based counts of images already placed
-    let nextQuoteIndex = 0;
-    let imagesPlaced = 0;
+    list.forEach((gallery) => {
+        const card = document.createElement('article');
+        card.className = 'gallery-card';
+        card.dataset.galleryId = gallery.id;
 
-    currentGalleryOrder.forEach((file, idx) => {
-        if (nextQuoteIndex < quoteInsertions.length && imagesPlaced === quoteInsertions[nextQuoteIndex]) {
-            portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
-            nextQuoteIndex += 1;
-        }
+        const cover = document.createElement('div');
+        cover.className = 'gallery-cover';
 
-        const figure = document.createElement('figure');
-        figure.className = 'portfolio-photo masonry-item';
-
+        const coverPath = getImagePath(gallery, gallery.coverImage || (gallery.images && gallery.images[0]));
         const img = document.createElement('img');
         img.loading = 'lazy';
-        img.src = `../Portofolio/${encodeURIComponent(file)}`;
-        img.alt = createAltFromFilename(file);
-        img.dataset.index = idx.toString();
-        img.addEventListener('click', () => openLightbox(idx));
+        if (coverPath) img.dataset.src = coverPath;
+        img.alt = `${gallery.coupleNames} at ${gallery.venue} Seattle wedding`;
+        img.onerror = () => {
+            img.src = '../hero-image-5.jpg';
+        };
+        cover.appendChild(img);
 
-        figure.appendChild(img);
-        portfolioGallery.appendChild(figure);
-        imagesPlaced += 1;
+        const body = document.createElement('div');
+        body.className = 'gallery-body';
+
+        const title = document.createElement('h3');
+        title.textContent = `${gallery.coupleNames} ${gallery.eventType} at ${gallery.venue}`;
+
+        const meta = document.createElement('p');
+        meta.className = 'gallery-meta';
+        meta.textContent = `${gallery.venue} • ${gallery.location} • ${gallery.eventDate}`;
+
+        const story = document.createElement('p');
+        story.className = 'gallery-story';
+        story.textContent = gallery.description;
+
+        const footer = document.createElement('div');
+        footer.className = 'gallery-footer';
+
+        const count = document.createElement('span');
+        count.className = 'gallery-count';
+        count.textContent = `${gallery.images ? gallery.images.length : 0} images`;
+
+        const btn = document.createElement('button');
+        btn.className = 'gallery-button';
+        btn.type = 'button';
+        btn.textContent = 'View Gallery';
+        btn.addEventListener('click', () => openGallery(gallery.id));
+        cover.addEventListener('click', () => openGallery(gallery.id));
+
+        footer.appendChild(count);
+        footer.appendChild(btn);
+
+        body.appendChild(title);
+        body.appendChild(meta);
+        body.appendChild(story);
+        body.appendChild(footer);
+
+        card.appendChild(cover);
+        card.appendChild(body);
+        portfolioGallery.appendChild(card);
     });
 
-    // Append any remaining quotes if gallery shorter than expected.
-    while (nextQuoteIndex < portfolioQuotes.length) {
-        portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
-        nextQuoteIndex += 1;
-    }
+    lazyLoadImages();
 }
 
 function shuffleArray(array) {
@@ -363,6 +338,74 @@ function createAltFromFilename(name) {
         .replace(/[-_]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+}
+
+function applyFilters() {
+    const search = document.getElementById('filterSearch')?.value.toLowerCase() || '';
+    const category = document.getElementById('filterCategory')?.value || 'all';
+    const season = document.getElementById('filterSeason')?.value || 'all';
+    const year = document.getElementById('filterYear')?.value || 'all';
+    const location = document.getElementById('filterLocation')?.value.toLowerCase() || '';
+    const sortOrder = document.getElementById('sortOrder')?.value || 'date-desc';
+
+    let list = galleries.slice();
+
+    list = list.filter((g) => {
+        const matchesCategory = category === 'all' || g.category === category;
+        const matchesSeason = season === 'all' || g.season === season;
+        const matchesYear = year === 'all' || (g.eventDate && g.eventDate.startsWith(year));
+        const matchesSearch =
+            !search ||
+            [g.coupleNames, g.venue, g.location, g.description]
+                .filter(Boolean)
+                .some((field) => field.toLowerCase().includes(search));
+        const matchesLocation = !location || (g.location && g.location.toLowerCase().includes(location));
+        return matchesCategory && matchesSeason && matchesYear && matchesSearch && matchesLocation;
+    });
+
+    list.sort((a, b) => {
+        if (sortOrder === 'alpha') {
+            return a.coupleNames.localeCompare(b.coupleNames);
+        }
+        if (sortOrder === 'featured') {
+            return (b.featured === true) - (a.featured === true);
+        }
+        if (sortOrder === 'date-asc') {
+            return (a.eventDate || '').localeCompare(b.eventDate || '');
+        }
+        // default date-desc
+        return (b.eventDate || '').localeCompare(a.eventDate || '');
+    });
+
+    renderPortfolioGallery(list);
+}
+
+async function loadPortfolioData() {
+    try {
+        const res = await fetch('portfolio-data.json');
+        if (!res.ok) throw new Error('Failed to load portfolio data');
+        const data = await res.json();
+        galleries = data.events || [];
+        applyFilters();
+    } catch (err) {
+        console.error(err);
+        galleries = [];
+    }
+}
+
+function openGallery(galleryId) {
+    if (!lightboxOverlay || !lightboxImage) return;
+    const gallery = galleries.find((g) => g.id === galleryId);
+    if (!gallery) return;
+
+    currentLightboxItems = (gallery.images || []).map((file) => ({
+        src: getImagePath(gallery, file),
+        alt: `${gallery.coupleNames} at ${gallery.venue} Seattle wedding`
+    }));
+    currentLightboxIndex = 0;
+    updateLightboxImage();
+    lightboxOverlay.classList.remove('hidden');
+    document.body.classList.add('lightbox-open');
 }
 
 function openLightbox(index) {
@@ -396,21 +439,21 @@ function closeLightbox() {
 }
 
 function updateLightboxImage() {
-    if (!lightboxImage || !currentGalleryOrder.length) return;
-    const file = currentGalleryOrder[currentLightboxIndex];
-    lightboxImage.src = `../Portofolio/${encodeURIComponent(file)}`;
-    lightboxImage.alt = createAltFromFilename(file);
+    if (!lightboxImage || !currentLightboxItems.length) return;
+    const item = currentLightboxItems[currentLightboxIndex];
+    lightboxImage.src = item.src;
+    lightboxImage.alt = item.alt || createAltFromFilename(item.src);
 }
 
 function showPrevLightbox() {
-    if (!currentGalleryOrder.length) return;
-    currentLightboxIndex = (currentLightboxIndex - 1 + currentGalleryOrder.length) % currentGalleryOrder.length;
+    if (!currentLightboxItems.length) return;
+    currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxItems.length) % currentLightboxItems.length;
     updateLightboxImage();
 }
 
 function showNextLightbox() {
-    if (!currentGalleryOrder.length) return;
-    currentLightboxIndex = (currentLightboxIndex + 1) % currentGalleryOrder.length;
+    if (!currentLightboxItems.length) return;
+    currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxItems.length;
     updateLightboxImage();
 }
 
@@ -606,9 +649,111 @@ document.addEventListener('DOMContentLoaded', () => {
         // Submit handler
         contactForm.addEventListener('submit', handleFormSubmit);
     }
+
+    // Lead capture form (wedding show)
+    if (leadForm) {
+        const leadHoneypot = document.getElementById('leadCompany');
+        const leadInputs = ['leadName', 'leadEmail', 'leadPhone'].map((id) => document.getElementById(id)).filter(Boolean);
+
+        const resetLeadAlerts = () => {
+            if (leadSuccessPanel) leadSuccessPanel.classList.add('hidden');
+            if (leadErrorPanel) leadErrorPanel.classList.add('hidden');
+        };
+
+        const clearLeadErrors = () => {
+            resetLeadAlerts();
+            document.querySelectorAll('#leadForm .ds-help').forEach((el) => {
+                el.textContent = '';
+                el.classList.remove('ds-error-text');
+            });
+            leadInputs.forEach((input) => input?.removeAttribute('aria-invalid'));
+        };
+
+        const setLeadError = (fieldId, message) => {
+            setDsError(fieldId, message);
+        };
+
+        const evaluateLeadValidity = () => {
+            const [nameEl, emailEl, phoneEl] = leadInputs;
+            const ready =
+                nameEl &&
+                emailEl &&
+                phoneEl &&
+                nameEl.value.trim().length > 0 &&
+                validateEmail(emailEl.value || '') &&
+                (phoneEl.value || '').trim().length >= 7;
+            if (leadSubmitButton) leadSubmitButton.disabled = !ready;
+        };
+
+        leadInputs.forEach((inp) => inp?.addEventListener('input', evaluateLeadValidity));
+        evaluateLeadValidity();
+
+        leadForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (leadHoneypot && leadHoneypot.value) return;
+
+            clearLeadErrors();
+            const name = document.getElementById('leadName')?.value.trim() || '';
+            const email = document.getElementById('leadEmail')?.value.trim() || '';
+            const phone = document.getElementById('leadPhone')?.value.trim() || '';
+
+            let hasError = false;
+            if (!name) { setLeadError('leadName', 'Please share your name.'); hasError = true; }
+            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so I can send details.'); hasError = true; }
+            if (!phone || !/^[0-9+()\\-\\.\\s]{7,}$/.test(phone)) { setLeadError('leadPhone', 'Add a phone number I can text or call.'); hasError = true; }
+
+            if (hasError) {
+                if (leadErrorPanel) leadErrorPanel.classList.remove('hidden');
+                if (leadErrorPanel?.querySelector('p')) leadErrorPanel.querySelector('p').textContent = 'Please check the highlighted fields.';
+                if (leadSubmitButton) leadSubmitButton.disabled = false;
+                return;
+            }
+
+            if (leadSubmitButton) {
+                leadSubmitButton.textContent = 'Saving...';
+                leadSubmitButton.disabled = true;
+            }
+
+            const formData = new FormData(leadForm);
+            const encoded = new URLSearchParams();
+            formData.forEach((value, key) => encoded.append(key, value.toString()));
+
+            try {
+                const response = await fetch('/lead/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: encoded.toString()
+                });
+
+                if (!response.ok) throw new Error('Lead submission failed');
+
+                leadForm.reset();
+                evaluateLeadValidity();
+                if (leadSuccessPanel) leadSuccessPanel.classList.remove('hidden');
+                if (leadSubmitButton) {
+                    leadSubmitButton.textContent = 'Submit another lead';
+                    leadSubmitButton.disabled = false;
+                }
+            } catch (error) {
+                console.error('Lead form error:', error);
+                if (leadErrorPanel) leadErrorPanel.classList.remove('hidden');
+                if (leadSubmitButton) {
+                    leadSubmitButton.textContent = 'Submit';
+                    leadSubmitButton.disabled = false;
+                }
+            }
+        });
+    }
     
     // Initialize features
-    renderPortfolioGallery();
+    if (portfolioGallery) {
+        loadPortfolioData();
+        ['filterSearch', 'filterCategory', 'filterSeason', 'filterYear', 'filterLocation', 'sortOrder'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', applyFilters);
+            if (el && el.tagName === 'SELECT') el.addEventListener('change', applyFilters);
+        });
+    }
     if (hasCarousel) startAutoplay();
     lazyLoadImages();
     initPortfolioHoverEffects();

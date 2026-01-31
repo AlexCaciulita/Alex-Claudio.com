@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Quick wedding show lead capture for Alex Claudio Photography. Leave your name, email, and phone so we can follow up after the show.">
+  <title>Wedding Show Lead Capture | Alex Claudio Photography</title>
+  <link rel="canonical" href="https://alex-claudio.com/lead/">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/sweely-broken" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="../styles.css?v=24">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+</head>
+<body class="lead-body">
+  <nav class="top-nav" id="topNav">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="logo">
+          <span class="logo-smallcaps">Alex</span>
+          <span class="logo-smallcaps">Claudio</span>
+        </a>
+      </div>
+      <div class="nav-right">
+        <a href="/portfolio/" class="nav-link">Portfolio</a>
+        <a href="/investment/" class="nav-link">Pricing</a>
+        <a href="/index.html#contact" class="nav-link">Contact</a>
+      </div>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="/portfolio/" class="mobile-nav-link">Portfolio</a>
+      <a href="/investment/" class="mobile-nav-link">Pricing</a>
+      <a href="/index.html#contact" class="mobile-nav-link">Contact</a>
+    </div>
+  </nav>
+
+  <main class="lead-shell">
+    <section class="lead-hero">
+      <div class="lead-hero-bleed" aria-hidden="true"></div>
+      <div class="container lead-layout">
+        <div class="lead-copy">
+          <p class="lead-eyebrow">Wedding Show Giveaway</p>
+          <h1>Win $500 toward your wedding photography</h1>
+          <p class="lead-subtitle">Enter in seconds. I’ll send availability, a sample gallery, and simple next steps to book.</p>
+          <div class="lead-pills">
+            <span class="lead-pill">Giveaway entry</span>
+            <span class="lead-pill">Priority follow-up</span>
+            <span class="lead-pill">No spam—ever</span>
+          </div>
+          <ul class="lead-highlights">
+            <li><span aria-hidden="true">•</span> Your entry for the $500 wedding photography credit.</li>
+            <li><span aria-hidden="true">•</span> Fast recap with the package that fits your date and venue.</li>
+            <li><span aria-hidden="true">•</span> Sneak peeks from recent weddings plus a consult slot if you want it.</li>
+          </ul>
+        </div>
+
+        <div class="lead-card" aria-labelledby="leadFormTitle">
+          <div class="lead-card-header">
+            <p class="lead-badge">Wedding Show 2026</p>
+            <h2 id="leadFormTitle">Enter for a chance to win $500 off a package</h2>
+            <p class="lead-card-subtitle">Drop your details to join the giveaway and get first access to dates.</p>
+          </div>
+
+          <form id="leadForm" class="lead-form" method="POST" action="/lead/" data-netlify="true" data-netlify-honeypot="company" name="wedding-show-lead" novalidate>
+            <input type="hidden" name="form-name" value="wedding-show-lead">
+            <input type="hidden" name="source" value="Wedding Show | January 31, 2026">
+
+            <div class="ds-field lead-field">
+              <label for="leadName" class="ds-label">Name <span class="ds-required" aria-hidden="true">*</span></label>
+              <input type="text" id="leadName" name="name" class="ds-input" autocomplete="name" placeholder="Full name" aria-required="true" aria-describedby="leadNameHelp" required>
+              <div class="ds-help" id="leadNameHelp" aria-live="polite"></div>
+            </div>
+
+            <div class="ds-field lead-field">
+              <label for="leadEmail" class="ds-label">Email <span class="ds-required" aria-hidden="true">*</span></label>
+              <input type="email" id="leadEmail" name="email" class="ds-input" autocomplete="email" placeholder="you@email.com" aria-required="true" aria-describedby="leadEmailHelp" required>
+              <div class="ds-help" id="leadEmailHelp" aria-live="polite"></div>
+            </div>
+
+            <div class="ds-field lead-field">
+              <label for="leadPhone" class="ds-label">Phone <span class="ds-required" aria-hidden="true">*</span></label>
+              <input type="tel" id="leadPhone" name="phone" class="ds-input" autocomplete="tel" placeholder="(555) 555-5555" aria-required="true" aria-describedby="leadPhoneHelp" required>
+              <div class="ds-help" id="leadPhoneHelp" aria-live="polite"></div>
+            </div>
+
+            <div class="hidden" aria-hidden="true">
+              <label for="leadCompany">Company</label>
+              <input type="text" id="leadCompany" name="company" tabindex="-1" autocomplete="off">
+            </div>
+
+            <div class="lead-submit-row">
+              <button type="submit" class="lead-submit" id="leadSubmit">Submit</button>
+            </div>
+
+            <div class="lead-alert success hidden" id="leadSuccess" role="status" aria-live="polite">
+              <strong>All set.</strong>
+              <p>Thanks! I’ll email and text you after the show.</p>
+            </div>
+            <div class="lead-alert error hidden" id="leadError" role="alert" aria-live="assertive">
+              <strong>Hmm, one more step.</strong>
+              <p>Please check the highlighted fields and try again.</p>
+            </div>
+
+            <p class="lead-footnote">Your details stay private. I only send show follow-ups and availability updates.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../script.js"></script>
+</body>
+</html>
