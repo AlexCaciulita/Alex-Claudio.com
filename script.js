@@ -731,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 evaluateLeadValidity();
                 if (leadSuccessPanel) leadSuccessPanel.classList.remove('hidden');
                 if (leadSubmitButton) {
-                    leadSubmitButton.textContent = 'Submit another lead';
+                    leadSubmitButton.textContent = 'Submit';
                     leadSubmitButton.disabled = false;
                 }
             } catch (error) {

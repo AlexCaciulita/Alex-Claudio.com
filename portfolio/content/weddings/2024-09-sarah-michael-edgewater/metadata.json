@@ -1,0 +1,12 @@
+{
+  "coupleNames": "Sarah & Michael",
+  "eventDate": "2024-09-15",
+  "venue": "The Edgewater Hotel",
+  "location": "Seattle, WA",
+  "eventType": "Full Wedding",
+  "description": "A romantic waterfront wedding at Seattle's iconic Edgewater Hotel with stunning sunset views over Elliott Bay.",
+  "featured": true,
+  "coverImage": "image001.jpg",
+  "tags": ["waterfront", "luxury", "sunset", "seattle", "fall"],
+  "season": "Fall"
+}

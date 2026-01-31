@@ -13,6 +13,41 @@
     <link href="https://fonts.cdnfonts.com/css/sweely-broken" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css?v=4">
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ImageGallery",
+        "name": "Alex Claudio Seattle Wedding Photography Portfolio",
+        "url": "https://alex-claudio.com/portfolio/",
+        "associatedMedia": [
+          {
+            "@type": "ImageObject",
+            "url": "https://alex-claudio.com/Portofolio/Sarah%26Michael%20-%20Wedding%20Day-278.jpg",
+            "name": "Golden Gardens Wedding | Seattle Wedding Photographer"
+          },
+          {
+            "@type": "ImageObject",
+            "url": "https://alex-claudio.com/Portofolio/Devin%26Laura%20-%20Engagement%20Session%20%20(14).jpg",
+            "name": "Downtown Rooftop Engagement | Seattle Wedding Photographer"
+          },
+          {
+            "@type": "ImageObject",
+            "url": "https://alex-claudio.com/Portofolio/Diane%20%26%20Chris%20-%20Engagement%20Session-100.jpg",
+            "name": "Discovery Park Elopement | Seattle Wedding Photographer"
+          },
+          {
+            "@type": "ImageObject",
+            "url": "https://alex-claudio.com/Portofolio/Dawn%20%26%20Richard%20-%20Wedding%20Day-207.jpg",
+            "name": "Pioneer Square Ceremony | Seattle Wedding Photographer"
+          },
+          {
+            "@type": "ImageObject",
+            "url": "https://alex-claudio.com/Portofolio/Amy%26Paul%20-%20Wedding%20Day-423.jpg",
+            "name": "Capitol Hill Reception | Seattle Wedding Photographer"
+          }
+        ]
+      }
+    </script>
 </head>
 <body>
     <nav class="top-nav" id="topNav">
@@ -44,14 +79,69 @@
         </div>
     </nav>
 
+    <section class="portfolio-hero">
+        <div class="container">
+            <div class="portfolio-hero-content">
+                <p class="section-eyebrow">Portfolio</p>
+                <h1 class="portfolio-hero-title">Featured Weddings &amp; Love Stories</h1>
+                <p class="portfolio-hero-subtitle">Curated Seattle wedding photography stories with full weddings, elopements, engagements, ceremonies, receptions, details, and portraits across the Pacific Northwest.</p>
+            </div>
+            <form class="portfolio-filters" id="portfolioFilters">
+                <div class="filter-group">
+                    <label for="filterSearch">Search</label>
+                    <input type="search" id="filterSearch" placeholder="Search names, venues, locations">
+                </div>
+                <div class="filter-group">
+                    <label for="filterCategory">Event Type</label>
+                    <select id="filterCategory">
+                        <option value="all">All</option>
+                        <option value="weddings">Full Weddings</option>
+                        <option value="elopements">Elopements</option>
+                        <option value="engagements">Engagement Sessions</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterSeason">Season</label>
+                    <select id="filterSeason">
+                        <option value="all">All seasons</option>
+                        <option value="Spring">Spring</option>
+                        <option value="Summer">Summer</option>
+                        <option value="Fall">Fall</option>
+                        <option value="Winter">Winter</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterYear">Year</label>
+                    <select id="filterYear">
+                        <option value="all">Any year</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterLocation">Location</label>
+                    <input type="text" id="filterLocation" placeholder="Seattle, Bellevue, etc.">
+                </div>
+                <div class="filter-group">
+                    <label for="sortOrder">Sort</label>
+                    <select id="sortOrder">
+                        <option value="date-desc">Date (newest)</option>
+                        <option value="date-asc">Date (oldest)</option>
+                        <option value="alpha">Alphabetical</option>
+                        <option value="featured">Featured first</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </section>
+
     <section class="portfolio-gallery-section">
         <div class="container">
             <div class="section-header">
-                <p class="section-eyebrow">Featured Gallery</p>
+                <p class="section-eyebrow">Featured Weddings</p>
+                <h2>Browse by story, venue, and season</h2>
+                <p class="section-subtitle">Each gallery includes venue details, couple names, dates, and a brief story so you can find work that feels like your celebration.</p>
             </div>
-        </div>
-        <div class="masonry-gallery-wrapper">
-            <div id="portfolioGallery" class="masonry-gallery" aria-live="polite"></div>
+            <div class="gallery-grid" id="portfolioGallery" aria-live="polite"></div>
         </div>
     </section>
 

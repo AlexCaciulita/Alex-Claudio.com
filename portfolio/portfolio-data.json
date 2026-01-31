@@ -1,0 +1,79 @@
+{
+  "events": [
+    {
+      "id": "2024-10-emily-james-discovery-park",
+      "category": "weddings",
+      "coupleNames": "Emily & James",
+      "eventDate": "2024-10-05",
+      "venue": "Discovery Park",
+      "location": "Seattle, WA",
+      "eventType": "Full Wedding",
+      "description": "Wind-swept Discovery Park ceremony with golden meadows, lighthouse portraits, and an intimate dinner under the stars.",
+      "featured": false,
+      "coverImage": "image001.jpg",
+      "tags": ["outdoor", "pnw", "lighthouse", "fall"],
+      "season": "Fall",
+      "images": ["image001.jpg"]
+    },
+    {
+      "id": "2024-09-sarah-michael-edgewater",
+      "category": "weddings",
+      "coupleNames": "Sarah & Michael",
+      "eventDate": "2024-09-15",
+      "venue": "The Edgewater Hotel",
+      "location": "Seattle, WA",
+      "eventType": "Full Wedding",
+      "description": "A romantic waterfront wedding at Seattle's iconic Edgewater Hotel with stunning sunset views over Elliott Bay.",
+      "featured": true,
+      "coverImage": "image001.jpg",
+      "tags": ["waterfront", "luxury", "sunset", "seattle", "fall"],
+      "season": "Fall",
+      "images": ["image001.jpg"]
+    },
+    {
+      "id": "2024-08-rachel-chris-courthouse",
+      "category": "elopements",
+      "coupleNames": "Rachel & Chris",
+      "eventDate": "2024-08-12",
+      "venue": "King County Courthouse",
+      "location": "Seattle, WA",
+      "eventType": "Elopement",
+      "description": "Courthouse vows followed by rooftop portraits and Pike Place strolls for a chic, intimate Seattle elopement.",
+      "featured": false,
+      "coverImage": "image001.jpg",
+      "tags": ["courthouse", "elopement", "city", "summer"],
+      "season": "Summer",
+      "images": ["image001.jpg"]
+    },
+    {
+      "id": "2024-06-jennifer-david-sodo-park",
+      "category": "weddings",
+      "coupleNames": "Jennifer & David",
+      "eventDate": "2024-06-22",
+      "venue": "Sodo Park",
+      "location": "Seattle, WA",
+      "eventType": "Full Wedding",
+      "description": "Industrial-chic vows at Sodo Park with dramatic draping, candlelit reception, and a packed dance floor.",
+      "featured": true,
+      "coverImage": "image001.jpg",
+      "tags": ["industrial", "summer", "seattle", "reception"],
+      "season": "Summer",
+      "images": ["image001.jpg"]
+    },
+    {
+      "id": "2024-05-amanda-ryan-pike-place",
+      "category": "engagements",
+      "coupleNames": "Amanda & Ryan",
+      "eventDate": "2024-05-03",
+      "venue": "Pike Place Market",
+      "location": "Seattle, WA",
+      "eventType": "Engagement Session",
+      "description": "Early morning Pike Place engagement with quiet cobblestones, market lights, and waterfront breeze.",
+      "featured": false,
+      "coverImage": "image001.jpg",
+      "tags": ["pike-place", "downtown", "spring", "engagement"],
+      "season": "Spring",
+      "images": ["image001.jpg"]
+    }
+  ]
+}

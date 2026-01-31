@@ -1,0 +1,12 @@
+{
+  "coupleNames": "Emily & James",
+  "eventDate": "2024-10-05",
+  "venue": "Discovery Park",
+  "location": "Seattle, WA",
+  "eventType": "Full Wedding",
+  "description": "Wind-swept Discovery Park ceremony with golden meadows, lighthouse portraits, and an intimate dinner under the stars.",
+  "featured": false,
+  "coverImage": "image001.jpg",
+  "tags": ["outdoor", "pnw", "lighthouse", "fall"],
+  "season": "Fall"
+}
