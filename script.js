@@ -635,14 +635,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const evaluateLeadValidity = () => {
-            const [nameEl, emailEl, phoneEl] = leadInputs;
+            const [nameEl, emailEl] = leadInputs;
             const ready =
                 nameEl &&
                 emailEl &&
-                phoneEl &&
                 nameEl.value.trim().length > 0 &&
-                validateEmail(emailEl.value || '') &&
-                (phoneEl.value || '').trim().length >= 7;
+                validateEmail(emailEl.value || '');
             if (leadSubmitButton) leadSubmitButton.disabled = !ready;
         };
 
