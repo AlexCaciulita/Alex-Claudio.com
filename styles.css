@@ -587,6 +587,7 @@ body.lead-body {
   color: #FFFFFF;
   max-width: var(--max-width-text);
   padding: calc(var(--nav-height) + var(--space-32)) var(--space-16) var(--space-32);
+  transform: translateY(-25%);
 }
 .hero-subtext {
   margin-top: var(--space-12);
@@ -612,7 +613,7 @@ body.lead-body {
 }
 
 .hero-title {
-  font-size: var(--text-display);
+  font-size: calc(var(--text-display) * 0.65);
   font-weight: var(--weight-regular);
   font-family: var(--font-display-serif);
   text-transform: uppercase;
