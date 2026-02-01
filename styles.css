@@ -132,7 +132,10 @@ body {
 .pricing-hero {
   position: relative;
   padding: calc(var(--nav-height) + var(--space-64)) 0 var(--space-64);
-  background: linear-gradient(160deg, rgba(15,15,18,0.55), rgba(15,15,18,0.25)), url('../82.jpg') center/cover no-repeat;
+  min-height: 70vh;
+  background:
+    linear-gradient(160deg, rgba(15,15,18,0.55), rgba(15,15,18,0.25)),
+    url('../82.jpg?v=1') center/cover no-repeat;
   color: #fff;
 }
 
