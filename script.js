@@ -614,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lead capture form (wedding show)
     if (leadForm) {
         const leadHoneypot = document.getElementById('leadCompany');
-        const leadInputs = ['leadName', 'leadEmail', 'leadPhone'].map((id) => document.getElementById(id)).filter(Boolean);
+        const leadInputs = ['leadName', 'leadEmail'].map((id) => document.getElementById(id)).filter(Boolean);
 
         const resetLeadAlerts = () => {
             if (leadSuccessPanel) leadSuccessPanel.classList.add('hidden');
@@ -656,12 +656,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clearLeadErrors();
             const name = document.getElementById('leadName')?.value.trim() || '';
             const email = document.getElementById('leadEmail')?.value.trim() || '';
-            const phone = document.getElementById('leadPhone')?.value.trim() || '';
+            const phone = '';
 
             let hasError = false;
             if (!name) { setLeadError('leadName', 'Please share your name.'); hasError = true; }
             if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so I can send details.'); hasError = true; }
-            if (!phone || !/^[0-9+()\-\.\s]{7,}$/.test(phone)) { setLeadError('leadPhone', 'Add a phone number I can text or call.'); hasError = true; }
+            // no phone validation needed
 
             if (hasError) {
                 if (leadErrorPanel) leadErrorPanel.classList.remove('hidden');
