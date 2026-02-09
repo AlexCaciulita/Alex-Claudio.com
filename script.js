@@ -7,6 +7,8 @@ const heroSlides = document.querySelectorAll('.hero-slide');
 const heroDots = document.querySelectorAll('.hero-dot');
 const heroPrev = document.getElementById('heroPrev');
 const heroNext = document.getElementById('heroNext');
+const mobileInquiryTeaser = document.getElementById('mobileInquiryTeaser');
+const contactSection = document.getElementById('contact');
 const contactForm = document.getElementById('contactForm');
 const submitButtonEl = document.getElementById('submitButton');
 const leadForm = document.getElementById('leadForm');
@@ -184,6 +186,33 @@ function stopAutoplay() {
 function handleCarouselInteraction() {
     stopAutoplay();
     startAutoplay();
+}
+
+function initHeroParallax() {
+    if (!heroCarousel) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const updateParallax = () => {
+        const offset = Math.min(window.scrollY * 0.15, 70);
+        heroCarousel.style.setProperty('--hero-parallax-y', `${offset}px`);
+    };
+
+    updateParallax();
+    window.addEventListener('scroll', debounce(updateParallax, 10), { passive: true });
+}
+
+function initMobileInquiryTeaser() {
+    if (!mobileInquiryTeaser || !contactSection) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            mobileInquiryTeaser.classList.toggle('hidden-near-contact', entry.isIntersecting);
+        });
+    }, {
+        threshold: 0.25
+    });
+
+    observer.observe(contactSection);
 }
 
 // ===== SMOOTH SCROLLING =====
@@ -706,6 +735,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize features
     renderPortfolioGallery();
+    initHeroParallax();
+    initMobileInquiryTeaser();
     if (hasCarousel) startAutoplay();
     lazyLoadImages();
     initPortfolioHoverEffects();
@@ -859,6 +890,11 @@ function addImageLoadingStates() {
 
 // Add scroll-triggered animations
 function initScrollAnimations() {
+    if (!('IntersectionObserver' in window)) {
+        document.querySelectorAll('.reveal').forEach((el) => el.classList.add('reveal-visible'));
+        return;
+    }
+
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -867,15 +903,18 @@ function initScrollAnimations() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('animate-in');
+                entry.target.classList.add('reveal-visible');
+                observer.unobserve(entry.target);
             }
         });
     }, observerOptions);
     
     // Observe elements that should animate on scroll
-    const animateElements = document.querySelectorAll('.portfolio-tile, .testimonial-quote, .about-content');
-    animateElements.forEach((el, idx) => {
-        el.style.setProperty('--animate-delay', `${idx * 80}ms`);
+    const animateElements = document.querySelectorAll('.reveal, .experience-card, .testimonial-card, .editorial-tile, .stats-item');
+    animateElements.forEach((el) => {
+        if (!el.classList.contains('reveal')) {
+            el.classList.add('reveal');
+        }
     });
     animateElements.forEach(el => observer.observe(el));
 }

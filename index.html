@@ -107,14 +107,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css?v=26">
+    <link rel="stylesheet" href="styles.css?v=27">
     <!-- Handwritten Font for Logo -->
     <link href="https://fonts.cdnfonts.com/css/sweely-broken" rel="stylesheet">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
-<body>
+<body class="home-body">
     <!-- Navigation -->
     <nav class="top-nav" id="topNav">
         <div class="nav-container">
@@ -156,7 +156,11 @@
             <div class="hero-overlay">
                 <div class="hero-content">
                     <p class="hero-eyebrow">SEATTLE WEDDING PHOTOGRAPHER</p>
-                    <h2 class="hero-title">Love Stories, Artfully Documented</h2>
+                    <h2 class="hero-title hero-title-split">
+                        <span>Love Stories</span>
+                        <span>Artfully Documented</span>
+                    </h2>
+                    <p class="hero-subtext">Documentary heart. Editorial finish. Pacific Northwest soul.</p>
                 </div>
             </div>
         </div>
@@ -172,89 +176,43 @@
             <div class="intro-content">
                 <h2 class="intro-title">Romantic, candid photos that feel like you</h2>
                 <p class="intro-text">
-                    As a Seattle wedding photographer with over 10 years of experience, I specialize in documentary-style photography with editorial polish. I travel throughout Seattle, the Eastside (Bellevue, Kirkland, Redmond), and the greater Puget Sound region—from ferries to forests to urban rooftops—capturing authentic, romantic moments that feel like you.
+                    Seattle wedding photographer with 10+ years of experience, blending documentary honesty with editorial polish across Seattle and the Puget Sound.
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Testimonials -->
-    <section class="testimonials-section" id="reviews">
+    <section class="stats-band reveal" aria-label="Studio statistics">
         <div class="container">
-            <div class="testimonial-slider" id="testimonialSlider">
-                <div class="testimonial-slide active">
-                    <div class="testimonial-content">
-                        <blockquote class="testimonial-quote">
-                            "Alex captured our wedding day exactly as we remember it - full of genuine emotion and beautiful moments. His documentary approach meant we could truly enjoy our day while he captured every special moment."
-                        </blockquote>
-                        <cite class="testimonial-author">&mdash; Sarah &amp; Michael, Charlotte</cite>
-                    </div>
+            <div class="stats-grid">
+                <div class="stats-item">
+                    <p class="stats-value">10+</p>
+                    <p class="stats-label">Years documenting weddings</p>
                 </div>
-                <div class="testimonial-slide">
-                    <div class="testimonial-content">
-                        <blockquote class="testimonial-quote">
-                            "We barely noticed Alex shooting, yet he delivered images that feel cinematic and honest. He was calm, kind, and everywhere at once."
-                        </blockquote>
-                        <cite class="testimonial-author">&mdash; Lindsey &amp; Stephen, Greensboro</cite>
-                    </div>
+                <div class="stats-item">
+                    <p class="stats-value">300+</p>
+                    <p class="stats-label">Celebrations photographed</p>
                 </div>
-                <div class="testimonial-slide">
-                    <div class="testimonial-content">
-                        <blockquote class="testimonial-quote">
-                            "The photos transport us back to the day. Nothing staged, just real laughter, tears, and joy. Exactly what we hoped for."
-                        </blockquote>
-                        <cite class="testimonial-author">&mdash; Maria &amp; David, Seattle</cite>
-                    </div>
+                <div class="stats-item">
+                    <p class="stats-value">48h</p>
+                    <p class="stats-label">Sneak peeks delivery</p>
                 </div>
-                <div class="testimonial-slide">
-                    <div class="testimonial-content">
-                        <blockquote class="testimonial-quote">
-                            "Every frame feels effortless and honest. He caught the glances and laughter we thought only we noticed."
-                        </blockquote>
-                        <cite class="testimonial-author">&mdash; Diane &amp; Chris, Seattle</cite>
-                    </div>
-                </div>
-                <div class="testimonial-slide">
-                    <div class="testimonial-content">
-                        <blockquote class="testimonial-quote">
-                            "The gallery felt like a film. Warm, real, and full of life. We’ve already framed half the shots."
-                        </blockquote>
-                        <cite class="testimonial-author">&mdash; Amy &amp; Paul, Seattle</cite>
-                    </div>
-                </div>
-                <div class="testimonial-slide">
-                    <div class="testimonial-content">
-                        <blockquote class="testimonial-quote">
-                            "Alex moved like a guest with a camera — calm, kind, and somehow everywhere when the magic happened."
-                        </blockquote>
-                        <cite class="testimonial-author">&mdash; Dawn &amp; Richard, Asheville</cite>
-                    </div>
-                </div>
-
-                <div class="testimonial-controls">
-                    <button class="testimonial-arrow prev" id="testimonialPrev" aria-label="Previous testimonial">&#10094;</button>
-                    <button class="testimonial-arrow next" id="testimonialNext" aria-label="Next testimonial">&#10095;</button>
-                </div>
-                <div class="testimonial-dots" id="testimonialDots">
-                    <button class="testimonial-dot active" data-slide="0" aria-label="Go to testimonial 1"></button>
-                    <button class="testimonial-dot" data-slide="1" aria-label="Go to testimonial 2"></button>
-                    <button class="testimonial-dot" data-slide="2" aria-label="Go to testimonial 3"></button>
-                    <button class="testimonial-dot" data-slide="3" aria-label="Go to testimonial 4"></button>
-                    <button class="testimonial-dot" data-slide="4" aria-label="Go to testimonial 5"></button>
-                    <button class="testimonial-dot" data-slide="5" aria-label="Go to testimonial 6"></button>
+                <div class="stats-item">
+                    <p class="stats-value">SEA +</p>
+                    <p class="stats-label">Destination coverage</p>
                 </div>
             </div>
         </div>
     </section>
+
     <!-- About Section -->
     <section class="about-section" id="about">
         <div class="container">
             <div class="about-hero">
                 <div class="about-hero-text">
                     <p class="about-eyebrow">Meet the Photographer</p>
-                    <h1 class="about-hero-title">About Alex | Seattle Wedding Photographer</h1>
-                    <p class="about-lede">For over a decade, I've had the incredible privilege of documenting love stories across the Pacific Northwest. Based in Seattle, I specialize in documentary-style wedding photography with editorial polish—capturing authentic moments as they unfold while guiding you when you need it.</p>
-                    <p class="about-lede">My approach is simple: I believe your wedding day should feel like YOUR day, not a photoshoot. I blend into the background to capture genuine emotions, candid laughter, and those fleeting moments you might otherwise miss. When it's time for portraits, I provide gentle direction to create timeless, artful images that feel natural and authentic.</p>
+                    <p class="about-lede">I’m a Seattle-based wedding photographer documenting real moments with a clean, editorial finish.</p>
+                    <p class="about-lede">My approach is calm and unobtrusive: candid coverage first, gentle direction when needed.</p>
                     <div class="about-actions">
                         <a class="pricing-button" href="/index.html#contact">Check Availability</a>
                         <a class="pricing-button secondary" href="/portfolio/">View Portfolio</a>
@@ -269,25 +227,16 @@
             <div class="about-grid">
                 <div class="about-card">
                     <h3>My Journey to Wedding Photography</h3>
-                    <p>I fell in love with photography <em>What drew me to weddings specifically was <em>[describe the emotion, storytelling, or energy that hooked you]</em>. There's something magical about being trusted to document one of the most important days in a couple's life.</p>
-                    <p>Over the past 10+ years, I've photographed over <em>[number]</em> weddings across Seattle, the Eastside, and throughout the Pacific Northwest. From intimate elopements on ferries to grand celebrations at iconic Seattle venues, each wedding tells a unique story.</p>
+                    <p>I’ve spent 10+ years photographing weddings across Seattle and the Pacific Northwest.</p>
+                    <p>From small elopements to full-day celebrations, the goal is always the same: honest photos that age well.</p>
                 </div>
                 <div class="about-card">
                     <h3>What Makes My Style Unique</h3>
                     <ul class="about-list">
-                        <li><strong>Documentary:</strong> I capture real moments as they happen—candid emotions, genuine laughter, stolen glances, and authentic interactions.</li>
-                        <li><strong>Editorial:</strong> During portraits and key moments, I provide gentle direction to create artful, magazine-worthy images with intentional composition and beautiful light.</li>
-                        <li><strong>The Result:</strong> A complete story of your day with a balance of photojournalistic authenticity and editorial artistry.</li>
+                        <li><strong>Documentary:</strong> Real moments, naturally captured.</li>
+                        <li><strong>Editorial:</strong> Light direction for polished portraits.</li>
+                        <li><strong>Result:</strong> A full story that feels true to your day.</li>
                     </ul>
-                </div>
-            </div>
-
-            <div class="about-bts">
-                <div class="about-bts-image" role="img" aria-label="Seattle wedding photographer Alex Claudio capturing candid moments at a downtown wedding" style="background-image: url('hero-image-4.jpg');"></div>
-                <div class="about-bts-copy">
-                    <h3>At Home in the Pacific Northwest</h3>
-                    <p>Living and working in Seattle means I know this region intimately. From the dramatic waterfront at Golden Gardens to the urban elegance of downtown venues, from the lush forests of the Eastside to the stunning mountain backdrops—I know where to find the best light, the hidden photo spots, and how to make the most of every location.</p>
-                    <p>I also know Seattle weather. Rain doesn't phase me—I bring clear umbrellas, embrace the moody atmosphere, and always have backup plans. Some of my favorite images have been captured on misty, romantic Seattle days.</p>
                 </div>
             </div>
 
@@ -295,12 +244,124 @@
                 <div class="about-cta-inner">
                     <p class="about-eyebrow">Let's Create Something Beautiful Together</p>
                     <h2>Ready to connect about your wedding day?</h2>
-                    <p>Share your vision and let's plan photography that feels like you—honest, elegant, and filled with the energy of Seattle and the Pacific Northwest.</p>
+                    <p>Share your vision and I’ll help shape coverage that feels effortless and true to you.</p>
                     <div class="about-actions">
                         <a class="pricing-button" href="/index.html#contact">Start the Conversation</a>
                         <a class="pricing-button secondary" href="/portfolio/">See Recent Stories</a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="experience-section reveal" aria-labelledby="experienceTitle">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-eyebrow">The Experience</p>
+                <h2 class="section-title" id="experienceTitle">What working together feels like</h2>
+            </div>
+            <div class="experience-grid">
+                <article class="experience-card">
+                    <span class="experience-icon">01</span>
+                    <h3>Calm Direction</h3>
+                    <p>Simple, clear guidance when needed so you stay present, never over-posed.</p>
+                </article>
+                <article class="experience-card">
+                    <span class="experience-icon">02</span>
+                    <h3>Real Emotion</h3>
+                    <p>Documentary coverage focused on honest expressions, movement, and connection.</p>
+                </article>
+                <article class="experience-card">
+                    <span class="experience-icon">03</span>
+                    <h3>Fast Delivery</h3>
+                    <p>Quick previews and polished final galleries built for easy sharing and prints.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section" id="reviews">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-eyebrow">Client Notes</p>
+                <h2 class="section-title">Kind words from recent couples</h2>
+            </div>
+            <div class="testimonial-stack reveal">
+                <article class="testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">SM</span>
+                        <cite class="testimonial-author">Sarah &amp; Michael</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">He captured the day exactly how it felt: emotional, joyful, and effortless.</blockquote>
+                </article>
+                <article class="testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">LS</span>
+                        <cite class="testimonial-author">Lindsey &amp; Stephen</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">Calm, kind, and somehow everywhere. The photos feel cinematic and real.</blockquote>
+                </article>
+                <article class="testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">MD</span>
+                        <cite class="testimonial-author">Maria &amp; David</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">Nothing felt staged, just real laughter, tears, and joy.</blockquote>
+                </article>
+                <article class="testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">DC</span>
+                        <cite class="testimonial-author">Diane &amp; Chris</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">Every frame feels honest. He caught moments we didn’t even see.</blockquote>
+                </article>
+                <article class="testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">AP</span>
+                        <cite class="testimonial-author">Amy &amp; Paul</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">The gallery felt like a film. Warm, real, and full of life.</blockquote>
+                </article>
+                <article class="testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">DR</span>
+                        <cite class="testimonial-author">Dawn &amp; Richard</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">He felt like a guest with a camera and never missed the magic.</blockquote>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="editorial-preview-section reveal" aria-labelledby="editorialPreviewTitle">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-eyebrow">Editorial Preview</p>
+                <h2 class="section-title" id="editorialPreviewTitle">A quick look at the visual style</h2>
+            </div>
+            <div class="editorial-mosaic">
+                <a href="/portfolio/" class="editorial-tile tile-a">
+                    <img src="82.jpg" alt="Bride and groom at wedding reception exit">
+                </a>
+                <a href="/portfolio/" class="editorial-tile tile-b">
+                    <img src="hero-image-3.jpg" alt="Couple portrait in dramatic light">
+                </a>
+                <a href="/portfolio/" class="editorial-tile tile-c">
+                    <img src="Portofolio/Sarah&Michael - Wedding Day-278.jpg" alt="Waterfront wedding couple portrait">
+                </a>
+                <a href="/portfolio/" class="editorial-tile tile-d">
+                    <img src="Portofolio/5DM32249.jpg" alt="Candid emotional wedding moment">
+                </a>
+                <a href="/portfolio/" class="editorial-tile tile-e">
+                    <img src="Portofolio/Amy&Paul - Wedding Day-423.jpg" alt="Documentary wedding dance floor moment">
+                </a>
+                <a href="/portfolio/" class="editorial-tile tile-f">
+                    <img src="hero-image-5.jpg" alt="Romantic couple portrait at sunset">
+                </a>
+            </div>
+            <div class="portfolio-cta">
+                <a class="btn btn-secondary" href="/portfolio/">View Full Portfolio</a>
             </div>
         </div>
     </section>
@@ -315,15 +376,15 @@
                     <div class="faq-feature-image" role="img" aria-label="Seattle wedding couple leaning against a white wall in Pioneer Square" style="background-image: url('5DM35746.jpg');"></div>
                     <div class="faq-feature-copy">
                         <h3>Craft your legacy</h3>
-                        <p>I’ll travel across Seattle, the Eastside, and the greater Puget Sound — ferries, forests, rooftops, and wineries included. Destination weddings? Absolutely. Tell me where and we’ll make it happen.</p>
+                        <p>Seattle, the Eastside, Puget Sound, or destination weddings. Tell me where, and I’ll handle the photo plan.</p>
                         <p class="faq-feature-note">Rain or shine, I bring clear umbrellas, backup plans, and calm energy so the day feels effortless.</p>
                     </div>
                 </div>
                 <div class="faq-feature reverse">
                     <div class="faq-feature-copy">
                         <h3>Discover the unseen</h3>
-                        <p>Documentary-first with editorial polish. I blend into the moment, then guide when you need it so the images feel cinematic and true to you.</p>
-                        <p class="faq-feature-note">Expect location scouting, timeline support, and delivery built for sharing with family, friends, and vendors.</p>
+                        <p>Documentary first, editorial when needed, so your photos feel natural and elevated.</p>
+                        <p class="faq-feature-note">You’ll also get location guidance, timeline support, and easy gallery delivery.</p>
                     </div>
                     <div class="faq-feature-image" role="img" aria-label="Romantic Seattle waterfront wedding couple at sunset near Puget Sound" style="background-image: url('Portofolio/Sarah&Michael - Wedding Day-278.jpg');"></div>
                 </div>
@@ -336,7 +397,7 @@
         <div class="container">
             <div class="cta-content">
                 <h2 class="cta-title">Ready to Tell Your Story?</h2>
-                <p class="cta-text">Let's create beautiful memories together</p>
+                <p class="cta-text">Let’s make photos you’ll love for decades.</p>
                 <a href="#contact" class="btn btn-ghost-light">Get In Touch</a>
             </div>
         </div>
@@ -451,6 +512,8 @@
         </div>
     </section>
 
+    <a href="#contact" class="mobile-inquiry-teaser" id="mobileInquiryTeaser">Check your date availability</a>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -512,6 +575,6 @@
       "priceRange": "$$"
     }
     </script>
-    <script src="script.js?v=26"></script>
+    <script src="script.js?v=27"></script>
 </body>
 </html>
