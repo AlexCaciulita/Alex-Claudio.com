@@ -15,6 +15,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    document.documentElement.classList.add("js");
+  </script>
   <style>
     :root {
       --bg: #f4f7fb;
@@ -24,6 +27,9 @@
       --line: #d7e1ee;
       --brand: #0d5ea8;
       --brand-2: #0f7b6c;
+      --shadow: 0 18px 45px rgba(15, 33, 56, 0.1);
+      --fast: 220ms;
+      --normal: 520ms;
     }
 
     * {
@@ -42,6 +48,35 @@
       display: grid;
       place-items: center;
       padding: 24px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: -1;
+      animation: drift 15s ease-in-out infinite alternate;
+    }
+
+    body::before {
+      width: 320px;
+      height: 320px;
+      right: -80px;
+      top: 12vh;
+      background: radial-gradient(circle, rgba(13, 94, 168, 0.2) 0%, rgba(13, 94, 168, 0) 66%);
+    }
+
+    body::after {
+      width: 280px;
+      height: 280px;
+      left: -90px;
+      bottom: 8vh;
+      background: radial-gradient(circle, rgba(15, 123, 108, 0.2) 0%, rgba(15, 123, 108, 0) 66%);
+      animation-delay: 1.5s;
     }
 
     main {
@@ -50,7 +85,21 @@
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: clamp(20px, 4vw, 40px);
-      box-shadow: 0 18px 45px rgba(15, 33, 56, 0.1);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      animation: fade-up 640ms ease both;
+    }
+
+    main::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: linear-gradient(110deg, transparent 0%, rgba(13, 94, 168, 0.08) 48%, transparent 56%);
+      transform: translateX(-120%);
+      animation: soft-sweep 13s ease-in-out infinite;
     }
 
     .eyebrow {
@@ -60,6 +109,9 @@
       color: var(--brand);
       margin: 0 0 10px;
       font-weight: 600;
+      opacity: 0;
+      animation: fade-up var(--normal) ease both;
+      animation-delay: 80ms;
     }
 
     h1 {
@@ -67,6 +119,9 @@
       margin: 0;
       line-height: 1.2;
       font-size: clamp(1.6rem, 4vw, 2.5rem);
+      opacity: 0;
+      animation: fade-up var(--normal) ease both;
+      animation-delay: 140ms;
     }
 
     .subtitle {
@@ -75,6 +130,9 @@
       color: var(--muted);
       max-width: 65ch;
       line-height: 1.6;
+      opacity: 0;
+      animation: fade-up var(--normal) ease both;
+      animation-delay: 220ms;
     }
 
     .grid {
@@ -89,6 +147,18 @@
       border-radius: 12px;
       padding: 14px 16px;
       background: linear-gradient(165deg, #fff, #f9fbfe);
+      opacity: 0;
+      animation: fade-up var(--normal) ease both;
+      animation-delay: calc(250ms + var(--i, 0) * 80ms);
+      transition: transform var(--fast) ease, box-shadow var(--fast) ease, border-color var(--fast) ease, background var(--fast) ease;
+    }
+
+    .card:hover,
+    .card:focus-within {
+      transform: translateY(-4px);
+      border-color: #bfd3eb;
+      box-shadow: 0 12px 30px rgba(13, 42, 77, 0.12);
+      background: linear-gradient(165deg, #fff, #f5faff);
     }
 
     .label {
@@ -109,8 +179,24 @@
 
     a {
       color: var(--brand);
-      text-decoration-thickness: 2px;
-      text-underline-offset: 3px;
+      text-decoration: none;
+      background-image: linear-gradient(currentColor, currentColor);
+      background-size: 100% 1px;
+      background-position: 0 98%;
+      background-repeat: no-repeat;
+      transition: color var(--fast) ease, background-size var(--fast) ease, background-position var(--fast) ease;
+    }
+
+    a:hover,
+    a:focus-visible {
+      background-size: 100% 2px;
+      background-position: 0 100%;
+    }
+
+    a:focus-visible {
+      outline: 2px solid rgba(13, 94, 168, 0.45);
+      outline-offset: 2px;
+      border-radius: 2px;
     }
 
     .note {
@@ -151,9 +237,68 @@
       font-size: 0.9rem;
     }
 
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity var(--normal) ease, transform var(--normal) ease;
+    }
+
+    .js .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes drift {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(20px, -16px, 0) scale(1.04);
+      }
+      100% {
+        transform: translate3d(-10px, 8px, 0) scale(0.98);
+      }
+    }
+
+    @keyframes soft-sweep {
+      0%,
+      22% {
+        transform: translateX(-120%);
+      }
+      58%,
+      100% {
+        transform: translateX(120%);
+      }
+    }
+
     @media (max-width: 560px) {
       body {
         padding: 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .js .reveal {
+        opacity: 1;
+        transform: none;
       }
     }
   </style>
@@ -196,38 +341,38 @@
     </p>
 
     <section class="grid" aria-label="Company details">
-      <article class="card">
+      <article class="card" style="--i: 0;">
         <p class="label">Legal Business Name</p>
         <p class="value">Alex Claudio Ventures LLC</p>
       </article>
-      <article class="card">
+      <article class="card" style="--i: 1;">
         <p class="label">Primary Contact</p>
         <p class="value">Claudiu Caciulita</p>
       </article>
-      <article class="card">
+      <article class="card" style="--i: 2;">
         <p class="label">Role</p>
         <p class="value">Sole Proprietor</p>
       </article>
-      <article class="card">
+      <article class="card" style="--i: 3;">
         <p class="label">Phone</p>
         <p class="value"><a href="tel:+17047121605">+1 (704) 712-1605</a></p>
       </article>
-      <article class="card">
+      <article class="card" style="--i: 4;">
         <p class="label">Email</p>
         <p class="value"><a href="mailto:contact@alex-claudio.com">contact@alex-claudio.com</a></p>
       </article>
-      <article class="card">
+      <article class="card" style="--i: 5;">
         <p class="label">Website</p>
         <p class="value"><a href="https://alex-claudio.com/">alex-claudio.com</a></p>
       </article>
     </section>
 
-    <section class="note" aria-label="Business use">
+    <section class="note reveal" aria-label="Business use">
       This contact channel is monitored for client inquiries, customer support, billing communication,
       and legal/compliance requests related to products and services published under Alex Claudio Ventures LLC.
     </section>
 
-    <section class="summary" aria-label="Business summary">
+    <section class="summary reveal" aria-label="Business summary">
       <h2>Business Summary</h2>
       <p>
         Alex Claudio Ventures LLC is a service-based business focused on building mobile applications and delivering
@@ -237,9 +382,36 @@
       </p>
     </section>
 
-    <footer>
+    <footer class="reveal">
       Last updated: February 18, 2026
     </footer>
   </main>
+
+  <script>
+    (() => {
+      const revealItems = document.querySelectorAll(".reveal");
+
+      if (!("IntersectionObserver" in window)) {
+        revealItems.forEach((item) => item.classList.add("is-visible"));
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          });
+        },
+        {
+          threshold: 0.2,
+          rootMargin: "0px 0px -40px 0px"
+        }
+      );
+
+      revealItems.forEach((item) => observer.observe(item));
+    })();
+  </script>
 </body>
 </html>
