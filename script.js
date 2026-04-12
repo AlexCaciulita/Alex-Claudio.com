@@ -138,7 +138,17 @@ const portfolioImages = [
     'Nunta Madalina & Catalin - 2 Iulie 2016 (371).jpg',
     'resized222.jpg',
     'Sarah&Michael - Wedding Day-275.jpg',
-    'Sarah&Michael - Wedding Day-286.jpg'
+    'Sarah&Michael - Wedding Day-286.jpg',
+    'Jess&Fenn - Engagement Session-33.jpg',
+    'Jess&Fenn - Engagement Session-41.jpg',
+    'Jess&Fenn - Engagement Session-57.jpg',
+    'Jess&Fenn - Engagement Session-63.jpg',
+    'Jess&Fenn - Engagement Session-102.jpg',
+    'Jess&Fenn - Engagement Session-116.jpg',
+    'Jess&Fenn - Engagement Session-119.jpg',
+    'Jess&Fenn - Engagement Session-123.jpg',
+    'Jess&Fenn - Engagement Session-126.jpg',
+    'Jess&Fenn - Engagement Session-134.jpg'
 ];
 
 function showSlide(index) {
