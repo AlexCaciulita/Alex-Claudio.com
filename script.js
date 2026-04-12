@@ -28,6 +28,7 @@ const lightboxPrev = document.getElementById('lightboxPrev');
 const lightboxNext = document.getElementById('lightboxNext');
 const testimonialsCarousel = document.getElementById('testimonialsCarousel');
 const testimonialsTrack = document.getElementById('testimonialsTrack');
+const homeBody = document.querySelector('.home-body');
 let lenisInstance = null;
 
 // ===== NAVIGATION SCROLL EFFECT =====
@@ -364,6 +365,127 @@ function initButtonMicroInteractions() {
     });
 }
 
+function initSceneMotion() {
+    if (!homeBody) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        homeBody.style.setProperty('--scene-shift-x', '0px');
+        homeBody.style.setProperty('--scene-shift-y', '0px');
+        return;
+    }
+
+    let rafId = null;
+    const state = {
+        currentX: 0,
+        currentY: 0,
+        targetX: 0,
+        targetY: 0
+    };
+
+    const render = () => {
+        state.currentX += (state.targetX - state.currentX) * 0.12;
+        state.currentY += (state.targetY - state.currentY) * 0.12;
+
+        homeBody.style.setProperty('--scene-shift-x', `${state.currentX.toFixed(2)}px`);
+        homeBody.style.setProperty('--scene-shift-y', `${state.currentY.toFixed(2)}px`);
+
+        if (
+            Math.abs(state.targetX - state.currentX) < 0.1 &&
+            Math.abs(state.targetY - state.currentY) < 0.1
+        ) {
+            rafId = null;
+            return;
+        }
+
+        rafId = requestAnimationFrame(render);
+    };
+
+    const scheduleRender = () => {
+        if (rafId !== null) return;
+        rafId = requestAnimationFrame(render);
+    };
+
+    const reset = () => {
+        state.targetX = 0;
+        state.targetY = 0;
+        scheduleRender();
+    };
+
+    window.addEventListener('pointermove', (event) => {
+        const centeredX = (event.clientX / window.innerWidth) - 0.5;
+        const centeredY = (event.clientY / window.innerHeight) - 0.5;
+
+        state.targetX = centeredX * 32;
+        state.targetY = centeredY * 24;
+        scheduleRender();
+    }, { passive: true });
+
+    window.addEventListener('pointerout', (event) => {
+        if (event.relatedTarget === null) {
+            reset();
+        }
+    }, { passive: true });
+
+    window.addEventListener('blur', reset, { passive: true });
+}
+
+function initTiltCards() {
+    const cards = Array.from(document.querySelectorAll('[data-tilt]'));
+    if (!cards.length) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    if (prefersReducedMotion || !supportsHover) {
+        cards.forEach((card) => {
+            card.style.setProperty('--tilt-x', '0deg');
+            card.style.setProperty('--tilt-y', '0deg');
+        });
+        return;
+    }
+
+    cards.forEach((card) => {
+        let frameId = null;
+        let targetX = 0;
+        let targetY = 0;
+        const strength = Number(card.dataset.tiltStrength || 10);
+
+        const update = () => {
+            card.style.setProperty('--tilt-x', `${targetX.toFixed(2)}deg`);
+            card.style.setProperty('--tilt-y', `${targetY.toFixed(2)}deg`);
+            frameId = null;
+        };
+
+        const scheduleUpdate = () => {
+            if (frameId !== null) return;
+            frameId = requestAnimationFrame(update);
+        };
+
+        const reset = () => {
+            targetX = 0;
+            targetY = 0;
+            scheduleUpdate();
+        };
+
+        card.addEventListener('pointermove', (event) => {
+            if (event.pointerType === 'touch') return;
+
+            const rect = card.getBoundingClientRect();
+            const offsetX = ((event.clientX - rect.left) / rect.width) - 0.5;
+            const offsetY = ((event.clientY - rect.top) / rect.height) - 0.5;
+
+            targetX = offsetY * -strength;
+            targetY = offsetX * strength;
+            scheduleUpdate();
+        });
+
+        card.addEventListener('pointerleave', reset);
+        card.addEventListener('pointercancel', reset);
+        card.addEventListener('blur', reset);
+    });
+}
+
 function smoothScrollTo(target) {
     const element = document.querySelector(target);
     if (element) {
@@ -442,7 +564,7 @@ async function handleFormSubmit(event) {
             contactForm.reset();
             submitButtonEl.textContent = originalText;
             submitButtonEl.disabled = false;
-            showFormSuccess('We received your inquiry and will respond soon.');
+            showFormSuccess('I received your inquiry and will respond within 24 hours. Check your inbox (and spam folder) for a personal reply.');
             trackFormSubmission();
         } else {
             throw new Error('Form submission failed');
@@ -1114,6 +1236,8 @@ function initScrollAnimations() {
 document.addEventListener('DOMContentLoaded', () => {
     initLuxuryScroll();
     initButtonMicroInteractions();
+    initSceneMotion();
+    initTiltCards();
     addImageLoadingStates();
     initScrollAnimations();
 });

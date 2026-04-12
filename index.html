@@ -197,20 +197,6 @@
                             <a href="#contact" class="btn btn-primary">Start Your Story</a>
                             <a href="/portfolio/" class="btn btn-ghost-light">See the Portfolio</a>
                         </div>
-                        <div class="hero-metrics" aria-label="Highlights">
-                            <div class="hero-metric">
-                                <strong>10+</strong>
-                                <span>Years photographing weddings with a documentary-first approach</span>
-                            </div>
-                            <div class="hero-metric">
-                                <strong>Seattle</strong>
-                                <span>Serving the city, the Eastside, and destination weekends</span>
-                            </div>
-                            <div class="hero-metric">
-                                <strong>True-to-feel</strong>
-                                <span>Images that stay emotional, elegant, and recognizably yours</span>
-                            </div>
-                        </div>
                     </div>
                     <div class="hero-gallery tilt-card" data-tilt data-tilt-strength="14">
                         <figure class="hero-frame hero-frame-main">
@@ -324,50 +310,60 @@
                 <p class="section-eyebrow">Client Notes</p>
                 <h2 class="section-title">Kind words from recent couples</h2>
             </div>
-            <div class="testimonials-carousel reveal" id="testimonialsCarousel" aria-label="Testimonials carousel">
-                <div class="testimonials-track" id="testimonialsTrack">
-                    <article class="testimonial-card tilt-card" data-tilt data-tilt-strength="8">
-                        <div class="testimonial-head">
-                            <span class="testimonial-avatar">SM</span>
-                            <cite class="testimonial-author">Sarah &amp; Michael</cite>
-                        </div>
-                        <blockquote class="testimonial-copy">He captured the day exactly how it felt: emotional, joyful, and effortless.</blockquote>
-                    </article>
-                    <article class="testimonial-card tilt-card" data-tilt data-tilt-strength="8">
-                        <div class="testimonial-head">
-                            <span class="testimonial-avatar">LS</span>
-                            <cite class="testimonial-author">Lindsey &amp; Stephen</cite>
-                        </div>
-                        <blockquote class="testimonial-copy">Calm, kind, and somehow everywhere. The photos feel cinematic and real.</blockquote>
-                    </article>
-                    <article class="testimonial-card tilt-card" data-tilt data-tilt-strength="8">
-                        <div class="testimonial-head">
-                            <span class="testimonial-avatar">MD</span>
-                            <cite class="testimonial-author">Maria &amp; David</cite>
-                        </div>
-                        <blockquote class="testimonial-copy">Nothing felt staged, just real laughter, tears, and joy.</blockquote>
-                    </article>
-                    <article class="testimonial-card tilt-card" data-tilt data-tilt-strength="8">
-                        <div class="testimonial-head">
-                            <span class="testimonial-avatar">DC</span>
-                            <cite class="testimonial-author">Diane &amp; Chris</cite>
-                        </div>
-                        <blockquote class="testimonial-copy">Every frame feels honest. He caught moments we didn’t even see.</blockquote>
-                    </article>
-                    <article class="testimonial-card tilt-card" data-tilt data-tilt-strength="8">
-                        <div class="testimonial-head">
-                            <span class="testimonial-avatar">AP</span>
-                            <cite class="testimonial-author">Amy &amp; Paul</cite>
-                        </div>
-                        <blockquote class="testimonial-copy">The gallery felt like a film. Warm, real, and full of life.</blockquote>
-                    </article>
-                    <article class="testimonial-card tilt-card" data-tilt data-tilt-strength="8">
-                        <div class="testimonial-head">
-                            <span class="testimonial-avatar">DR</span>
-                            <cite class="testimonial-author">Dawn &amp; Richard</cite>
-                        </div>
-                        <blockquote class="testimonial-copy">He felt like a guest with a camera and never missed the magic.</blockquote>
-                    </article>
+            <div class="testimonial-slider" id="testimonialSlider" aria-label="Testimonials carousel">
+                <article class="testimonial-slide testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">SM</span>
+                        <cite class="testimonial-author">Sarah &amp; Michael</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">He captured the day exactly how it felt: emotional, joyful, and effortless.</blockquote>
+                </article>
+                <article class="testimonial-slide testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">LS</span>
+                        <cite class="testimonial-author">Lindsey &amp; Stephen</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">Calm, kind, and somehow everywhere. The photos feel cinematic and real.</blockquote>
+                </article>
+                <article class="testimonial-slide testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">MD</span>
+                        <cite class="testimonial-author">Maria &amp; David</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">Nothing felt staged, just real laughter, tears, and joy.</blockquote>
+                </article>
+                <article class="testimonial-slide testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">DC</span>
+                        <cite class="testimonial-author">Diane &amp; Chris</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">Every frame feels honest. He caught moments we didn’t even see.</blockquote>
+                </article>
+                <article class="testimonial-slide testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">AP</span>
+                        <cite class="testimonial-author">Amy &amp; Paul</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">The gallery felt like a film. Warm, real, and full of life.</blockquote>
+                </article>
+                <article class="testimonial-slide testimonial-card">
+                    <div class="testimonial-head">
+                        <span class="testimonial-avatar">DR</span>
+                        <cite class="testimonial-author">Dawn &amp; Richard</cite>
+                    </div>
+                    <blockquote class="testimonial-copy">He felt like a guest with a camera and never missed the magic.</blockquote>
+                </article>
+                <div class="testimonial-nav">
+                    <button class="testimonial-arrow" id="testimonialPrev" aria-label="Previous testimonial">&#10094;</button>
+                    <div class="testimonial-dots">
+                        <button class="testimonial-dot active" aria-label="Testimonial 1"></button>
+                        <button class="testimonial-dot" aria-label="Testimonial 2"></button>
+                        <button class="testimonial-dot" aria-label="Testimonial 3"></button>
+                        <button class="testimonial-dot" aria-label="Testimonial 4"></button>
+                        <button class="testimonial-dot" aria-label="Testimonial 5"></button>
+                        <button class="testimonial-dot" aria-label="Testimonial 6"></button>
+                    </div>
+                    <button class="testimonial-arrow" id="testimonialNext" aria-label="Next testimonial">&#10095;</button>
                 </div>
             </div>
         </div>
@@ -447,19 +443,6 @@
                             <div class="ds-help" id="phoneHelp" aria-live="polite"></div>
                         </div>
 
-                        <fieldset class="ds-field" aria-describedby="servicesHelp">
-                            <legend class="ds-label">What services are you interested in? <span class="ds-required" aria-hidden="true">*</span></legend>
-                            <div class="ds-checkbox-group" id="servicesGroup">
-                                <label class="ds-checkbox"><input type="checkbox" name="services" value="wedding" required> <span>Wedding Photography</span></label>
-                                <label class="ds-checkbox"><input type="checkbox" name="services" value="engagement"> <span>Engagement Session</span></label>
-                                <label class="ds-checkbox"><input type="checkbox" name="services" value="proposal"> <span>Proposal Photography</span></label>
-                                <label class="ds-checkbox"><input type="checkbox" name="services" value="family"> <span>Family Photography</span></label>
-                                <label class="ds-checkbox ds-checkbox-other"><input type="checkbox" id="servicesOther" name="services" value="other"> <span>Other</span></label>
-                                <input type="text" id="servicesOtherText" class="ds-input ds-input-inline hidden" placeholder="Please specify" aria-label="Other service">
-                            </div>
-                            <div class="ds-help" id="servicesHelp" aria-live="polite"></div>
-                        </fieldset>
-
                         <div class="ds-field">
                             <label for="event_date" class="ds-label">Event date <span class="ds-required" aria-hidden="true">*</span></label>
                             <input type="date" id="event_date" name="event_date" class="ds-input ds-date" aria-required="true" aria-describedby="dateHelp" required>
@@ -479,20 +462,6 @@
                         </div>
 
                         <div class="ds-field">
-                            <label for="referral" class="ds-label">How did you hear about me? <span class="ds-required" aria-hidden="true">*</span></label>
-                            <select id="referral" name="referral" class="ds-input ds-select" aria-required="true" aria-describedby="referralHelp" required>
-                                <option value="" selected disabled>Select an option</option>
-                                <option value="search">Search</option>
-                                <option value="social">Social</option>
-                                <option value="friend">Friend</option>
-                                <option value="vendor">Vendor</option>
-                                <option value="ad">Ad</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <div class="ds-help" id="referralHelp" aria-live="polite"></div>
-                        </div>
-
-                        <div class="ds-field">
                             <label for="message" class="ds-label">Tell me about you and your event <span class="ds-required" aria-hidden="true">*</span></label>
                             <textarea id="message" name="message" class="ds-textarea" rows="6" aria-required="true" aria-describedby="messageHelp" placeholder="Share date, venue, vibe and any must-haves." required></textarea>
                             <div class="ds-help" id="messageHelp" aria-live="polite"></div>
@@ -504,15 +473,15 @@
                             <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
                         </div>
 
-                        <!-- Captcha removed temporarily -->
+                        <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="light"></div>
 
                         <div class="ds-submit-row">
                             <button type="submit" class="ds-submit" id="submitButton">SEND</button>
                         </div>
 
                         <div class="ds-panel ds-success hidden" id="formSuccess" role="status" aria-live="polite">
-                            <strong>Thank you</strong>
-                            <p>We received your inquiry and will respond soon.</p>
+                            <strong>Thank you!</strong>
+                            <p>I received your inquiry and will respond within 24 hours. Check your inbox (and spam folder) for a personal reply.</p>
                         </div>
                         <div class="ds-panel ds-error hidden" id="formError" role="alert" aria-live="assertive">
                             <strong>Something went wrong</strong>
@@ -542,18 +511,19 @@
                 </div>
                 
                 <div class="footer-social">
-                    <a href="https://www.instagram.com/alexclaudiophoto/" class="social-link">Instagram</a>
+                    <a href="https://www.instagram.com/alexclaudiophotography/" class="social-link">Instagram</a>
                     <a href="https://www.facebook.com/AlexClaudioPhotographyy/" class="social-link">Facebook</a>
                 </div>
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2025 Alex Claudio Photography. All rights reserved.</p>
+                <p>&copy; 2026 Alex Claudio Photography. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <!-- Scripts -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
     <script src="script.js?v=33"></script>
 </body>
