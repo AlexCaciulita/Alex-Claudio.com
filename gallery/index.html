@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Your Gallery | Alex Claudio Photography</title>
+    <link rel="canonical" href="https://alex-claudio.com/gallery/">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css?v=41">
+    <link rel="stylesheet" href="gallery.css?v=2">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+</head>
+<body class="gallery-page">
+    <nav class="top-nav" id="topNav">
+        <div class="nav-container">
+            <div class="nav-center">
+                <a href="/" class="logo nav-logo-center" aria-label="Alex Claudio">
+                    <svg class="logo-signature" viewBox="0 0 520 100" role="img" aria-hidden="true">
+                        <text x="10" y="72">Alex Claudio</text>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="gallery-main">
+        <header class="gallery-header" id="galleryHeader" hidden>
+            <p class="gallery-eyebrow">Your Private Gallery</p>
+            <h1 class="gallery-title" id="galleryTitle"></h1>
+            <p class="gallery-date" id="galleryDate"></p>
+            <p class="gallery-message" id="galleryMessage"></p>
+        </header>
+
+        <div class="gallery-tabs" id="galleryTabs" role="tablist" hidden></div>
+
+        <div class="gallery-status" id="galleryStatus" aria-live="polite">
+            <p>Loading your gallery…</p>
+        </div>
+
+        <section class="gallery-sections" id="gallerySections" hidden></section>
+    </main>
+
+    <div id="lightboxOverlay" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Image preview">
+        <button id="lightboxClose" class="lightbox-close" aria-label="Close">&times;</button>
+        <button id="lightboxPrev" class="lightbox-nav lightbox-prev" aria-label="Previous image">&#10094;</button>
+        <div class="lightbox-content">
+            <img id="lightboxImage" src="" alt="">
+            <a id="lightboxDownload" class="lightbox-download" href="#" download aria-label="Download image">Download</a>
+        </div>
+        <button id="lightboxNext" class="lightbox-nav lightbox-next" aria-label="Next image">&#10095;</button>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Alex Claudio Photography</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="gallery.js?v=1"></script>
+</body>
+</html>
