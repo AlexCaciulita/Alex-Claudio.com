@@ -112,10 +112,12 @@ exports.handler = async (event) => {
     const filename = rel.slice(slashIdx + 1);
     if (!filename || filename.includes('/')) continue;
     if (!IMAGE_RE.test(filename)) continue;
+    const encodedKey = encodeURI(key);
     result[category].push({
       key,
       name: filename,
-      url: `https://${publicDomain}/${encodeURI(key)}`,
+      url: `https://${publicDomain}/${encodedKey}`,
+      downloadUrl: `/cdn/${encodedKey}`,
       size: obj.Size || 0
     });
   }

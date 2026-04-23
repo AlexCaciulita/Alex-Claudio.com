@@ -134,7 +134,7 @@
 
       const dl = document.createElement('a');
       dl.className = 'gallery-tile-download';
-      dl.href = photo.url;
+      dl.href = photo.downloadUrl || photo.url;
       dl.download = photo.name;
       dl.setAttribute('aria-label', `Download ${photo.name}`);
       dl.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -165,7 +165,7 @@
     const photo = currentList[currentIndex];
     lightboxImage.src = photo.url;
     lightboxImage.alt = photo.name;
-    lightboxDownload.href = photo.url;
+    lightboxDownload.href = photo.downloadUrl || photo.url;
     lightboxDownload.setAttribute('download', photo.name);
   }
 
@@ -202,7 +202,8 @@
       const zip = new JSZip();
       let done = 0;
       for (const photo of photos) {
-        const res = await fetch(photo.url, { mode: 'cors' });
+        const fetchUrl = photo.downloadUrl || photo.url;
+        const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error(`Failed: ${photo.name}`);
         const blob = await res.blob();
         zip.file(photo.name, blob);

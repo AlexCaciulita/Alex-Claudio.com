@@ -5,3 +5,9 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/cdn/*"
+  to = "https://pub-e3a82ec61e164ed2841fe90eef1e25aa.r2.dev/:splat"
+  status = 200
+  force = true
