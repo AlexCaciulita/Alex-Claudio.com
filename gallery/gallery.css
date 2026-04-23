@@ -4,27 +4,27 @@
 }
 
 .gallery-main {
-  padding: calc(var(--nav-height) + 32px) var(--gutter-mobile) var(--space-96);
+  padding: calc(var(--nav-height) + 16px) var(--gutter-mobile) var(--space-96);
   max-width: 1400px;
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .gallery-main {
-    padding: calc(var(--nav-height) + 48px) var(--gutter-tablet) var(--space-96);
+    padding: calc(var(--nav-height) + 20px) var(--gutter-tablet) var(--space-96);
   }
 }
 
 @media (min-width: 1200px) {
   .gallery-main {
-    padding: calc(var(--nav-height) + 56px) var(--gutter-desktop) var(--space-96);
+    padding: calc(var(--nav-height) + 24px) var(--gutter-desktop) var(--space-96);
   }
 }
 
 .gallery-header {
   text-align: center;
-  margin-bottom: var(--space-48);
-  padding: var(--space-32) var(--space-16) var(--space-48);
+  margin-bottom: var(--space-32);
+  padding: var(--space-16) var(--space-16) var(--space-24);
   border-bottom: 1px solid var(--color-hairline);
   position: relative;
 }
@@ -46,15 +46,15 @@
   letter-spacing: var(--tracking-wide-caps);
   text-transform: uppercase;
   color: var(--color-accent-muted);
-  margin: 0 0 var(--space-16);
+  margin: 0 0 var(--space-8);
 }
 
 .gallery-title {
   font-family: var(--font-heading);
-  font-size: clamp(40px, 6vw, 72px);
+  font-size: clamp(36px, 5vw, 60px);
   font-weight: var(--weight-light);
   line-height: 1.05;
-  margin: 0 0 var(--space-16);
+  margin: 0 0 var(--space-8);
   color: var(--color-ink);
   letter-spacing: 0.01em;
 }
