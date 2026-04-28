@@ -1252,6 +1252,95 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollAnimations();
 });
 
+function initHandoffHome() {
+    const root = document.querySelector('.handoff-home');
+    if (!root) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const hero = root.querySelector('.handoff-hero');
+    if (hero) {
+        window.setTimeout(() => hero.classList.add('is-revealed'), prefersReducedMotion ? 0 : 300);
+    }
+
+    const revealEls = Array.from(root.querySelectorAll('.reveal'));
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+        revealEls.forEach((el) => {
+            el.classList.add('is-visible');
+            el.classList.add('reveal-visible');
+        });
+    } else {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                entry.target.classList.add('reveal-visible');
+                observer.unobserve(entry.target);
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -80px 0px' });
+
+        revealEls.forEach((el) => observer.observe(el));
+    }
+
+    const featureBand = root.querySelector('.feature-band');
+    const featureBg = featureBand?.querySelector('.bg');
+    if (featureBand && featureBg && !prefersReducedMotion) {
+        const updateFeatureBand = () => {
+            const rect = featureBand.getBoundingClientRect();
+            const viewportHeight = window.innerHeight || 1;
+            const progress = 1 - (rect.top + rect.height / 2) / viewportHeight;
+            featureBg.style.transform = `scale(1.08) translateY(${progress * -30}px)`;
+        };
+
+        updateFeatureBand();
+        window.addEventListener('scroll', debounce(updateFeatureBand, 10), { passive: true });
+        window.addEventListener('resize', debounce(updateFeatureBand, 120), { passive: true });
+    }
+
+    const testimonials = Array.from(root.querySelectorAll('.handoff-testimonial'));
+    const dots = Array.from(root.querySelectorAll('.handoff-testimonial-dots button'));
+    if (testimonials.length && dots.length) {
+        let activeIndex = 0;
+        let timerId = null;
+
+        const show = (nextIndex) => {
+            activeIndex = (nextIndex + testimonials.length) % testimonials.length;
+            testimonials.forEach((slide, index) => slide.classList.toggle('is-active', index === activeIndex));
+            dots.forEach((dot, index) => dot.classList.toggle('is-active', index === activeIndex));
+        };
+
+        const start = () => {
+            if (prefersReducedMotion || timerId) return;
+            timerId = window.setInterval(() => show(activeIndex + 1), 7000);
+        };
+
+        const stop = () => {
+            if (!timerId) return;
+            window.clearInterval(timerId);
+            timerId = null;
+        };
+
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                stop();
+                show(index);
+                start();
+            });
+        });
+
+        const testimonialRegion = root.querySelector('.testimonials');
+        testimonialRegion?.addEventListener('mouseenter', stop);
+        testimonialRegion?.addEventListener('mouseleave', start);
+        show(0);
+        start();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHandoffHome);
+} else {
+    initHandoffHome();
+}
+
 // ===== EXPORT FOR MODULE USE (if needed) =====
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {

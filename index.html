@@ -104,10 +104,10 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Pinyon+Script&display=swap" rel="stylesheet">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css?v=42">
+    <link rel="stylesheet" href="styles.css?v=43">
     <link rel="preload" as="image" href="assets/home/hero-2000.jpg" imagesrcset="assets/home/hero-1200.jpg 1200w, assets/home/hero-2000.jpg 2000w" imagesizes="100vw">
     <link href="https://fonts.cdnfonts.com/css/brittany-signature" rel="stylesheet">
     <!-- Favicon -->
@@ -124,35 +124,35 @@
       gtag('config', 'G-G8EKXJ67NS');
     </script>
 </head>
-<body class="home-body">
+<body class="home-body handoff-home">
     <div class="site-scene" aria-hidden="true">
+        <div class="leak leak-1"></div>
+        <div class="leak leak-2"></div>
+        <div class="leak leak-3"></div>
+        <div class="bokeh bokeh-1"></div>
+        <div class="bokeh bokeh-2"></div>
+        <div class="bokeh bokeh-3"></div>
+        <div class="bokeh bokeh-4"></div>
+        <div class="bokeh bokeh-5"></div>
         <div class="scene-grain"></div>
-        <div class="scene-vignette"></div>
-        <div class="scene-light-leak leak-left"></div>
-        <div class="scene-light-leak leak-right"></div>
-        <div class="scene-bokeh bokeh-one"></div>
-        <div class="scene-bokeh bokeh-two"></div>
-        <div class="scene-bokeh bokeh-three"></div>
     </div>
-    <!-- Navigation -->
-    <nav class="top-nav" id="topNav">
+
+    <nav class="top-nav handoff-nav" id="topNav">
         <div class="nav-container">
             <div class="nav-links nav-links-left">
+                <a href="/" class="nav-link">Home</a>
                 <a href="portfolio/" class="nav-link">Portfolio</a>
-                <a href="#about" class="nav-link">About</a>
             </div>
 
             <div class="nav-center">
-                <a href="/" class="logo nav-logo-center" aria-label="Alex Claudio">
-                    <svg class="logo-signature" viewBox="0 0 520 100" role="img" aria-hidden="true">
-                        <text x="10" y="72">Alex Claudio</text>
-                    </svg>
+                <a href="/" class="wordmark nav-logo-center" aria-label="Alex Claudio Photography">
+                    Alex Claudio Photography
                 </a>
             </div>
 
             <div class="nav-links nav-links-right">
                 <a href="/pricing/" class="nav-link">Pricing</a>
-                <a href="#contact" class="nav-link">Contact</a>
+                <a href="#contact" class="nav-link">Inquire</a>
             </div>
 
             <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu" aria-controls="mobileMenu">
@@ -163,368 +163,310 @@
         </div>
         
         <div class="mobile-menu" id="mobileMenu">
+            <a href="/" class="mobile-nav-link">Home</a>
             <a href="portfolio/" class="mobile-nav-link">Portfolio</a>
-            <a href="#about" class="mobile-nav-link">About</a>
             <a href="/pricing/" class="mobile-nav-link">Pricing</a>
-            <a href="#contact" class="mobile-nav-link">Contact</a>
+            <a href="#contact" class="mobile-nav-link">Inquire</a>
         </div>
     </nav>
 
-    <main id="content" class="home-main">
-    <!-- Hero (single image) -->
-    <section class="hero-carousel" id="heroCarousel">
-        <div class="hero-slide active">
-            <picture class="hero-media">
-                <source media="(max-width: 767px)" srcset="assets/home/hero-1200.jpg">
-                <img src="assets/home/hero-2000.jpg" srcset="assets/home/hero-1200.jpg 1200w, assets/home/hero-2000.jpg 2000w" sizes="100vw" alt="Bride and groom in a mountain valley at sunset" fetchpriority="high" decoding="async">
-            </picture>
-            <div class="hero-overlay">
-                <div class="hero-content">
-                    <div class="hero-copy">
-                        <p class="hero-eyebrow">Seattle Wedding Photographer</p>
-                        <p class="hero-kicker">Documentary x Editorial</p>
-                        <h1 class="hero-title hero-title-split" aria-label="Love Stories Artfully Documented">
-                            <span class="hero-line" style="--line-delay: 0ms;">
-                                <span class="hero-word" style="--word-index: 0;">Love</span>
-                                <span class="hero-word" style="--word-index: 1;">Stories</span>
-                            </span>
-                            <span class="hero-line" style="--line-delay: 260ms;">
-                                <span class="hero-word" style="--word-index: 0;">Artfully</span>
-                                <span class="hero-word" style="--word-index: 1;">Documented</span>
-                            </span>
-                        </h1>
-                        <div class="hero-actions">
-                            <a href="#contact" class="btn btn-primary">Start Your Story</a>
-                            <a href="/portfolio/" class="btn btn-ghost-light">See the Portfolio</a>
-                        </div>
-                    </div>
-                    <div class="hero-gallery tilt-card" data-tilt data-tilt-strength="14">
-                        <figure class="hero-frame hero-frame-main">
-                            <img src="assets/home/about-cta-1600.jpg" alt="Wedding couple portrait with editorial composition" fetchpriority="high" decoding="async">
-                            <figcaption>Full-story coverage with editorial composition.</figcaption>
-                        </figure>
-                        <figure class="hero-frame hero-frame-top">
-                            <img src="assets/home/tile-hero3-900.jpg" alt="Couple portrait in dramatic light" loading="eager" decoding="async">
-                            <figcaption>Portraits that still feel alive.</figcaption>
-                        </figure>
-                        <figure class="hero-frame hero-frame-bottom">
-                            <img src="assets/home/tile-82-900.jpg" alt="Bride and groom during a celebratory wedding exit" loading="eager" decoding="async">
-                            <figcaption>Energy, emotion, and movement.</figcaption>
-                        </figure>
-                    </div>
+    <main id="content" class="home-main handoff-main">
+        <section class="hero handoff-hero" id="hero" data-screen-label="01 Home">
+            <div class="hero-frame">
+                <picture>
+                    <source media="(max-width: 767px)" srcset="assets/home/hero-1200.jpg">
+                    <img class="hero-img" src="assets/home/hero-2000.jpg" srcset="assets/home/hero-1200.jpg 1200w, assets/home/hero-2000.jpg 2000w" sizes="100vw" alt="Bride and groom in a mountain valley at sunset" fetchpriority="high" decoding="async">
+                </picture>
+                <div class="hero-overlay"></div>
+                <div class="hero-grain"></div>
+            </div>
+
+            <div class="hero-meta tl">
+                <span>Seattle · PNW</span>
+                <span class="val">Est. 2014</span>
+            </div>
+            <div class="hero-meta tr">
+                <span>Portfolio No. 042</span>
+                <span class="val">Weddings / Editorial</span>
+            </div>
+            <div class="hero-meta bl">
+                <span>Reel 01</span>
+                <span class="val">Frame 24 / 36</span>
+            </div>
+            <div class="hero-meta br">
+                <span>Chapter One</span>
+                <span class="val">The Lookbook</span>
+            </div>
+
+            <div class="hero-content">
+                <div class="hero-eyebrow">Seattle Wedding Photographer</div>
+                <h1 class="hero-display" aria-label="Love Stories, artfully documented.">
+                    <span class="line">
+                        <span class="word" style="--word-delay: 900ms;">Love</span>
+                        <span class="word" style="--word-delay: 1040ms;">Stories,</span>
+                    </span>
+                    <span class="line">
+                        <span class="word" style="--word-delay: 1180ms;"><em>artfully</em></span>
+                        <span class="word" style="--word-delay: 1320ms;">documented.</span>
+                    </span>
+                </h1>
+                <p class="hero-sub">Documentary in feeling, editorial in finish. Photographs of your day made for the mantel, the album, and the family records.</p>
+            </div>
+
+            <a class="hero-scroll" href="#intro" aria-label="Scroll to introduction">
+                <span>Scroll</span>
+                <span class="line"></span>
+            </a>
+        </section>
+
+        <section class="intro" id="intro">
+            <div class="intro-mark reveal">Hello,</div>
+            <div class="container-text">
+                <div class="intro-eyebrow">
+                    <span class="eyebrow reveal">The Photographer</span>
+                </div>
+                <h2 class="reveal" style="--reveal-order: 1;">I make <em>quiet, romantic</em> photographs of weddings: candid first, gently guided, finished with an <em>editorial</em> hand.</h2>
+                <p class="intro-lede reveal" style="--reveal-order: 2;">Ten years of shooting in the PNW and Europe, a deep preference for natural light, and an unhurried way of moving through a wedding day.</p>
+                <div class="intro-signoff reveal" style="--reveal-order: 3;">
+                    With care,
+                    <span class="script">Alex</span>
                 </div>
             </div>
-        </div>
-        
-        <div class="hero-controls">
-            <button class="hero-dot active" data-slide="0" aria-label="View hero image"></button>
-        </div>
-    </section>
+        </section>
 
-    <!-- Intro Section -->
-    <section class="intro-section reveal">
-        <div class="container">
-            <div class="intro-content tilt-card" data-tilt data-tilt-strength="8">
-                <h2 class="intro-title">Romantic, candid photos that feel like you</h2>
-                <p class="intro-text">
-                    Seattle wedding photographer with 10+ years of experience, blending documentary honesty with editorial polish across Seattle and the Puget Sound.
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <section class="about-section reveal" id="about">
-        <div class="container">
-            <div class="about-hero">
-                <div class="about-hero-text">
-                    <p class="about-eyebrow">Meet the Photographer</p>
-                    <p class="about-lede">I’m a Seattle-based wedding photographer documenting real moments with a clean, editorial finish.</p>
-                    <p class="about-lede">My approach is calm and unobtrusive: candid coverage first, gentle direction when needed.</p>
+        <section class="experience" aria-labelledby="experienceTitle">
+            <div class="container">
+                <div class="experience-top">
+                    <div>
+                        <div class="eyebrow reveal">The Experience</div>
+                        <h2 class="reveal" id="experienceTitle" style="--reveal-order: 1;">A calm, <em>considered</em> process <br>from first letter to archive.</h2>
+                    </div>
+                    <p class="reveal" style="--reveal-order: 2;">No pressure, no upsells. Four quiet chapters that begin the day you write and end with photographs in your hands.</p>
                 </div>
-                <div class="about-hero-media tilt-card" data-tilt data-tilt-strength="12">
-                    <img src="alex.jpg" alt="Seattle wedding photographer Alex Claudio portrait with camera" loading="lazy">
-                </div>
-            </div>
-
-            <div class="about-grid">
-                <div class="about-card tilt-card" data-tilt data-tilt-strength="10">
-                    <h3>My Journey to Wedding Photography</h3>
-                    <p>I’ve spent 10+ years photographing weddings across Seattle and the Pacific Northwest.</p>
-                    <p>From small elopements to full-day celebrations, the goal is always the same: honest photos that age well.</p>
-                </div>
-                <div class="about-card tilt-card" data-tilt data-tilt-strength="10">
-                    <h3>What Makes My Style Unique</h3>
-                    <ul class="about-list">
-                        <li><strong>Documentary:</strong> Real moments, naturally captured.</li>
-                        <li><strong>Editorial:</strong> Light direction for polished portraits.</li>
-                        <li><strong>Result:</strong> A full story that feels true to your day.</li>
-                    </ul>
+                <div class="experience-grid">
+                    <article class="exp-step reveal" style="--reveal-order: 1;">
+                        <span class="exp-num"><em>01</em></span>
+                        <h3>A first letter</h3>
+                        <p>Tell me a little about your day: venue, vibe, the people who make it yours. We'll exchange notes, and I'll send my full guide.</p>
+                    </article>
+                    <article class="exp-step reveal" style="--reveal-order: 2;">
+                        <span class="exp-num"><em>02</em></span>
+                        <h3>The planning call</h3>
+                        <p>A 30-minute call to shape the timeline, light, and any moments you want held close. We cover first looks, golden hour, and anything private.</p>
+                    </article>
+                    <article class="exp-step reveal" style="--reveal-order: 3;">
+                        <span class="exp-num"><em>03</em></span>
+                        <h3>The wedding day</h3>
+                        <p>I arrive early, move quietly, and make pictures. Gentle direction when it helps, invisible when it matters. No forced poses, no fuss.</p>
+                    </article>
+                    <article class="exp-step reveal" style="--reveal-order: 4;">
+                        <span class="exp-num"><em>04</em></span>
+                        <h3>Your archive</h3>
+                        <p>Four weeks later: a hand-edited gallery, a private film, and an heirloom folio option. Images you can hang in your home and pass down.</p>
+                    </article>
                 </div>
             </div>
+        </section>
 
-            <div class="about-cta">
-                <div class="about-cta-inner">
-                    <p class="about-eyebrow">Let's Create Something Beautiful Together</p>
-                    <h2>Ready to connect about your wedding day?</h2>
-                    <p>Share your vision and I’ll help shape coverage that feels effortless and true to you.</p>
-                    <div class="about-actions">
-                        <a class="pricing-button" href="/#contact">Start the Conversation</a>
-                        <a class="pricing-button secondary" href="/portfolio/">See Recent Stories</a>
+        <section class="mosaic-section" aria-labelledby="mosaicTitle">
+            <div class="container">
+                <div class="mosaic-head">
+                    <div>
+                        <div class="eyebrow reveal">Lookbook 2025 / 26</div>
+                        <h2 class="reveal" id="mosaicTitle" style="--reveal-order: 1;">A year of <em>quiet weddings</em><br>across the Pacific Northwest.</h2>
                     </div>
+                    <a class="reveal" href="portfolio/" style="--reveal-order: 2;">View full portfolio</a>
+                </div>
+                <div class="mosaic-grid">
+                    <a href="portfolio/" class="mtile m1 reveal" style="--reveal-order: 1;">
+                        <img src="assets/home/faq-craft-1600.jpg" alt="Editorial wedding portrait in warm light" loading="lazy" decoding="async">
+                        <span class="label">Sarah &amp; Michael · Sequim</span>
+                    </a>
+                    <a href="portfolio/" class="mtile m2 reveal" style="--reveal-order: 2;">
+                        <img src="assets/home/tile-hero3-900.jpg" alt="Couple portrait in dramatic light" loading="lazy" decoding="async">
+                        <span class="label">Diane &amp; Chris · Cascades</span>
+                    </a>
+                    <a href="portfolio/" class="mtile m3 reveal" style="--reveal-order: 3;">
+                        <img src="assets/home/tile-sarahmichael-900.jpg" alt="Waterfront wedding couple portrait" loading="lazy" decoding="async">
+                        <span class="label">Evergreen Chapel</span>
+                    </a>
+                    <a href="portfolio/" class="mtile m4 reveal" style="--reveal-order: 4;">
+                        <img src="assets/home/tile-82-900.jpg" alt="Wedding couple during a celebratory exit" loading="lazy" decoding="async">
+                        <span class="label">Amy &amp; Paul · Bellevue</span>
+                    </a>
+                    <a href="portfolio/" class="mtile m5 reveal" style="--reveal-order: 5;">
+                        <img src="assets/home/faq-discover-1400.jpg" alt="Candid wedding moment in black and white" loading="lazy" decoding="async">
+                        <span class="label">Dawn &amp; Richard · Tacoma</span>
+                    </a>
+                    <a href="portfolio/" class="mtile m6 reveal" style="--reveal-order: 6;">
+                        <img src="assets/home/tile-5dm32249-900.jpg" alt="Documentary wedding reception moment" loading="lazy" decoding="async">
+                        <span class="label">Jess &amp; Fenn · Kirkland</span>
+                    </a>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="experience-section reveal" aria-labelledby="experienceTitle">
-        <div class="container">
-            <div class="section-header">
-                <p class="section-eyebrow">The Experience</p>
-                <h2 class="section-title" id="experienceTitle">What working together feels like</h2>
+        <section class="feature-band">
+            <div class="bg"></div>
+            <div class="overlay"></div>
+            <div class="content">
+                <div class="eyebrow dark reveal">The Studio</div>
+                <h2 class="reveal" style="--reveal-order: 1;">Ten years of weddings,<br>told as <em>one quiet film</em>.</h2>
+                <p class="reveal" style="--reveal-order: 2;">I started photographing weddings in Seattle in 2014. Over two hundred stories later, I still believe the best ones are the least hurried.</p>
+                <a class="btn btn-ghost reveal" href="portfolio/" style="--reveal-order: 3;">See the portfolio <span class="arrow">→</span></a>
             </div>
-            <div class="experience-grid">
-                <article class="experience-card tilt-card" data-tilt data-tilt-strength="10">
-                    <span class="experience-icon">01</span>
-                    <h3>Calm Direction</h3>
-                    <p>Simple, clear guidance when needed so you stay present, never over-posed.</p>
-                </article>
-                <article class="experience-card tilt-card" data-tilt data-tilt-strength="10">
-                    <span class="experience-icon">02</span>
-                    <h3>Real Emotion</h3>
-                    <p>Documentary coverage focused on honest expressions, movement, and connection.</p>
-                </article>
-                <article class="experience-card tilt-card" data-tilt data-tilt-strength="10">
-                    <span class="experience-icon">03</span>
-                    <h3>Fast Delivery</h3>
-                    <p>Quick previews and polished final galleries built for easy sharing and prints.</p>
-                </article>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Testimonials -->
-    <section class="testimonials-section reveal" id="reviews">
-        <div class="container">
-            <div class="section-header">
-                <p class="section-eyebrow">Client Notes</p>
-                <h2 class="section-title">Kind words from recent couples</h2>
-            </div>
-            <div class="testimonial-slider" id="testimonialSlider" aria-label="Testimonials carousel">
-                <article class="testimonial-slide testimonial-card">
-                    <div class="testimonial-head">
-                        <span class="testimonial-avatar">SM</span>
-                        <cite class="testimonial-author">Sarah &amp; Michael</cite>
-                    </div>
-                    <blockquote class="testimonial-copy">He captured the day exactly how it felt: emotional, joyful, and effortless.</blockquote>
-                </article>
-                <article class="testimonial-slide testimonial-card">
-                    <div class="testimonial-head">
-                        <span class="testimonial-avatar">LS</span>
-                        <cite class="testimonial-author">Lindsey &amp; Stephen</cite>
-                    </div>
-                    <blockquote class="testimonial-copy">Calm, kind, and somehow everywhere. The photos feel cinematic and real.</blockquote>
-                </article>
-                <article class="testimonial-slide testimonial-card">
-                    <div class="testimonial-head">
-                        <span class="testimonial-avatar">MD</span>
-                        <cite class="testimonial-author">Maria &amp; David</cite>
-                    </div>
-                    <blockquote class="testimonial-copy">Nothing felt staged, just real laughter, tears, and joy.</blockquote>
-                </article>
-                <article class="testimonial-slide testimonial-card">
-                    <div class="testimonial-head">
-                        <span class="testimonial-avatar">DC</span>
-                        <cite class="testimonial-author">Diane &amp; Chris</cite>
-                    </div>
-                    <blockquote class="testimonial-copy">Every frame feels honest. He caught moments we didn’t even see.</blockquote>
-                </article>
-                <article class="testimonial-slide testimonial-card">
-                    <div class="testimonial-head">
-                        <span class="testimonial-avatar">AP</span>
-                        <cite class="testimonial-author">Amy &amp; Paul</cite>
-                    </div>
-                    <blockquote class="testimonial-copy">The gallery felt like a film. Warm, real, and full of life.</blockquote>
-                </article>
-                <article class="testimonial-slide testimonial-card">
-                    <div class="testimonial-head">
-                        <span class="testimonial-avatar">DR</span>
-                        <cite class="testimonial-author">Dawn &amp; Richard</cite>
-                    </div>
-                    <blockquote class="testimonial-copy">He felt like a guest with a camera and never missed the magic.</blockquote>
-                </article>
-                <div class="testimonial-nav">
-                    <button class="testimonial-arrow" id="testimonialPrev" aria-label="Previous testimonial">&#10094;</button>
-                    <div class="testimonial-dots">
-                        <button class="testimonial-dot active" aria-label="Testimonial 1"></button>
-                        <button class="testimonial-dot" aria-label="Testimonial 2"></button>
-                        <button class="testimonial-dot" aria-label="Testimonial 3"></button>
-                        <button class="testimonial-dot" aria-label="Testimonial 4"></button>
-                        <button class="testimonial-dot" aria-label="Testimonial 5"></button>
-                        <button class="testimonial-dot" aria-label="Testimonial 6"></button>
-                    </div>
-                    <button class="testimonial-arrow" id="testimonialNext" aria-label="Next testimonial">&#10095;</button>
+        <section class="testimonials" id="reviews" aria-labelledby="reviewsTitle">
+            <div class="container">
+                <div class="testimonial-head">
+                    <div class="eyebrow reveal">Client Notes</div>
+                    <h2 class="reveal" id="reviewsTitle" style="--reveal-order: 1;">What couples <em>remember</em><br>about working together.</h2>
+                </div>
+                <div class="handoff-testimonial-track" aria-live="polite">
+                    <article class="handoff-testimonial is-active">
+                        <blockquote>“Alex moved through our day like a ghost with a camera. Six weeks later we opened the gallery and cried: every moment we'd forgotten, quietly held.”</blockquote>
+                        <div class="cite"><span class="name">Sarah &amp; Michael</span><span>Married · Sequim · Sept 2025</span></div>
+                    </article>
+                    <article class="handoff-testimonial">
+                        <blockquote>“The photographs look like a film of someone else's wedding, except they're ours. It's the finest gift we've given each other.”</blockquote>
+                        <div class="cite"><span class="name">Diane &amp; Chris</span><span>Married · North Cascades · June 2025</span></div>
+                    </article>
+                    <article class="handoff-testimonial">
+                        <blockquote>“We hired Alex for the pictures and got a photographer who felt like an old friend by the end of the night. Rare thing.”</blockquote>
+                        <div class="cite"><span class="name">Amy &amp; Paul</span><span>Married · Bellevue · May 2025</span></div>
+                    </article>
+                </div>
+                <div class="handoff-testimonial-dots" aria-label="Choose testimonial">
+                    <button class="is-active" type="button" aria-label="Show testimonial 1"></button>
+                    <button type="button" aria-label="Show testimonial 2"></button>
+                    <button type="button" aria-label="Show testimonial 3"></button>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="editorial-preview-section reveal" aria-labelledby="editorialPreviewTitle">
-        <div class="container">
-            <div class="section-header">
-                <p class="section-eyebrow">Editorial Preview</p>
-                <h2 class="section-title" id="editorialPreviewTitle">A quick look at the visual style</h2>
+        <section class="cta-banner">
+            <div class="container-text">
+                <div class="eyebrow reveal">Next Step</div>
+                <h2 class="reveal" style="--reveal-order: 1;">Let's make photographs<br>you'll love for <em>decades</em>.</h2>
+                <p class="reveal" style="--reveal-order: 2;">A handful of dates remain for 2026, and I'm now booking select weddings into spring 2027. Write when you're ready.</p>
+                <div class="reveal" style="--reveal-order: 3;">
+                    <a class="btn" href="#contact">Start your story <span class="arrow">→</span></a>
+                </div>
             </div>
-            <div class="editorial-mosaic">
-                <a href="/portfolio/" class="editorial-tile tile-a tilt-card" data-tilt data-tilt-strength="10">
-                    <img src="assets/home/faq-discover-1400.jpg" alt="Wedding couple in a candid moment" loading="lazy" decoding="async">
-                </a>
-                <a href="/portfolio/" class="editorial-tile tile-b tilt-card" data-tilt data-tilt-strength="10">
-                    <img src="assets/home/tile-hero5-900.jpg" alt="Wedding couple sharing a quiet moment" loading="lazy" decoding="async">
-                </a>
-                <a href="/portfolio/" class="editorial-tile tile-c tilt-card" data-tilt data-tilt-strength="10">
-                    <img src="assets/home/tile-sarahmichael-900.jpg" alt="Waterfront wedding couple portrait" loading="lazy" decoding="async">
-                </a>
-                <a href="/portfolio/" class="editorial-tile tile-d tilt-card" data-tilt data-tilt-strength="10">
-                    <img src="assets/home/tile-5dm32249-900.jpg" alt="Candid emotional wedding moment" loading="lazy" decoding="async">
-                </a>
-                <a href="/portfolio/" class="editorial-tile tile-e tilt-card" data-tilt data-tilt-strength="10">
-                    <img src="assets/home/tile-amypaul-900.jpg" alt="Documentary wedding dance floor moment" loading="lazy" decoding="async">
-                </a>
-                <a href="/portfolio/" class="editorial-tile tile-f tilt-card" data-tilt data-tilt-strength="10">
-                    <img src="assets/home/faq-craft-1600.jpg" alt="Wedding couple portrait with warm editorial style" loading="lazy" decoding="async">
-                </a>
-            </div>
-            <div class="portfolio-cta">
-                <a class="btn btn-secondary" href="portfolio/">View Full Portfolio</a>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- CTA Banner -->
-    <section class="cta-banner">
-        <div class="container">
-            <div class="cta-content">
-                <h2 class="cta-title">Ready to Tell Your Story?</h2>
-                <p class="cta-text">Let’s make photos you’ll love for decades.</p>
-                <a href="#contact" class="btn btn-ghost-light">Get In Touch</a>
-            </div>
-        </div>
-    </section>
+        <section class="inquiry" id="contact" data-screen-label="04 Inquire">
+            <div class="container">
+                <div class="inquiry-inner">
+                    <div class="inquiry-left">
+                        <div class="eyebrow dark reveal">Inquire</div>
+                        <h2 class="reveal" style="--reveal-order: 1;">Tell me about<br>your <em>wedding day</em>.</h2>
+                        <p class="reveal" style="--reveal-order: 2;">Share the shape of the celebration, the people who matter most, and the feeling you want the photographs to carry.</p>
+                        <dl class="inquiry-meta reveal" style="--reveal-order: 3;">
+                            <div class="inquiry-meta-item">
+                                <dt>Based In</dt>
+                                <dd>Seattle · PNW · Destination</dd>
+                            </div>
+                            <div class="inquiry-meta-item">
+                                <dt>Response</dt>
+                                <dd>Personal replies within 24 hours</dd>
+                            </div>
+                            <div class="inquiry-meta-item">
+                                <dt>Email</dt>
+                                <dd>contact@alex-claudio.com</dd>
+                            </div>
+                        </dl>
+                    </div>
 
-    <!-- Contact Section -->
-    <section class="contact-section" id="contact">
-        <div class="container">
-            <div class="section-header">
-                <p class="section-eyebrow">Inquire</p>
-                <h2 class="section-title">Tell me about your wedding day</h2>
-            </div>
-            <div class="contact-content centered">
-                <div class="contact-form tilt-card" data-tilt data-tilt-strength="6">
-                    <form id="contactForm" class="ds-form" method="POST" action="/" data-netlify="true" data-netlify-honeypot="company" name="contact" novalidate>
+                    <form id="contactForm" class="inquiry-form reveal" method="POST" action="/" data-netlify="true" data-netlify-honeypot="company" name="contact" novalidate style="--reveal-order: 1;">
                         <input type="hidden" name="form-name" value="contact">
-                        <p class="ds-required-hint" id="requiredHint">* indicates required</p>
-
-                        <div class="ds-field">
-                            <label for="names" class="ds-label">Names <span class="ds-required" aria-hidden="true">*</span></label>
-                            <input type="text" id="names" name="names" class="ds-input" autocomplete="name" placeholder="First and last names" aria-required="true" aria-describedby="namesHelp" required>
-                            <div class="ds-help" id="namesHelp" aria-live="polite"></div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="names">Your name <span aria-hidden="true">*</span></label>
+                                <input class="ds-input" type="text" id="names" name="names" autocomplete="name" placeholder="Sarah & Michael" aria-required="true" aria-describedby="namesHelp" required>
+                                <div class="ds-help" id="namesHelp" aria-live="polite"></div>
+                            </div>
+                            <div class="field">
+                                <label for="email">Email <span aria-hidden="true">*</span></label>
+                                <input class="ds-input" type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" aria-required="true" aria-describedby="emailHelp" required>
+                                <div class="ds-help" id="emailHelp" aria-live="polite"></div>
+                            </div>
                         </div>
-
-                        <div class="ds-field">
-                            <label for="email" class="ds-label">Email address <span class="ds-required" aria-hidden="true">*</span></label>
-                            <input type="email" id="email" name="email" class="ds-input" autocomplete="email" placeholder="me@email.com" aria-required="true" aria-describedby="emailHelp" required>
-                            <div class="ds-help" id="emailHelp" aria-live="polite"></div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="event_date">Wedding date <span aria-hidden="true">*</span></label>
+                                <input class="ds-input" type="date" id="event_date" name="event_date" aria-required="true" aria-describedby="dateHelp" required>
+                                <div class="ds-help" id="dateHelp" aria-live="polite"></div>
+                            </div>
+                            <div class="field">
+                                <label for="location">Venue or location <span aria-hidden="true">*</span></label>
+                                <input class="ds-input" type="text" id="location" name="location" placeholder="Sequim, WA" aria-required="true" aria-describedby="locationHelp" required>
+                                <div class="ds-help" id="locationHelp" aria-live="polite"></div>
+                            </div>
                         </div>
-
-                        <div class="ds-field">
-                            <label for="phone" class="ds-label">Your phone number</label>
-                            <input type="tel" id="phone" name="phone" class="ds-input" autocomplete="tel" placeholder="+1 (555) 555-5555" aria-describedby="phoneHelp">
-                            <div class="ds-help" id="phoneHelp" aria-live="polite"></div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="phone">Phone</label>
+                                <input class="ds-input" type="tel" id="phone" name="phone" autocomplete="tel" placeholder="+1 (555) 555-5555" aria-describedby="phoneHelp">
+                                <div class="ds-help" id="phoneHelp" aria-live="polite"></div>
+                            </div>
+                            <div class="field">
+                                <label for="budget">Estimated budget</label>
+                                <input class="ds-input" type="text" id="budget" name="budget" inputmode="numeric" placeholder="$4,000 - $6,000" aria-describedby="budgetHelp">
+                                <div class="ds-help" id="budgetHelp" aria-live="polite"></div>
+                            </div>
                         </div>
-
-                        <div class="ds-field">
-                            <label for="event_date" class="ds-label">Event date <span class="ds-required" aria-hidden="true">*</span></label>
-                            <input type="date" id="event_date" name="event_date" class="ds-input ds-date" aria-required="true" aria-describedby="dateHelp" required>
-                            <div class="ds-help" id="dateHelp" aria-live="polite"></div>
-                        </div>
-
-                        <div class="ds-field">
-                            <label for="location" class="ds-label">Location <span class="ds-required" aria-hidden="true">*</span></label>
-                            <input type="text" id="location" name="location" class="ds-input" aria-required="true" aria-describedby="locationHelp" required>
-                            <div class="ds-help" id="locationHelp" aria-live="polite"></div>
-                        </div>
-
-                        <div class="ds-field">
-                            <label for="budget" class="ds-label">Estimated budget</label>
-                            <input type="text" id="budget" name="budget" class="ds-input" inputmode="numeric" placeholder="$4,000 - $6,000" aria-describedby="budgetHelp">
-                            <div class="ds-help" id="budgetHelp" aria-live="polite"></div>
-                        </div>
-
-                        <div class="ds-field">
-                            <label for="message" class="ds-label">Tell me about you and your event <span class="ds-required" aria-hidden="true">*</span></label>
-                            <textarea id="message" name="message" class="ds-textarea" rows="6" aria-required="true" aria-describedby="messageHelp" placeholder="Share date, venue, vibe and any must-haves." required></textarea>
+                        <div class="field">
+                            <label for="message">Tell me about your day <span aria-hidden="true">*</span></label>
+                            <textarea class="ds-textarea" id="message" name="message" rows="5" placeholder="The feeling you're after, the people who will be there, anything I should hold close." aria-required="true" aria-describedby="messageHelp" required></textarea>
                             <div class="ds-help" id="messageHelp" aria-live="polite"></div>
                         </div>
-
-                        <!-- Honeypot for bots -->
                         <div class="hidden" aria-hidden="true">
                             <label for="company">Company</label>
                             <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
                         </div>
-
-                        <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="light"></div>
-
-                        <div class="ds-submit-row">
-                            <button type="submit" class="ds-submit" id="submitButton">SEND</button>
-                        </div>
-
+                        <button class="btn" id="submitButton" type="submit">Send note <span class="arrow">→</span></button>
                         <div class="ds-panel ds-success hidden" id="formSuccess" role="status" aria-live="polite">
                             <strong>Thank you!</strong>
-                            <p>I received your inquiry and will respond within 24 hours. Check your inbox (and spam folder) for a personal reply.</p>
+                            <p>I received your inquiry and will respond within 24 hours.</p>
                         </div>
                         <div class="ds-panel ds-error hidden" id="formError" role="alert" aria-live="assertive">
                             <strong>Something went wrong</strong>
                             <p>Please try again or email us directly.</p>
                         </div>
-
                     </form>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer handoff-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <h3 class="footer-logo">Alex Claudio</h3>
-                    <p class="footer-tagline">Documentary Wedding Photography</p>
+            <div class="footer-top">
+                <div>
+                    <div class="script">Alex Claudio Photography</div>
+                    <p class="blurb">Seattle-based wedding photography. Documentary in feeling, editorial in finish: photos you'll want to live with for decades.</p>
                 </div>
-                
-                <div class="footer-nav">
-                    <a href="portfolio/">Portfolio</a>
-                    <a href="#about">About</a>
-                    <a href="#contact">Contact</a>
-                </div>
-                
-                <div class="footer-social">
-                    <a href="https://www.instagram.com/alexclaudiophotography/" class="social-link">Instagram</a>
-                    <a href="https://www.facebook.com/AlexClaudioPhotographyy/" class="social-link">Facebook</a>
+                <div>
+                    <h4>Explore</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="portfolio/">Portfolio</a></li>
+                        <li><a href="/pricing/">Pricing</a></li>
+                        <li><a href="#contact">Inquire</a></li>
+                    </ul>
                 </div>
             </div>
-            
             <div class="footer-bottom">
-                <p>&copy; 2026 Alex Claudio Photography. All rights reserved.</p>
+                <span>&copy; 2026 Alex Claudio Photography</span>
+                <span>Love, artfully documented</span>
             </div>
         </div>
     </footer>
 
     <!-- Scripts -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
-    <script src="script.js?v=33"></script>
+    <script src="script.js?v=34"></script>
 </body>
 </html>
