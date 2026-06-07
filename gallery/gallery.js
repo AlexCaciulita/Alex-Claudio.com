@@ -35,6 +35,20 @@
   let activeCategories = [];
   const builtSections = {};
 
+  // Load images via IntersectionObserver rather than native loading="lazy":
+  // the native version is unreliable inside CSS multi-column (masonry) layouts
+  // and leaves many tiles unloaded. rootMargin pre-loads just ahead of scroll.
+  const lazyObserver = ('IntersectionObserver' in window)
+    ? new IntersectionObserver((entries, obs) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const im = entry.target;
+          if (im.dataset.src) im.src = im.dataset.src;
+          obs.unobserve(im);
+        });
+      }, { rootMargin: '800px 0px' })
+    : null;
+
   function showStatus(html) {
     statusEl.innerHTML = html;
     statusEl.hidden = false;
@@ -173,11 +187,16 @@
       tile.className = 'gallery-tile';
 
       const img = document.createElement('img');
-      img.loading = 'lazy';
       img.decoding = 'async';
-      img.src = photo.url;
       img.alt = photo.name;
+      img.dataset.src = photo.url;
+      img.addEventListener('load', () => img.classList.add('is-loaded'));
       img.addEventListener('click', () => openLightbox(photos, idx));
+      if (lazyObserver) {
+        lazyObserver.observe(img);
+      } else {
+        img.src = photo.url;
+      }
       tile.appendChild(img);
 
       const dl = document.createElement('a');

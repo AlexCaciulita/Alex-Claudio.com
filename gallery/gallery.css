@@ -3,6 +3,25 @@
   color: var(--color-ink);
 }
 
+/* Signature wordmark logo, matching the main site. The gallery nav has only the
+   centered logo, so collapse the 3-column nav grid to a single centered column.
+   The nav sits over the light page (the hero is below it), so the mark is ink. */
+.gallery-page .top-nav .nav-container {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.gallery-page .top-nav .wordmark {
+  display: inline-block;
+  font-family: 'Pinyon Script', 'Great Vibes', cursive;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.12;
+  letter-spacing: 0.005em;
+  color: var(--color-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .gallery-main {
   padding: calc(var(--nav-height) + 16px) var(--gutter-mobile) var(--space-96);
   max-width: 1400px;
@@ -307,7 +326,18 @@
   width: 100%;
   height: auto;
   display: block;
-  transition: transform 600ms ease;
+  /* Placeholder box so the tile has height before the photo loads — keeps the
+     masonry layout stable and lets the lazy-loader measure positions. */
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: var(--color-hairline);
+  opacity: 0;
+  transition: transform 600ms ease, opacity 400ms ease;
+}
+
+.gallery-tile img.is-loaded {
+  aspect-ratio: auto; /* revert to the photo's true ratio once loaded */
+  opacity: 1;
 }
 
 .gallery-tile:hover img {
