@@ -53,7 +53,8 @@ async function readManifest(client, bucket, key) {
     return {
       name: typeof parsed.name === 'string' ? parsed.name : null,
       date: typeof parsed.date === 'string' ? parsed.date : null,
-      message: typeof parsed.message === 'string' ? parsed.message : null
+      message: typeof parsed.message === 'string' ? parsed.message : null,
+      hero: typeof parsed.hero === 'string' ? parsed.hero : null
     };
   } catch (err) {
     return null;
@@ -93,7 +94,7 @@ exports.handler = async (event) => {
     return { statusCode: 404, body: JSON.stringify({ error: 'Gallery not found' }) };
   }
 
-  const result = { name: null, date: null, message: null };
+  const result = { name: null, date: null, message: null, hero: null };
   for (const cat of CATEGORIES) result[cat] = [];
 
   let manifestKey = null;
@@ -129,6 +130,17 @@ exports.handler = async (event) => {
   if (manifestKey) {
     const manifest = await readManifest(client, bucket, manifestKey);
     if (manifest) Object.assign(result, manifest);
+  }
+
+  // Resolve a manifest hero (a path relative to the slug, e.g.
+  // "wedding/Photo-468.jpg") into a full public CDN URL.
+  if (result.hero) {
+    const heroRel = result.hero.replace(/^\/+/, '');
+    if (IMAGE_RE.test(heroRel) && !heroRel.includes('..')) {
+      result.hero = `https://${publicDomain}/${encodeURI(`${slug}/${heroRel}`)}`;
+    } else {
+      result.hero = null;
+    }
   }
 
   const totalImages = CATEGORIES.reduce((n, c) => n + result[c].length, 0);

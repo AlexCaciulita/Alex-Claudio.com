@@ -15,6 +15,10 @@
   const messageEl = document.getElementById('galleryMessage');
   const tabsEl = document.getElementById('galleryTabs');
   const sectionsEl = document.getElementById('gallerySections');
+  const heroEl = document.getElementById('galleryHero');
+  const heroImg = document.getElementById('galleryHeroImg');
+  const heroTitleEl = document.getElementById('galleryHeroTitle');
+  const heroDateEl = document.getElementById('galleryHeroDate');
 
   const lightboxOverlay = document.getElementById('lightboxOverlay');
   const lightboxImage = document.getElementById('lightboxImage');
@@ -26,6 +30,10 @@
   let currentList = [];
   let currentIndex = 0;
   let jszipPromise = null;
+
+  let galleryData = null;
+  let activeCategories = [];
+  const builtSections = {};
 
   function showStatus(html) {
     statusEl.innerHTML = html;
@@ -48,43 +56,83 @@
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
-  function renderHeader(data) {
-    const hasAny = data.name || data.date || data.message;
-    if (!hasAny) {
+  // When a hero image is set, the couple's name + date are shown over the hero,
+  // so the plain text header only carries the message (if any).
+  function renderHero(data) {
+    if (!data.hero) {
+      heroEl.hidden = true;
+      return false;
+    }
+    heroImg.src = data.hero;
+    heroImg.alt = data.name ? `${data.name} — gallery hero` : 'Gallery hero image';
+    heroTitleEl.textContent = data.name || '';
+    heroTitleEl.hidden = !data.name;
+    const dateText = formatDate(data.date);
+    heroDateEl.textContent = dateText;
+    heroDateEl.hidden = !dateText;
+    heroEl.hidden = false;
+    return true;
+  }
+
+  function renderHeader(data, heroShown) {
+    const showTitle = !heroShown && !!data.name;
+    const showDate = !heroShown && !!formatDate(data.date);
+    const showMessage = !!data.message;
+    if (!showTitle && !showDate && !showMessage) {
       headerEl.hidden = true;
       return;
     }
     titleEl.textContent = data.name || '';
-    titleEl.hidden = !data.name;
+    titleEl.hidden = !showTitle;
     const dateText = formatDate(data.date);
     dateEl.textContent = dateText;
-    dateEl.hidden = !dateText;
+    dateEl.hidden = !showDate;
     messageEl.textContent = data.message || '';
-    messageEl.hidden = !data.message;
+    messageEl.hidden = !showMessage;
     headerEl.hidden = false;
   }
 
-  function buildTabs(activeCategories) {
+  function buildTabs(categories) {
     tabsEl.innerHTML = '';
-    if (activeCategories.length < 2) {
+    if (categories.length < 2) {
       tabsEl.hidden = true;
       return;
     }
-    activeCategories.forEach((cat, idx) => {
+    categories.forEach((cat) => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'gallery-tab' + (idx === 0 ? ' active' : '');
+      btn.className = 'gallery-tab';
       btn.textContent = CATEGORY_LABELS[cat];
-      btn.dataset.target = `section-${cat}`;
-      btn.addEventListener('click', () => {
-        const target = document.getElementById(btn.dataset.target);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
+      btn.dataset.cat = cat;
+      btn.setAttribute('role', 'tab');
+      btn.addEventListener('click', () => switchTo(cat));
       tabsEl.appendChild(btn);
     });
     tabsEl.hidden = false;
+  }
+
+  // Show one category at a time. Each section's DOM (and therefore its images)
+  // is built only the first time its tab is opened, so the initial page load
+  // only fetches photos for the active category instead of all of them.
+  function switchTo(category) {
+    if (!activeCategories.includes(category)) {
+      category = activeCategories[0];
+    }
+    Array.from(tabsEl.children).forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.cat === category);
+    });
+    if (!builtSections[category]) {
+      const section = renderSection(category, galleryData[category]);
+      sectionsEl.appendChild(section);
+      builtSections[category] = section;
+    }
+    Object.keys(builtSections).forEach((cat) => {
+      builtSections[cat].hidden = cat !== category;
+    });
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', `#${category}`);
+    }
+    window.scrollTo({ top: 0 });
   }
 
   function renderSection(category, photos) {
@@ -234,6 +282,7 @@
   }
 
   function renderNotFound() {
+    heroEl.hidden = true;
     headerEl.hidden = true;
     tabsEl.hidden = true;
     sectionsEl.hidden = true;
@@ -268,18 +317,19 @@
         return;
       }
       const data = await res.json();
-      const activeCategories = CATEGORY_ORDER.filter((c) => Array.isArray(data[c]) && data[c].length > 0);
+      activeCategories = CATEGORY_ORDER.filter((c) => Array.isArray(data[c]) && data[c].length > 0);
       if (!activeCategories.length) {
         renderNotFound();
         return;
       }
-      renderHeader(data);
+      galleryData = data;
+      const heroShown = renderHero(data);
+      renderHeader(data, heroShown);
       buildTabs(activeCategories);
       sectionsEl.innerHTML = '';
-      activeCategories.forEach((cat) => {
-        sectionsEl.appendChild(renderSection(cat, data[cat]));
-      });
       sectionsEl.hidden = false;
+      const requested = (window.location.hash || '').replace('#', '');
+      switchTo(activeCategories.includes(requested) ? requested : activeCategories[0]);
       hideStatus();
     } catch (err) {
       console.error(err);
