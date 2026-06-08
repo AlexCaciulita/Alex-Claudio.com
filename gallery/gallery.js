@@ -149,6 +149,22 @@
     window.scrollTo({ top: 0 });
   }
 
+  // Size a grid-masonry tile to its photo's real height by spanning the right
+  // number of grid rows. Skipped while the tile is hidden (height would be 0).
+  function setTileSpan(tile) {
+    if (!tile || tile.offsetParent === null) return;
+    const img = tile.querySelector('img');
+    const grid = tile.parentElement;
+    if (!img || !img.complete || !img.naturalHeight || !grid) return;
+    const styles = getComputedStyle(grid);
+    const rowH = parseFloat(styles.gridAutoRows) || 4;
+    const gap = parseFloat(styles.rowGap) || 0;
+    const h = img.getBoundingClientRect().height;
+    if (!h) return;
+    const span = Math.max(1, Math.ceil((h + gap) / (rowH + gap)));
+    tile.style.gridRowEnd = `span ${span}`;
+  }
+
   function renderSection(category, photos) {
     const section = document.createElement('section');
     section.className = 'gallery-section';
@@ -190,7 +206,10 @@
       img.decoding = 'async';
       img.alt = photo.name;
       img.dataset.src = photo.url;
-      img.addEventListener('load', () => img.classList.add('is-loaded'));
+      img.addEventListener('load', () => {
+        img.classList.add('is-loaded');
+        setTileSpan(tile);
+      });
       img.addEventListener('click', () => openLightbox(photos, idx));
       if (lazyObserver) {
         lazyObserver.observe(img);
@@ -367,6 +386,15 @@
     if (e.key === 'Escape') closeLightbox();
     if (e.key === 'ArrowLeft') showPrev();
     if (e.key === 'ArrowRight') showNext();
+  });
+
+  // Recompute masonry spans when the column count / width changes.
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      document.querySelectorAll('.gallery-tile').forEach((tile) => setTileSpan(tile));
+    }, 150);
   });
 
   loadGallery();
