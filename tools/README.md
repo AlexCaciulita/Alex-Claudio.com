@@ -18,6 +18,15 @@ zip with this script upgrades it to a native download for everyone.
 pip3 install boto3
 ```
 
+> **macOS:** don't use the system `python3` (Command Line Tools) — it's built on
+> LibreSSL and large multipart uploads to R2 die with `SSLV3_ALERT_BAD_RECORD_MAC`
+> partway through. Use an OpenSSL Python instead, e.g. Homebrew's:
+> ```bash
+> brew install python@3.12
+> python3.12 -m venv ~/.gallery-venv && ~/.gallery-venv/bin/pip install boto3
+> # then run the tool with:  ~/.gallery-venv/bin/python tools/make-gallery-zip.py ...
+> ```
+
 Create an **R2 S3 API token** (wrangler's OAuth login can't do multipart
 uploads, which 2.5 GB files require):
 

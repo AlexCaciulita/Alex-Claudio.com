@@ -44,9 +44,9 @@ Usage
 
 import argparse
 import os
-import shutil
 import sys
 import tempfile
+import time
 import urllib.request
 import zipfile
 
@@ -59,6 +59,19 @@ CATEGORIES = ["engagement", "wedding"]
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic")
 
 
+class _NullCtx:
+    """Context manager yielding a fixed dir that is NOT deleted on exit (so a
+    failed upload can be retried without rebuilding the zip)."""
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        return self.path
+
+    def __exit__(self, *exc):
+        return False
+
+
 def human(n):
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024 or unit == "GB":
@@ -66,23 +79,36 @@ def human(n):
         n /= 1024
 
 
+def _get(url, attempts=6, timeout=120):
+    """GET a URL, retrying transient network/SSL errors with backoff. Returns
+    the full response body (each photo is a few MB, so buffering one at a time
+    is fine and makes the download atomically retryable)."""
+    last = None
+    for i in range(attempts):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except Exception as e:  # URLError, SSL EOF, timeout, transient 5xx
+            last = e
+            time.sleep(min(15, 2 * (i + 1)))
+    raise SystemExit(f"\nGave up after {attempts} tries on {url}\n  last error: {last}")
+
+
 def fetch_manifest(slug):
-    req = urllib.request.Request(f"{LIST_FN}?c={slug}", headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        import json
-        return json.load(r)
+    import json
+    return json.loads(_get(f"{LIST_FN}?c={slug}", timeout=60))
 
 
 def zip_from_r2(photos, zip_path):
-    """Stream each photo straight into a STORE zip via the same-origin /cdn proxy."""
+    """Download each photo (with retries) into a STORE zip via the /cdn proxy."""
     total = len(photos)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED, allowZip64=True) as zf:
         for i, p in enumerate(photos, 1):
+            data = _get(SITE_ORIGIN + p["downloadUrl"])
             info = zipfile.ZipInfo(p["name"])
             info.compress_type = zipfile.ZIP_STORED
-            req = urllib.request.Request(SITE_ORIGIN + p["downloadUrl"], headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=120) as resp, zf.open(info, "w") as dest:
-                shutil.copyfileobj(resp, dest, length=1024 * 1024)
+            zf.writestr(info, data)
             sys.stdout.write(f"\r  zipping {i}/{total} ({p['name'][:40]})        ")
             sys.stdout.flush()
     print()
@@ -105,10 +131,23 @@ def zip_from_local(src_dir, zip_path):
     return total
 
 
-def upload(zip_path, key):
+def _abort_incomplete(s3, key):
+    """Abort any half-finished multipart upload for this key (orphans left by a
+    prior failed attempt — they'd otherwise accumulate as billable storage)."""
+    try:
+        r = s3.list_multipart_uploads(Bucket=BUCKET, Prefix=key)
+        for u in r.get("Uploads", []):
+            s3.abort_multipart_upload(Bucket=BUCKET, Key=u["Key"], UploadId=u["UploadId"])
+            print(f"  (aborted stale multipart upload for {u['Key']})")
+    except Exception:
+        pass
+
+
+def upload(zip_path, key, attempts=5):
     try:
         import boto3
         from boto3.s3.transfer import TransferConfig
+        from botocore.config import Config
     except ImportError:
         raise SystemExit("boto3 is required:  pip3 install boto3")
 
@@ -120,31 +159,53 @@ def upload(zip_path, key):
             "Create one: Cloudflare dashboard -> R2 -> Manage R2 API Tokens -> Object Read & Write."
         )
 
-    s3 = boto3.client(
-        "s3",
-        endpoint_url=f"https://{ACCOUNT_ID}.r2.cloudflarestorage.com",
-        aws_access_key_id=akid,
-        aws_secret_access_key=secret,
-        region_name="auto",
+    # This machine's Python 3.9 TLS stack intermittently corrupts the connection
+    # mid-multipart ("SSL bad record mac"), and botocore's in-process retries
+    # reuse the same poisoned connection. So: upload parts on a single connection
+    # (use_threads=False), and on failure rebuild a FRESH client (fresh TLS) and
+    # retry the whole upload after clearing the half-done one.
+    cfg = TransferConfig(
+        multipart_threshold=64 * 1024 * 1024,
+        multipart_chunksize=64 * 1024 * 1024,
+        use_threads=False,
     )
-    cfg = TransferConfig(multipart_threshold=64 * 1024 * 1024, multipart_chunksize=64 * 1024 * 1024)
     size = os.path.getsize(zip_path)
-    seen = {"n": 0}
 
-    def progress(bytes_amount):
-        seen["n"] += bytes_amount
-        pct = 100 * seen["n"] / size if size else 100
-        sys.stdout.write(f"\r  uploading {human(seen['n'])}/{human(size)} ({pct:.0f}%)        ")
-        sys.stdout.flush()
+    last = None
+    for attempt in range(1, attempts + 1):
+        seen = {"n": 0}
 
-    s3.upload_file(
-        zip_path, BUCKET, key, Config=cfg, Callback=progress,
-        ExtraArgs={
-            "ContentType": "application/zip",
-            "ContentDisposition": f'attachment; filename="{os.path.basename(key)}"',
-        },
-    )
-    print()
+        def progress(bytes_amount):
+            seen["n"] += bytes_amount
+            pct = 100 * seen["n"] / size if size else 100
+            sys.stdout.write(f"\r  uploading {human(seen['n'])}/{human(size)} ({pct:.0f}%)        ")
+            sys.stdout.flush()
+
+        s3 = boto3.client(
+            "s3",
+            endpoint_url=f"https://{ACCOUNT_ID}.r2.cloudflarestorage.com",
+            aws_access_key_id=akid,
+            aws_secret_access_key=secret,
+            region_name="auto",
+            config=Config(retries={"max_attempts": 6, "mode": "standard"}, max_pool_connections=4),
+        )
+        try:
+            _abort_incomplete(s3, key)
+            s3.upload_file(
+                zip_path, BUCKET, key, Config=cfg, Callback=progress,
+                ExtraArgs={
+                    "ContentType": "application/zip",
+                    "ContentDisposition": f'attachment; filename="{os.path.basename(key)}"',
+                },
+            )
+            print()
+            return
+        except Exception as e:
+            last = e
+            print(f"\n  upload attempt {attempt}/{attempts} failed ({type(e).__name__}); retrying…")
+            _abort_incomplete(s3, key)
+            time.sleep(3 * attempt)
+    raise SystemExit(f"Upload failed after {attempts} attempts: {last}")
 
 
 def main():
@@ -153,6 +214,9 @@ def main():
     ap.add_argument("categories", nargs="*", help="engagement and/or wedding (default: whichever exist)")
     ap.add_argument("--src", action="append", default=[],
                     help="category=DIR to zip local originals instead of downloading from R2")
+    ap.add_argument("--work-dir",
+                    help="keep built zips here and reuse an existing same-size zip on re-run "
+                         "(so a failed upload doesn't re-download). Default: a temp dir.")
     args = ap.parse_args()
 
     local_src = {}
@@ -167,18 +231,28 @@ def main():
     if not wanted:
         raise SystemExit(f"No engagement/wedding photos found for '{args.slug}'.")
 
+    tmpctx = (lambda: _NullCtx(args.work_dir)) if args.work_dir else tempfile.TemporaryDirectory
+    if args.work_dir:
+        os.makedirs(args.work_dir, exist_ok=True)
+
     for cat in wanted:
         if cat not in CATEGORIES:
             print(f"! skipping unknown category '{cat}'")
             continue
         key = f"{args.slug}/{args.slug}-{cat}.zip"
-        with tempfile.TemporaryDirectory() as tmp:
+        with tmpctx() as tmp:
             zip_path = os.path.join(tmp, f"{args.slug}-{cat}.zip")
-            if cat in local_src:
+            photos = manifest.get(cat) or []
+            expected = sum(p.get("size", 0) for p in photos) if cat not in local_src else None
+            reuse = (args.work_dir and os.path.exists(zip_path)
+                     and (expected is None or abs(os.path.getsize(zip_path) - expected) < expected * 0.02))
+            if reuse:
+                print(f"[{cat}] reusing already-built {zip_path} ({human(os.path.getsize(zip_path))})")
+                n = len(photos)
+            elif cat in local_src:
                 print(f"[{cat}] zipping local originals from {local_src[cat]}")
                 n = zip_from_local(local_src[cat], zip_path)
             else:
-                photos = manifest.get(cat) or []
                 if not photos:
                     print(f"[{cat}] no photos — skipping")
                     continue
@@ -187,7 +261,7 @@ def main():
                 n = len(photos)
             print(f"[{cat}] built {human(os.path.getsize(zip_path))} ({n} photos) -> uploading to {key}")
             upload(zip_path, key)
-            print(f"[{cat}] done -> https://alex-claudio.com/cdn/{args.slug}/{args.slug}-{cat}.zip\n")
+            print(f"[{cat}] done -> {SITE_ORIGIN}/cdn/{args.slug}/{args.slug}-{cat}.zip\n")
 
     print("All set. Reload the gallery — 'Download all' is now a native download.")
 
