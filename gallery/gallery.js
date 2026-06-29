@@ -6,7 +6,10 @@
     wedding: 'Wedding Day'
   };
   const CATEGORY_ORDER = ['engagement', 'wedding'];
-  const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+  // zip.js streams each photo from the network straight into the archive (and,
+  // where supported, straight to disk), so a full wedding gallery of several GB
+  // never has to be held in memory at once — unlike a build-the-whole-blob zipper.
+  const ZIPJS_CDN = 'https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.7.57/dist/zip.min.js';
 
   const statusEl = document.getElementById('galleryStatus');
   const headerEl = document.getElementById('galleryHeader');
@@ -29,7 +32,7 @@
 
   let currentList = [];
   let currentIndex = 0;
-  let jszipPromise = null;
+  let zipjsPromise = null;
 
   let galleryData = null;
   let activeCategories = [];
@@ -267,49 +270,80 @@
     updateLightboxImage();
   }
 
-  function loadJSZip() {
-    if (jszipPromise) return jszipPromise;
-    jszipPromise = new Promise((resolve, reject) => {
+  function loadZipJs() {
+    if (zipjsPromise) return zipjsPromise;
+    zipjsPromise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = JSZIP_CDN;
-      s.onload = () => resolve(window.JSZip);
-      s.onerror = () => reject(new Error('Failed to load JSZip'));
+      s.src = ZIPJS_CDN;
+      s.onload = () => resolve(window.zip);
+      s.onerror = () => reject(new Error('Failed to load zip.js'));
       document.head.appendChild(s);
     });
-    return jszipPromise;
+    return zipjsPromise;
   }
 
   async function downloadAll(category, photos, btn) {
     const originalText = btn.textContent;
+    const slug = getSlug();
+    const filename = `${slug}-${category}.zip`;
+
+    // Open the save-to-disk stream first, while we still hold the click's user
+    // activation (showSaveFilePicker requires it). When available (Chromium
+    // browsers) the zip is written straight to disk and never buffered, so
+    // gallery size is irrelevant. Other browsers fall back to a disk-backed Blob.
+    let writableStream = null;
+    if (typeof window.showSaveFilePicker === 'function') {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'Zip archive', accept: { 'application/zip': ['.zip'] } }]
+        });
+        writableStream = await handle.createWritable();
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // user cancelled the dialog
+        writableStream = null; // blocked/unsupported → fall back to Blob
+      }
+    }
+
     btn.disabled = true;
     btn.textContent = 'Preparing…';
     try {
-      const JSZip = await loadJSZip();
-      const zip = new JSZip();
+      const zip = await loadZipJs();
+
+      // Store (level 0): these are JPEGs, already compressed — skipping deflate
+      // saves CPU/time and avoids re-compressing for no size gain.
+      let blobWriter = null;
+      let zipWriter;
+      if (writableStream) {
+        zipWriter = new zip.ZipWriter(writableStream, { level: 0 });
+      } else {
+        blobWriter = new zip.BlobWriter('application/zip');
+        zipWriter = new zip.ZipWriter(blobWriter, { level: 0 });
+      }
+
       let done = 0;
       for (const photo of photos) {
         const fetchUrl = photo.downloadUrl || photo.url;
-        const res = await fetch(fetchUrl);
-        if (!res.ok) throw new Error(`Failed: ${photo.name}`);
-        const blob = await res.blob();
-        zip.file(photo.name, blob);
+        await zipWriter.add(photo.name, new zip.HttpReader(fetchUrl));
         done++;
-        btn.textContent = `Downloading ${done}/${photos.length}…`;
+        btn.textContent = `Adding ${done}/${photos.length}…`;
       }
-      btn.textContent = 'Zipping…';
-      const blob = await zip.generateAsync({ type: 'blob' }, (meta) => {
-        btn.textContent = `Zipping ${Math.round(meta.percent)}%`;
-      });
-      const slug = getSlug();
-      const filename = `${slug}-${category}.zip`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      btn.textContent = 'Finishing…';
+      const blob = await zipWriter.close();
+
+      // Blob fallback: hand the finished archive to the browser as a download.
+      if (blobWriter) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
       btn.textContent = 'Downloaded ✓';
       setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2500);
     } catch (err) {
