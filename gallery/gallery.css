@@ -243,7 +243,23 @@
 .gallery-section-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-16);
+}
+
+/* Shown when a gallery is too large for this browser to bundle in-memory.
+   Breaks onto its own line under the button. */
+.gallery-download-note {
+  flex-basis: 100%;
+  margin: var(--space-8) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--color-muted-ink);
+  text-align: right;
+  max-width: 36ch;
+  margin-left: auto;
 }
 
 .gallery-count {
@@ -255,6 +271,10 @@
 }
 
 .gallery-download-all {
+  display: inline-block;
+  box-sizing: border-box;
+  text-align: center;
+  text-decoration: none;
   background: transparent;
   border: 1px solid var(--color-ink);
   color: var(--color-ink);

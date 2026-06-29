@@ -94,7 +94,7 @@ exports.handler = async (event) => {
     return { statusCode: 404, body: JSON.stringify({ error: 'Gallery not found' }) };
   }
 
-  const result = { name: null, date: null, message: null, hero: null };
+  const result = { name: null, date: null, message: null, hero: null, zips: {} };
   for (const cat of CATEGORIES) result[cat] = [];
 
   let manifestKey = null;
@@ -104,6 +104,15 @@ exports.handler = async (event) => {
     const rel = key.slice(slug.length + 1);
     if (rel === 'manifest.json') {
       manifestKey = key;
+      continue;
+    }
+    // Pre-built "Download all" archive, built at delivery and uploaded to
+    // {slug}/{slug}-{category}.zip. Served through the same-origin /cdn proxy so
+    // the browser streams it straight to disk — the only path that reliably
+    // delivers a multi-GB download on iOS Safari (in-browser zipping can't).
+    const zipCat = CATEGORIES.find((c) => rel === `${slug}-${c}.zip`);
+    if (zipCat) {
+      result.zips[zipCat] = { url: `/cdn/${encodeURI(key)}`, size: obj.Size || 0 };
       continue;
     }
     const slashIdx = rel.indexOf('/');

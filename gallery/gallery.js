@@ -189,12 +189,26 @@
     count.textContent = `${photos.length} photo${photos.length === 1 ? '' : 's'}`;
     meta.appendChild(count);
 
-    const downloadAllBtn = document.createElement('button');
-    downloadAllBtn.type = 'button';
-    downloadAllBtn.className = 'gallery-download-all';
-    downloadAllBtn.textContent = 'Download all';
-    downloadAllBtn.addEventListener('click', () => downloadAll(category, photos, downloadAllBtn));
-    meta.appendChild(downloadAllBtn);
+    // Prefer a pre-built archive when one exists: a plain native download that
+    // streams from the same-origin /cdn proxy straight to disk, so it works on
+    // every device (incl. iOS Safari) regardless of gallery size. Only when no
+    // archive has been built do we fall back to zipping in the browser.
+    const prebuilt = galleryData.zips && galleryData.zips[category];
+    if (prebuilt) {
+      const dlAll = document.createElement('a');
+      dlAll.className = 'gallery-download-all';
+      dlAll.href = prebuilt.url;
+      dlAll.setAttribute('download', `${getSlug()}-${category}.zip`);
+      dlAll.textContent = 'Download all';
+      meta.appendChild(dlAll);
+    } else {
+      const downloadAllBtn = document.createElement('button');
+      downloadAllBtn.type = 'button';
+      downloadAllBtn.className = 'gallery-download-all';
+      downloadAllBtn.textContent = 'Download all';
+      downloadAllBtn.addEventListener('click', () => downloadAll(category, photos, downloadAllBtn));
+      meta.appendChild(downloadAllBtn);
+    }
 
     head.appendChild(meta);
     section.appendChild(head);
@@ -282,17 +296,47 @@
     return zipjsPromise;
   }
 
+  // Above this total, building the archive as one in-memory Blob is unsafe on
+  // browsers without the File System Access API: WebKit caps a single allocation
+  // near 2GB and iOS Safari kills the tab well under 1GB — with no catchable
+  // error, so the progress counter completes and then nothing downloads. Rather
+  // than dead-end the customer, we steer them to a path that actually works.
+  const SAFE_BLOB_LIMIT = 300 * 1024 * 1024;
+
+  function setDownloadNote(btn, message) {
+    const meta = btn.parentElement;
+    if (!meta) return;
+    let note = meta.querySelector('.gallery-download-note');
+    if (!message) { if (note) note.remove(); return; }
+    if (!note) {
+      note = document.createElement('p');
+      note.className = 'gallery-download-note';
+      meta.appendChild(note);
+    }
+    note.textContent = message;
+  }
+
   async function downloadAll(category, photos, btn) {
     const originalText = btn.textContent;
     const slug = getSlug();
     const filename = `${slug}-${category}.zip`;
+    const canStreamToDisk = typeof window.showSaveFilePicker === 'function';
+    const totalBytes = photos.reduce((sum, p) => sum + (p.size || 0), 0);
+
+    // Safety net for large galleries on Safari/iOS/Firefox: don't attempt an
+    // in-memory zip that will silently fail — tell the customer what does work.
+    if (!canStreamToDisk && totalBytes > SAFE_BLOB_LIMIT) {
+      setDownloadNote(btn, 'This browser can’t bundle a gallery this large into one file. Tap the download arrow on each photo to save it, or open this gallery in Chrome on a computer to get everything in one zip.');
+      return;
+    }
+    setDownloadNote(btn, '');
 
     // Open the save-to-disk stream first, while we still hold the click's user
     // activation (showSaveFilePicker requires it). When available (Chromium
     // browsers) the zip is written straight to disk and never buffered, so
     // gallery size is irrelevant. Other browsers fall back to a disk-backed Blob.
     let writableStream = null;
-    if (typeof window.showSaveFilePicker === 'function') {
+    if (canStreamToDisk) {
       try {
         const handle = await window.showSaveFilePicker({
           suggestedName: filename,
