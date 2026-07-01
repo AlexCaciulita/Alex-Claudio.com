@@ -529,10 +529,6 @@ async function handleFormSubmit(event) {
     if (!data.location) errors.location = 'Please enter a location.';
     if (!data.message) errors.message = 'Please share a bit about your event.';
 
-    // At least one service
-        const servicesChecked = Array.from(document.querySelectorAll('input[name="services"]:checked'));
-    if (servicesChecked.length === 0) errors.services = 'Choose at least one service.';
-
     // Render errors
     clearDsErrors();
     Object.entries(errors).forEach(([key, msg]) => setDsError(key, msg));
