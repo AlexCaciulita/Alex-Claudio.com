@@ -6345,6 +6345,18 @@ body.home-body.handoff-home main.handoff-main > section.inquiry {
   font-size: 14px;
 }
 
+/* Restore a clear visual distinction between success and error. The generic
+   .handoff-home .ds-panel border above otherwise renders both identically. */
+.handoff-home .ds-success {
+  border-color: rgba(122, 194, 154, 0.55);
+  background: rgba(122, 194, 154, 0.10);
+}
+
+.handoff-home .ds-error {
+  border-color: rgba(244, 150, 143, 0.6);
+  background: rgba(244, 150, 143, 0.10);
+}
+
 .handoff-home .hidden {
   display: none !important;
 }

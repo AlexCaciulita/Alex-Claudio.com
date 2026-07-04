@@ -533,7 +533,11 @@ async function handleFormSubmit(event) {
     clearDsErrors();
     Object.entries(errors).forEach(([key, msg]) => setDsError(key, msg));
     if (Object.keys(errors).length > 0) {
-        showFormError('Please review the highlighted fields.');
+        const count = Object.keys(errors).length;
+        showFormError(count === 1
+            ? 'Please complete the highlighted field below.'
+            : `Please complete the ${count} highlighted fields below.`, false);
+        focusFirstError(Object.keys(errors)[0]);
         return;
     }
 
@@ -541,7 +545,8 @@ async function handleFormSubmit(event) {
     const budget = (data.budget || '').trim();
     if (budget && !/^[0-9,$\.\-\s]+$/.test(budget)) {
         setDsError('budget', 'Use numbers and , . - only.');
-        showFormError('Please correct the budget format.');
+        showFormError('Please correct the budget format.', false);
+        focusFirstError('budget');
         return;
     }
 
@@ -570,7 +575,7 @@ async function handleFormSubmit(event) {
             contactForm.reset();
             submitButtonEl.textContent = originalText;
             submitButtonEl.disabled = false;
-            showFormSuccess('I received your inquiry and will respond within 24 hours. Check your inbox (and spam folder) for a personal reply.');
+            showFormSuccess('Your inquiry is in! I received it and will respond personally within 24 hours. Check your inbox (and spam folder) for my reply.');
             trackFormSubmission();
         } else {
             throw new Error('Form submission failed');
@@ -579,8 +584,32 @@ async function handleFormSubmit(event) {
         console.error('Submission error:', error);
         submitButtonEl.textContent = originalText;
         submitButtonEl.disabled = false;
-        showFormError('Something went wrong. Please try again.');
+        showFormError('Something went wrong sending your inquiry. Please try again, or email me directly at contact@alex-claudio.com.');
     }
+}
+
+// Bring a form field (or panel) into view and, for fields, move focus to it so
+// the client immediately sees what needs attention.
+function scrollIntoViewCentered(el) {
+    if (!el) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // On the homepage Lenis drives the scroll; a raw scrollIntoView moves the
+    // real position without telling Lenis, whose stale target then snaps the
+    // page back on the next wheel/touch. Route through Lenis like smoothScrollTo.
+    if (lenisInstance) {
+        const offset = -Math.max(80, (window.innerHeight - el.offsetHeight) / 2);
+        lenisInstance.scrollTo(el, { offset, duration: reduce ? 0 : 0.8, immediate: reduce });
+        return;
+    }
+    try { el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); }
+    catch (e) { el.scrollIntoView(); }
+}
+
+function focusFirstError(fieldId) {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    scrollIntoViewCentered(el);
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
 }
 
 // ===== TESTIMONIAL SLIDER =====
@@ -875,15 +904,14 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('focus', () => { el.style.boxShadow = '0 0 0 2px rgba(209,165,116,0.35)' })
             el.addEventListener('blur', () => { el.style.boxShadow = 'none' })
         })
-        // Live enable/disable submit for required fields
+        // Keep the submit button always clickable. Disabling it until every
+        // required field was filled meant a client with one field missing just
+        // saw a greyed-out button with no explanation. Now clicking always runs
+        // validation and surfaces exactly what's missing (see handleFormSubmit).
+        // Clear a field's error as soon as the client starts correcting it.
         const requiredSelectors = ['#names', '#email', '#event_date', '#location', '#message'];
         const requiredInputs = requiredSelectors.map(sel => document.querySelector(sel)).filter(Boolean);
-        const evaluateValidity = () => {
-            const allFilled = requiredInputs.every(inp => (inp.value || '').trim().length > 0) && validateEmail((document.getElementById('email')?.value)||'');
-            if (submitButtonEl) submitButtonEl.disabled = !allFilled;
-        };
-        requiredInputs.forEach(inp => inp.addEventListener('input', evaluateValidity));
-        evaluateValidity();
+        requiredInputs.forEach(inp => inp.addEventListener('input', () => clearDsError(inp.id)));
 
         // Phone mask (very light)
         const phone = document.getElementById('phone');
@@ -941,18 +969,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setDsError(fieldId, message);
         };
 
-        const evaluateLeadValidity = () => {
-            const [nameEl, emailEl] = leadInputs;
-            const ready =
-                nameEl &&
-                emailEl &&
-                nameEl.value.trim().length > 0 &&
-                validateEmail(emailEl.value || '');
-            if (leadSubmitButton) leadSubmitButton.disabled = !ready;
-        };
-
-        leadInputs.forEach((inp) => inp?.addEventListener('input', evaluateLeadValidity));
-        evaluateLeadValidity();
+        // Keep the submit button always clickable (mirrors the contact form) so a
+        // visitor is told exactly what's missing instead of facing a greyed-out
+        // button. Clear each field's error as soon as it's corrected.
+        leadInputs.forEach((inp) => inp?.addEventListener('input', () => { if (inp.id) clearDsError(inp.id); }));
 
         leadForm.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -964,14 +984,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const phone = '';
 
             let hasError = false;
-            if (!name) { setLeadError('leadName', 'Please share your name.'); hasError = true; }
-            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so I can send details.'); hasError = true; }
+            let firstInvalid = null;
+            if (!name) { setLeadError('leadName', 'Please share your name.'); hasError = true; firstInvalid = firstInvalid || 'leadName'; }
+            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so I can send details.'); hasError = true; firstInvalid = firstInvalid || 'leadEmail'; }
             // no phone validation needed
 
             if (hasError) {
                 if (leadErrorPanel) leadErrorPanel.classList.remove('hidden');
                 if (leadErrorPanel?.querySelector('p')) leadErrorPanel.querySelector('p').textContent = 'Please check the highlighted fields.';
-                if (leadSubmitButton) leadSubmitButton.disabled = false;
+                focusFirstError(firstInvalid);
                 return;
             }
 
@@ -994,15 +1015,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error('Lead submission failed');
 
                 leadForm.reset();
-                evaluateLeadValidity();
-                if (leadSuccessPanel) leadSuccessPanel.classList.remove('hidden');
+                if (leadSuccessPanel) { leadSuccessPanel.classList.remove('hidden'); scrollIntoViewCentered(leadSuccessPanel); }
                 if (leadSubmitButton) {
                     leadSubmitButton.textContent = 'Submit';
                     leadSubmitButton.disabled = false;
                 }
             } catch (error) {
                 console.error('Lead form error:', error);
-                if (leadErrorPanel) leadErrorPanel.classList.remove('hidden');
+                if (leadErrorPanel) { leadErrorPanel.classList.remove('hidden'); scrollIntoViewCentered(leadErrorPanel); }
                 if (leadSubmitButton) {
                     leadSubmitButton.textContent = 'Submit';
                     leadSubmitButton.disabled = false;
@@ -1102,6 +1122,13 @@ function setDsError(fieldId, message) {
     if (inputEl) inputEl.setAttribute('aria-invalid', 'true');
 }
 
+function clearDsError(fieldId) {
+    const helpEl = document.getElementById(`${fieldId}Help`) || document.getElementById(`${fieldId}-help`);
+    if (helpEl) { helpEl.textContent = ''; helpEl.classList.remove('ds-error-text'); }
+    const inputEl = document.getElementById(fieldId);
+    if (inputEl) inputEl.removeAttribute('aria-invalid');
+}
+
 function clearDsErrors() {
     document.querySelectorAll('.ds-help').forEach(el => {
         el.textContent = '';
@@ -1114,14 +1141,24 @@ function showFormSuccess(msg) {
     const s = document.getElementById('formSuccess');
     const e = document.getElementById('formError');
     if (e) e.classList.add('hidden');
-    if (s) { s.classList.remove('hidden'); s.querySelector('p').textContent = msg; }
+    if (s) {
+        s.classList.remove('hidden');
+        s.querySelector('p').textContent = msg;
+        scrollIntoViewCentered(s);
+    }
 }
 
-function showFormError(msg) {
+function showFormError(msg, scroll = true) {
     const s = document.getElementById('formSuccess');
     const e = document.getElementById('formError');
     if (s) s.classList.add('hidden');
-    if (e) { e.classList.remove('hidden'); e.querySelector('p').textContent = msg; }
+    if (e) {
+        e.classList.remove('hidden');
+        e.querySelector('p').textContent = msg;
+        // When a specific field is being focused, we scroll to that field
+        // instead (avoids two competing smooth-scrolls).
+        if (scroll) scrollIntoViewCentered(e);
+    }
 }
 
 // ===== ERROR HANDLING =====
