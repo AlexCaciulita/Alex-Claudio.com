@@ -61,6 +61,20 @@ async function readManifest(client, bucket, key) {
   }
 }
 
+// Optional {slug}/dimensions.json maps each photo filename to [width, height].
+// When present, the gallery can reserve each tile's real aspect ratio before the
+// image loads, so the masonry is correct on first paint (no resize-on-load flash).
+async function readJson(client, bucket, key) {
+  try {
+    const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const text = await res.Body.transformToString();
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (err) {
+    return null;
+  }
+}
+
 exports.handler = async (event) => {
   const slug = (event.queryStringParameters && event.queryStringParameters.c) || '';
   if (!SLUG_RE.test(slug)) {
@@ -98,12 +112,17 @@ exports.handler = async (event) => {
   for (const cat of CATEGORIES) result[cat] = [];
 
   let manifestKey = null;
+  let dimsKey = null;
   for (const obj of objects) {
     const key = obj.Key;
     if (!key || key.endsWith('/')) continue;
     const rel = key.slice(slug.length + 1);
     if (rel === 'manifest.json') {
       manifestKey = key;
+      continue;
+    }
+    if (rel === 'dimensions.json') {
+      dimsKey = key;
       continue;
     }
     // Pre-built "Download all" archive, built at delivery and uploaded to
@@ -139,6 +158,21 @@ exports.handler = async (event) => {
   if (manifestKey) {
     const manifest = await readManifest(client, bucket, manifestKey);
     if (manifest) Object.assign(result, manifest);
+  }
+
+  if (dimsKey) {
+    const dims = await readJson(client, bucket, dimsKey);
+    if (dims) {
+      for (const cat of CATEGORIES) {
+        for (const photo of result[cat]) {
+          const d = dims[photo.name];
+          if (Array.isArray(d) && d.length === 2 && d[0] > 0 && d[1] > 0) {
+            photo.w = d[0];
+            photo.h = d[1];
+          }
+        }
+      }
+    }
   }
 
   // Resolve a manifest hero (a path relative to the slug, e.g.

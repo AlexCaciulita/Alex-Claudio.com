@@ -170,6 +170,12 @@
   flex-wrap: wrap;
 }
 
+/* Single-category galleries hide the tab bar. Without this, `display: flex`
+   overrides the [hidden] attribute and the empty bar still eats its margin. */
+.gallery-tabs[hidden] {
+  display: none;
+}
+
 .gallery-tab {
   background: transparent;
   border: 1px solid var(--color-hairline);
@@ -217,8 +223,16 @@
   border-bottom: 1px solid currentColor;
 }
 
+/* Both the container and each category are <section> elements, which inherit
+   the global `section { padding: 48-72px 0 }` — stacked, that buried the gallery
+   under ~290px of vertical whitespace. Neutralize it; spacing is set by margins. */
+.gallery-sections,
 .gallery-section {
-  margin-bottom: var(--space-96);
+  padding: 0;
+}
+
+.gallery-section {
+  margin-bottom: var(--space-64);
 }
 
 .gallery-section-head {
@@ -307,7 +321,7 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-auto-rows: 4px;
-  gap: var(--space-12);
+  gap: var(--space-8);
 }
 
 @media (min-width: 600px) {
@@ -319,7 +333,7 @@
 @media (min-width: 900px) {
   .gallery-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-16);
+    gap: var(--space-12);
   }
 }
 
@@ -337,8 +351,10 @@
   background: var(--color-hairline);
   border-radius: var(--radius-sm);
   cursor: zoom-in;
-  /* Placeholder span (~520px) until the image loads and JS sets the real span. */
-  grid-row-end: span 34;
+  /* Neutral placeholder span until JS sets the real span. With dimensions.json
+     this is overwritten on the first frame, so it is rarely seen; it only shows
+     for galleries without known dimensions, while each image loads. */
+  grid-row-end: span 20;
 }
 
 .gallery-tile img {

@@ -146,6 +146,11 @@
     Object.keys(builtSections).forEach((cat) => {
       builtSections[cat].hidden = cat !== category;
     });
+    // Now that the active section is visible and laid out, size every tile from
+    // its known dimensions so the masonry is correct immediately (no load flash).
+    requestAnimationFrame(() => {
+      builtSections[category].querySelectorAll('.gallery-tile').forEach((tile) => setTileSpan(tile));
+    });
     if (window.history && window.history.replaceState) {
       window.history.replaceState(null, '', `#${category}`);
     }
@@ -153,18 +158,31 @@
   }
 
   // Size a grid-masonry tile to its photo's real height by spanning the right
-  // number of grid rows. Skipped while the tile is hidden (height would be 0).
+  // number of grid rows. When the photo's intrinsic dimensions are known (from
+  // dimensions.json) we derive the display height from the tile's current width,
+  // so the tile is sized correctly BEFORE the image loads — no resize-on-load
+  // flash. Otherwise we fall back to measuring the loaded image.
   function setTileSpan(tile) {
     if (!tile || tile.offsetParent === null) return;
     const img = tile.querySelector('img');
     const grid = tile.parentElement;
-    if (!img || !img.complete || !img.naturalHeight || !grid) return;
+    if (!img || !grid) return;
+    const w = parseFloat(tile.dataset.w);
+    const h = parseFloat(tile.dataset.h);
+    let displayH;
+    if (w > 0 && h > 0) {
+      const colW = img.getBoundingClientRect().width;
+      if (!colW) return;
+      displayH = colW * (h / w);
+    } else {
+      if (!img.complete || !img.naturalHeight) return;
+      displayH = img.getBoundingClientRect().height;
+    }
+    if (!displayH) return;
     const styles = getComputedStyle(grid);
     const rowH = parseFloat(styles.gridAutoRows) || 4;
     const gap = parseFloat(styles.rowGap) || 0;
-    const h = img.getBoundingClientRect().height;
-    if (!h) return;
-    const span = Math.max(1, Math.ceil((h + gap) / (rowH + gap)));
+    const span = Math.max(1, Math.ceil((displayH + gap) / (rowH + gap)));
     tile.style.gridRowEnd = `span ${span}`;
   }
 
@@ -218,6 +236,11 @@
     photos.forEach((photo, idx) => {
       const tile = document.createElement('figure');
       tile.className = 'gallery-tile';
+      // Known intrinsic size → tile is sized before the image loads (no flash).
+      if (photo.w > 0 && photo.h > 0) {
+        tile.dataset.w = photo.w;
+        tile.dataset.h = photo.h;
+      }
 
       const img = document.createElement('img');
       img.decoding = 'async';
