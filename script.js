@@ -1020,6 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     leadSubmitButton.textContent = 'Submit';
                     leadSubmitButton.disabled = false;
                 }
+                trackFormSubmission('wedding_show_lead');
             } catch (error) {
                 console.error('Lead form error:', error);
                 if (leadErrorPanel) { leadErrorPanel.classList.remove('hidden'); scrollIntoViewCentered(leadErrorPanel); }
@@ -1168,15 +1169,23 @@ window.addEventListener('error', (event) => {
 
 // ===== ANALYTICS READY (placeholder) =====
 function trackEvent(eventName, eventData = {}) {
-    // Placeholder for analytics tracking
-    console.log('Event tracked:', eventName, eventData);
+    if (typeof window.gtag === 'function') {
+        window.gtag('event', eventName, eventData);
+    }
 }
 
 // Track form submissions
-function trackFormSubmission() {
+function trackFormSubmission(formName = 'wedding_inquiry') {
     trackEvent('contact_form_submitted', {
+        form_name: formName,
         timestamp: new Date().toISOString()
     });
+
+    if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead', {
+            content_name: formName
+        });
+    }
 }
 
 // Track portfolio clicks
