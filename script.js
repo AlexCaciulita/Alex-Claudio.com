@@ -78,8 +78,8 @@ let currentGalleryOrder = [];
 let currentTestimonial = 0;
 let testimonialInterval;
 const portfolioQuotes = [
-    'I specialise in capturing raw, natural, and candid moments, allowing your special day to unfold organically while we discreetly document every detail, emotion, and outpouring of love that will narrate your story.',
-    'I love awesome couples who are totally in love; we revel in telling their love stories and can’t wait to be a part of your epic wedding adventure.'
+    'We photograph your wedding together, with room for candid moments and a little guidance when you need it.',
+    'Two perspectives on your wedding day, from the people beside you to the reactions across the room.'
 ];
 // Curated ordering: favorites first, then remaining set.
 const portfolioImages = [
@@ -575,7 +575,7 @@ async function handleFormSubmit(event) {
             contactForm.reset();
             submitButtonEl.textContent = originalText;
             submitButtonEl.disabled = false;
-            showFormSuccess('Your inquiry is in! I received it and will respond personally within 24 hours. Check your inbox (and spam folder) for my reply.');
+            showFormSuccess("Your inquiry is in! We'll respond personally within 24 hours. Check your inbox (and spam folder) for our reply.");
             trackFormSubmission();
         } else {
             throw new Error('Form submission failed');
@@ -584,7 +584,7 @@ async function handleFormSubmit(event) {
         console.error('Submission error:', error);
         submitButtonEl.textContent = originalText;
         submitButtonEl.disabled = false;
-        showFormError('Something went wrong sending your inquiry. Please try again, or email me directly at contact@alex-claudio.com.');
+        showFormError('Something went wrong sending your inquiry. Please try again, or email us directly at contact@alex-claudio.com.');
     }
 }
 
@@ -986,7 +986,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let hasError = false;
             let firstInvalid = null;
             if (!name) { setLeadError('leadName', 'Please share your name.'); hasError = true; firstInvalid = firstInvalid || 'leadName'; }
-            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so I can send details.'); hasError = true; firstInvalid = firstInvalid || 'leadEmail'; }
+            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so we can send details.'); hasError = true; firstInvalid = firstInvalid || 'leadEmail'; }
             // no phone validation needed
 
             if (hasError) {
@@ -1298,6 +1298,12 @@ function initHandoffHome() {
     const root = document.querySelector('.handoff-home');
     if (!root) return;
 
+    const collectionField = root.querySelector('#collection');
+    const requestedCollection = new URLSearchParams(window.location.search).get('collection');
+    if (collectionField && Array.from(collectionField.options).some(option => option.value === requestedCollection)) {
+        collectionField.value = requestedCollection;
+    }
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const hero = root.querySelector('.handoff-hero');
     if (hero) {
@@ -1343,15 +1349,24 @@ function initHandoffHome() {
     if (testimonials.length && dots.length) {
         let activeIndex = 0;
         let timerId = null;
+        const testimonialRegion = root.querySelector('.testimonials');
 
         const show = (nextIndex) => {
             activeIndex = (nextIndex + testimonials.length) % testimonials.length;
-            testimonials.forEach((slide, index) => slide.classList.toggle('is-active', index === activeIndex));
-            dots.forEach((dot, index) => dot.classList.toggle('is-active', index === activeIndex));
+            testimonials.forEach((slide, index) => {
+                const active = index === activeIndex;
+                slide.classList.toggle('is-active', active);
+                slide.setAttribute('aria-hidden', String(!active));
+            });
+            dots.forEach((dot, index) => {
+                const active = index === activeIndex;
+                dot.classList.toggle('is-active', active);
+                dot.setAttribute('aria-pressed', String(active));
+            });
         };
 
         const start = () => {
-            if (prefersReducedMotion || timerId) return;
+            if (prefersReducedMotion || timerId || testimonialRegion?.matches(':hover') || testimonialRegion?.contains(document.activeElement)) return;
             timerId = window.setInterval(() => show(activeIndex + 1), 7000);
         };
 
@@ -1369,9 +1384,12 @@ function initHandoffHome() {
             });
         });
 
-        const testimonialRegion = root.querySelector('.testimonials');
         testimonialRegion?.addEventListener('mouseenter', stop);
         testimonialRegion?.addEventListener('mouseleave', start);
+        testimonialRegion?.addEventListener('focusin', stop);
+        testimonialRegion?.addEventListener('focusout', event => {
+            if (!testimonialRegion.contains(event.relatedTarget)) start();
+        });
         show(0);
         start();
     }

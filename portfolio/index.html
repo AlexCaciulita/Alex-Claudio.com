@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio | Alex Claudio Photography</title>
-    <meta name="description" content="Portfolio of Alex Claudio Photography. Documentary wedding photography gallery.">
+    <title>Wedding Portfolio | Alex Claudio Photography</title>
+    <meta name="description" content="Explore the wedding portfolio of Alex Claudio Photography, a wedding photography team based in Seattle and serving the Pacific Northwest.">
     <link rel="canonical" href="https://alex-claudio.com/portfolio/">
 
     <!-- Open Graph -->
     <meta property="og:title" content="Portfolio | Alex Claudio Photography">
-    <meta property="og:description" content="Browse the wedding photography portfolio of Alex Claudio — documentary style with an editorial finish, serving Seattle and the Pacific Northwest.">
+    <meta property="og:description" content="Explore the wedding portfolio of Alex Claudio Photography, a wedding photography team based in Seattle and serving the Pacific Northwest.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://alex-claudio.com/portfolio/">
     <meta property="og:image" content="https://alex-claudio.com/82.jpg">
@@ -18,7 +18,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Portfolio | Alex Claudio Photography">
-    <meta name="twitter:description" content="Browse the wedding photography portfolio of Alex Claudio — documentary style with an editorial finish, serving Seattle and the Pacific Northwest.">
+    <meta name="twitter:description" content="Explore the wedding portfolio of Alex Claudio Photography, a wedding photography team based in Seattle and serving the Pacific Northwest.">
     <meta name="twitter:image" content="https://alex-claudio.com/82.jpg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Pinyon+Script&display=swap" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/brittany-signature" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css?v=46">
-    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../editorial.css?v=4">
+    <link rel="icon" type="image/svg+xml" href="../logo-badge.svg">
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-979140720"></script>
@@ -40,13 +41,14 @@
     </script>
     <script src="/meta-pixel.js"></script>
 </head>
-<body class="portfolio-body">
+<body class="portfolio-body premium-site">
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2033560380692618&amp;ev=PageView&amp;noscript=1" alt=""></noscript>
+    <a class="skip-link" href="#content">Skip to content</a>
     <nav class="top-nav portfolio-nav" id="topNav">
         <div class="nav-container">
             <div class="nav-links nav-links-left">
-                <a href="/" class="nav-link">Home</a>
-                <a href="/portfolio/" class="nav-link">Portfolio</a>
+                <a href="/portfolio/" class="nav-link" aria-current="page">Portfolio</a>
+                <a href="/#intro" class="nav-link">The studio</a>
             </div>
 
             <div class="nav-center">
@@ -56,7 +58,7 @@
             </div>
 
             <div class="nav-links nav-links-right">
-                <a href="/pricing/" class="nav-link">Pricing</a>
+                <a href="/pricing/" class="nav-link">Collections</a>
                 <a href="/#contact" class="nav-link">Inquire</a>
             </div>
 
@@ -70,21 +72,33 @@
         <div class="mobile-menu" id="mobileMenu">
             <a href="/" class="mobile-nav-link">Home</a>
             <a href="/portfolio/" class="mobile-nav-link">Portfolio</a>
-            <a href="/pricing/" class="mobile-nav-link">Pricing</a>
+            <a href="/#intro" class="mobile-nav-link">The studio</a>
+            <a href="/pricing/" class="mobile-nav-link">Collections</a>
             <a href="/#contact" class="mobile-nav-link">Inquire</a>
         </div>
     </nav>
 
-    <section class="portfolio-gallery-section">
+    <main id="content">
+    <section class="portfolio-gallery-section" aria-labelledby="portfolioTitle">
         <div class="container">
             <div class="section-header">
-                <p class="section-eyebrow">Featured Gallery</p>
+                <p class="section-eyebrow">Alex Claudio Photography</p>
+                <h1 id="portfolioTitle">The wedding <em>portfolio.</em></h1>
+                <p class="portfolio-intro">Portraits, celebrations, and the moments in between.</p>
             </div>
         </div>
         <div class="masonry-gallery-wrapper">
             <div id="portfolioGallery" class="masonry-gallery" aria-live="polite"></div>
         </div>
     </section>
+    <section class="collection-inquiry">
+        <div class="container">
+            <p class="eyebrow">Your wedding</p>
+            <h2>Begin with<br><em>a conversation.</em></h2>
+            <a class="btn" href="/pricing/">Explore the collections</a>
+        </div>
+    </section>
+    </main>
 
     <div id="lightboxOverlay" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Image preview">
         <button id="lightboxClose" class="lightbox-close" aria-label="Close">&times;</button>
@@ -100,12 +114,13 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <h3 class="footer-logo">Alex Claudio</h3>
-                    <p class="footer-tagline">Documentary Wedding Photography</p>
+                    <p class="footer-tagline">Wedding photography in Seattle &amp; Europe.</p>
                 </div>
                 
                 <div class="footer-nav">
                     <a href="/portfolio/">Portfolio</a>
-                    <a href="/#about">About</a>
+                    <a href="/#intro">The studio</a>
+                    <a href="/pricing/">Collections</a>
                     <a href="/#contact">Contact</a>
                 </div>
                 
@@ -122,7 +137,6 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
-    <script src="../script.js?v=33"></script>
+    <script src="../script.js?v=38"></script>
 </body>
 </html>

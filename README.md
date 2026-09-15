@@ -4,7 +4,9 @@ A beautiful, responsive wedding photography website built with HTML, CSS, and Ja
 
 ## 🎯 Overview
 
-This website showcases Alex Claudio's documentary wedding photography services with a warm, cinematic aesthetic and clean editorial typography. The design emphasizes authentic moments and timeless storytelling.
+This website presents Alex Claudio Photography as a Seattle wedding photography team. Both photographers cover every wedding collection. The current collections are Essential ($4,000 / 6 hours), Signature ($5,700 / 8 hours / 30-page leather album), and Heirloom ($7,500 / 10 hours / 40-page leather album / 60-minute engagement session).
+
+The main pages use an image-led luxury wedding presentation in `editorial.css`. The homepage leads with selected photographs before the studio introduction. Use original studio photographs only; reference sites inform design, not portfolio content or press credentials. The current business name remains in place until a new studio name is selected.
 
 ## ✨ Features
 
