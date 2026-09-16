@@ -172,7 +172,7 @@ This website template is created for Alex Claudio Photography. Please respect th
 The production site runs as a Node.js web service on Railway. `server.js` serves
 the static site and provides the inquiry and private-gallery APIs. Railway uses
 `.railway/railway.ts` for its source, variables, start command, health check,
-region, and restart policy.
+and region.
 
 ### Deploy with Railway
 

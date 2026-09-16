@@ -8,8 +8,6 @@ export default defineRailway(() => {
       startCommand: "npm start",
       healthcheckPath: "/health",
       healthcheckTimeout: 100,
-      restartPolicyType: "ON_FAILURE",
-      restartPolicyMaxRetries: 10,
     },
     env: { R2_ACCESS_KEY_ID: preserve(), R2_ACCOUNT_ID: preserve(), R2_BUCKET_NAME: preserve(), R2_PUBLIC_DOMAIN: preserve(), R2_SECRET_ACCESS_KEY: preserve(), RESEND_API_KEY: preserve() },
   });
