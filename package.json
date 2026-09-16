@@ -13,5 +13,8 @@
     "@aws-sdk/client-s3": "^3.1133.0",
     "express": "^5.2.1",
     "googleapis": "^181.0.0"
+  },
+  "devDependencies": {
+    "railway": "^3.11.0"
   }
 }
