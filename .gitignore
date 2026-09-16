@@ -1,6 +1,9 @@
 .DS_Store
 portfolio/.DS_Store
 portfolio/content/.DS_Store
+node_modules/
+.env
+.env.*
 
-# Local Netlify folder
+# Local deployment state
 .netlify

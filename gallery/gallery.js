@@ -446,7 +446,7 @@
       return;
     }
     try {
-      const res = await fetch(`/.netlify/functions/list-gallery?c=${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/gallery?c=${encodeURIComponent(slug)}`);
       if (res.status === 404) {
         renderNotFound();
         return;

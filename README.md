@@ -169,19 +169,22 @@ This website template is created for Alex Claudio Photography. Please respect th
 
 ## 🚀 Deployment
 
-### Static Hosting
-This website can be deployed to any static hosting service:
+The production site runs as a Node.js web service on Railway. `server.js` serves
+the static site and provides the inquiry and private-gallery APIs. Railway uses
+`railway.json` for its start command, health check, and restart policy.
 
-1. **Netlify**: Drag and drop the folder
-2. **Vercel**: Connect your repository
-3. **GitHub Pages**: Push to a repository
-4. **Traditional Hosting**: Upload via FTP
+### Deploy with Railway
 
-### Custom Domain
-Update the Open Graph URL in `index.html` to match your domain:
-```html
-<meta property="og:url" content="https://yourdomain.com">
-```
+1. Install the Railway CLI and run `railway login`.
+2. Link this folder with `railway link`, or create a project with
+   `railway init --name alex-claudio-com`.
+3. Add the environment variables listed below.
+4. Run `railway up --detach`.
+5. Add `alex-claudio.com` and `www.alex-claudio.com` with `railway domain`, then
+   copy the returned DNS records into the domain's DNS provider.
+
+Railway injects `PORT`; do not set it manually. The service listens on all
+interfaces and exposes `GET /health` for deployment health checks.
 
 ## 🔄 Updates & Maintenance
 
@@ -201,18 +204,45 @@ Update the Open Graph URL in `index.html` to match your domain:
 
 **Built with ❤️ for Alex Claudio Photography**
 
+## Runtime environment variables
+
+Inquiry submissions are accepted at `POST /api/submissions`. They are emailed
+through Resend and can also be appended to a Google Sheet:
+
+- `RESEND_API_KEY` — Resend API key
+- `CONTACT_TO_EMAIL` — optional recipient; defaults to `contact@alex-claudio.com`
+- `CONTACT_FROM_EMAIL` — optional verified sender; defaults to Resend's onboarding sender
+- `GOOGLE_SHEET_ID` — optional target Google Sheet ID
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL` — service account email
+- `GOOGLE_SERVICE_ACCOUNT_KEY` — service account private key (escaped `\\n` newlines are supported)
+- `GOOGLE_SHEET_RANGE` — optional; defaults to `Leads!A:F`
+
+Private galleries use Cloudflare R2 and require:
+
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- `R2_PUBLIC_DOMAIN` — hostname or HTTPS origin for the public R2 bucket
+
+At least one inquiry destination (Resend or Google Sheets) must be configured.
+The server rejects a submission instead of displaying a false success if no
+destination accepts it.
+
 ## Lead capture to Excel/Sheets
-Netlify is configured with a serverless function `netlify/functions/submission-created.js` that runs on every form submission (home contact + wedding-show lead). To log each submission to a spreadsheet (easy to export to Excel), set these Netlify environment variables:
+
+To log each submission to a spreadsheet (easy to export to Excel), configure:
 
 - `GOOGLE_SHEET_ID` — the target Google Sheet ID (create a sheet with a tab named `Leads` or set `GOOGLE_SHEET_RANGE`)
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL` — service account email
 - `GOOGLE_SERVICE_ACCOUNT_KEY` — service account private key (paste with `\n` for newlines)
 - `GOOGLE_SHEET_RANGE` (optional) — e.g. `Leads!A:F`
 
-Columns saved: timestamp, form name, name, email, phone, source/referral. Netlify will install the `googleapis` dependency during build via `package.json`.
+Columns saved: timestamp, form name, name, email, phone, source/referral. Railway
+installs the `googleapis` dependency during build via `package.json`.
 
 Quick setup steps:
 1) Create a Google Cloud service account with Sheets access; share the target sheet with that service account email.
-2) Add the credentials as environment variables in the Netlify site settings.
+2) Add the credentials as environment variables in the Railway service.
 3) Deploy; new submissions will append rows automatically.
 4) Download as Excel (`File → Download → Microsoft Excel (.xlsx)`) anytime.

@@ -14,7 +14,7 @@ This script builds those zips. For each category it:
   2. streams every photo into a STORE (uncompressed — JPEGs don't shrink) zip,
   3. multipart-uploads it to  {slug}/{slug}-{category}.zip  in R2.
 
-Once uploaded, list-gallery.js reports the zip and the gallery automatically
+Once uploaded, the gallery API reports the zip and the gallery automatically
 turns "Download all" into a native download. Re-run after changing a gallery's
 photos to refresh its zip.
 
@@ -53,7 +53,7 @@ import zipfile
 ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID", "1a4010c112299a6a4889b06084a077a2")
 BUCKET = os.environ.get("R2_BUCKET_NAME", "alex-claudio-galleries")
 SITE_ORIGIN = os.environ.get("SITE_ORIGIN", "https://alex-claudio.com")
-LIST_FN = f"{SITE_ORIGIN}/.netlify/functions/list-gallery"
+LIST_FN = f"{SITE_ORIGIN}/api/gallery"
 UA = "make-gallery-zip/1.0"
 CATEGORIES = ["engagement", "wedding"]
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic")

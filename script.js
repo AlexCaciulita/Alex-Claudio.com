@@ -565,7 +565,7 @@ async function handleFormSubmit(event) {
             encodedData.append(key, value.toString());
         });
 
-        const response = await fetch('/', {
+        const response = await fetch('/api/submissions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: encodedData.toString()
@@ -1006,7 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.forEach((value, key) => encoded.append(key, value.toString()));
 
             try {
-                const response = await fetch('/lead/', {
+                const response = await fetch('/api/submissions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: encoded.toString()

@@ -1,0 +1,10 @@
+.git/
+.netlify/
+.claude/
+node_modules/
+ads/
+docs/
+tests/
+tools/
+*.zip
+*.mp4
