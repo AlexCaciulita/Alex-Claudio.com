@@ -4,6 +4,7 @@ export default defineRailway(() => {
   const alexClaudioSite = service("alex-claudio-site", {
     source: github("AlexCaciulita/Alex-Claudio.com", { checkSuites: false }),
     replicas: { "us-west2": 1 },
+    domains: ["alex-claudio.com", "www.alex-claudio.com"],
     deploy: {
       startCommand: "npm start",
       healthcheckPath: "/health",
