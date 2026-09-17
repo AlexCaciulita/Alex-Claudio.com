@@ -15,7 +15,7 @@ test('journal pages have local navigation, real photos, and unique page metadata
     titles.add(html.match(/<title>([^<]+)<\/title>/)[1]);
     assert.match(html, /<meta name="description" content="[^"]+">/);
     assert.match(html, /href="https:\/\/alex-claudio.com\/blog\//);
-    assert.match(html, /journal\.css\?v=2/);
+    assert.match(html, /journal\.css\?v=3/);
     const images = [...html.matchAll(/<img[^>]+src="([^"]+)"[^>]+alt="([^"]+)"/g)];
     const expectedImageCount = path === 'blog/index.html' ? 3 : 1;
     assert.equal(images.length, expectedImageCount, path);

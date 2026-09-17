@@ -79,7 +79,14 @@ body.journal-body .article-intro-copy p { margin: 0 0 20px; font-size: 16px; lin
 body.journal-body .article-intro-copy p:first-child { margin-top: 0; font: 400 33px/1.25 var(--font-display); color: var(--ink); }
 body.journal-body .article-layout { max-width: 1180px; margin: 26px auto 0; padding: 52px 72px 76px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 80px; align-items: start; background: var(--paper-bright); }
 body.journal-body .article-contents { position: sticky; top: 120px; padding-top: 22px; border-top: 1px solid var(--rule); }
-body.journal-body .article-contents a { display: grid; grid-template-columns: 22px 1fr; gap: 12px; text-decoration: none; font-size: 11px; line-height: 1.65; margin: 0 0 17px; }
+body.journal-body .article-contents a { display: block; text-decoration: none; font-size: 12px; line-height: 1.65; margin: 0 0 12px; }
+body.journal-body .article-contents .article-part-link { margin: 26px 0 14px; padding-top: 16px; border-top: 1px solid var(--rule); font-weight: 500; }
+body.journal-body .article-part { padding: 0; background: transparent; }
+body.journal-body .article-part + .article-part { margin-top: 42px; }
+body.journal-body .article-part-heading { padding: 28px 0 30px; border-top: 1px solid var(--rule); }
+body.journal-body .article-part-heading h2 { margin: 0; font-size: clamp(32px, 3vw, 42px); line-height: 1.12; }
+body.journal-body .article-part-heading .journal-kicker { margin-bottom: 12px; }
+body.journal-body .article-section h3 { margin: 0 0 20px; font-size: 30px; line-height: 1.15; }
 body.journal-body .article-contents a span { color: #958c82; font-family: var(--font-display); font-size: 18px; line-height: 1.2; }
 body.journal-body .article-contents a:hover { text-decoration: underline; }
 body.journal-body .article-copy { min-width: 0; }
