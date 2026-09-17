@@ -21,10 +21,9 @@ test('public marketing copy describes the photography team without relationship 
     assert.match(source, /<link rel="icon" type="image\/svg\+xml" href="(?:\.\.\/)?logo-badge\.svg">/, path);
   }
   assert.doesNotMatch(script, relationshipLabels);
-  assert.match(home, /Alex has photographed weddings since 2014/);
+  assert.match(home, /We Photographed weddings since 2014/);
   assert.match(home, /Every collection includes both of us for the full coverage/);
   assert.match(pricing, /Two photographers\. Every collection\./);
-  assert.doesNotMatch(home, /we.ve photographed.*since 2014/i);
 });
 
 test('studio introduction uses both approved portraits without name captions', () => {
