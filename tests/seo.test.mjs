@@ -51,5 +51,5 @@ test('main pages and homepage planning section link directly to canonical Journa
   }
   const home = read('index.html');
   for (const slug of articles) assert.ok(home.includes(`href="blog/${slug}/"`));
-  assert.match(home, /Seattle wedding<br><em>photography/);
+  assert.match(home, /<title>Seattle Wedding Photographers/);
 });

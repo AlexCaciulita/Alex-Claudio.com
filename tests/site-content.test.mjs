@@ -91,8 +91,8 @@ test('supporting navigation targets the actual team section', () => {
 });
 
 test('editorial presentation keeps original images, anonymous notes, and the agreed collections', () => {
-  assert.match(home, /Seattle wedding<br><em>photography\.<\/em>/);
-  assert.match(home, /An editorial eye\.<br>A personal approach\./);
+  assert.match(home, /Your wedding\.<br><em>Unmistakably you\.<\/em>/);
+  assert.match(home, /Editorial wedding photography\.<br>Seattle, the Pacific Northwest &amp; Europe\./);
   assert.ok(home.indexOf('id="selected-work"') < home.indexOf('id="intro"'));
   const gallery = home.match(/<section class="mosaic-section"[\s\S]*?<\/section>/)[0];
   const galleryImages = [...gallery.matchAll(/<img src="([^"]+)"/g)].map(match => match[1]);
