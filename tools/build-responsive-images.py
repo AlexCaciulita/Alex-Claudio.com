@@ -16,7 +16,8 @@ def variants(source, key):
         image = ImageOps.exif_transpose(original).convert('RGB')
         width, height = image.size
         candidates = []
-        for size in sorted({min(width, target) for target in [400, 800, 1200, 1600]}):
+        targets = [400, 800, 1200, 1600, 2400] if key == 'hero-upscaled' else [400, 800, 1200, 1600]
+        for size in sorted({min(width, target) for target in targets}):
             destination = OUTPUT / f'{key}-{size}.webp'
             destination.parent.mkdir(parents=True, exist_ok=True)
             resized = image.resize((size, round(height * size / width)), Image.Resampling.LANCZOS)
@@ -35,12 +36,12 @@ for page in [ROOT / 'index.html', ROOT / 'pricing/index.html', *sorted((ROOT / '
     def update_image(match):
         tag = match[0]
         path = re.search(r'\bsrc="([^"]+)"', tag)
-        if not path or '/assets/' not in '/' + path[1] or path[1].startswith('https:'):
+        if not path or path[1].startswith('https:') or ('/assets/' not in '/' + path[1] and 'hero-img' not in tag):
             return tag
         file = (page.parent / path[1]).resolve()
         if file.suffix.lower() not in ['.jpg', '.jpeg', '.png']:
             return tag
-        key = '-'.join(file.relative_to(ROOT / 'assets').with_suffix('').parts)
+        key = 'hero-upscaled' if 'hero-img' in tag else '-'.join(file.relative_to(ROOT / 'assets').with_suffix('').parts)
         candidates, width, height = variants(file, key)
         for attribute in ['srcset', 'sizes', 'width', 'height']:
             tag = re.sub(r'\s+' + attribute + r'="[^"]*"', '', tag)
@@ -56,9 +57,9 @@ for page in [ROOT / 'index.html', ROOT / 'pricing/index.html', *sorted((ROOT / '
 
     source = re.sub(r'<img\b[^>]*>', update_image, source)
     if page == ROOT / 'index.html':
-        hero = re.search(r'<img class="hero-img"[^>]*srcset="([^"]+)" sizes="([^"]+)"', source)
+        hero = re.search(r'<img class="hero-img"[^>]*src="([^"]+)"[^>]*srcset="([^"]+)" sizes="([^"]+)"', source)
         source = re.sub(r'<link rel="preload" as="image"[^>]*>',
-                        f'<link rel="preload" as="image" href="assets/home/faq-craft-1600.jpg" imagesrcset="{hero[1]}" imagesizes="{hero[2]}">', source)
+                        f'<link rel="preload" as="image" href="{hero[1]}" imagesrcset="{hero[2]}" imagesizes="{hero[3]}">', source)
     page.write_text(source)
 
 figures = []
