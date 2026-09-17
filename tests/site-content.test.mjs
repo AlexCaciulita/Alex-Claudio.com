@@ -90,7 +90,7 @@ test('supporting navigation targets the actual team section', () => {
 });
 
 test('editorial presentation keeps original images, anonymous notes, and the agreed collections', () => {
-  assert.match(home, /Wedding<br><em>photography\.<\/em>/);
+  assert.match(home, /Seattle wedding<br><em>photography\.<\/em>/);
   assert.match(home, /An editorial eye\.<br>A personal approach\./);
   assert.ok(home.indexOf('id="selected-work"') < home.indexOf('id="intro"'));
   const gallery = home.match(/<section class="mosaic-section"[\s\S]*?<\/section>/)[0];

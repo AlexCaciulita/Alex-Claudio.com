@@ -7,6 +7,12 @@ const { SubmissionError, processSubmission } = require('./server/submissions');
 const ROOT = __dirname;
 const SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
 const SUBMISSION_LIMIT = 10;
+const PUBLIC_PAGES = new Set([
+  '/', '/portfolio/', '/pricing/', '/links/', '/lead/', '/blog/',
+  '/blog/seattle-wedding-rain-plan/',
+  '/blog/how-many-hours-wedding-photography/',
+  '/blog/wedding-photography-timeline/'
+]);
 const PRIVATE_PATHS = new Set([
   'ads',
   'docs',
@@ -145,12 +151,27 @@ function createApp() {
     next();
   });
 
+  app.use((req, res, next) => {
+    if (!['GET', 'HEAD'].includes(req.method)) return next();
+    const queryAt = req.originalUrl.indexOf('?');
+    const pathname = queryAt < 0 ? req.originalUrl : req.originalUrl.slice(0, queryAt);
+    const query = queryAt < 0 ? '' : req.originalUrl.slice(queryAt);
+    const candidate = pathname.replace(/\/index(?:\.html)?$/, '/');
+    const canonicalPath = PUBLIC_PAGES.has(candidate) ? candidate
+      : PUBLIC_PAGES.has(`${candidate}/`) ? `${candidate}/` : pathname;
+    if (req.hostname === 'www.alex-claudio.com') {
+      return res.redirect(301, `https://alex-claudio.com${canonicalPath}${query}`);
+    }
+    if (canonicalPath !== pathname) return res.redirect(301, `${canonicalPath}${query}`);
+    next();
+  });
+
   app.use(express.static(ROOT, {
     dotfiles: 'ignore',
     extensions: ['html'],
     index: 'index.html',
     setHeaders(res, filePath) {
-      if (filePath.endsWith('.html')) {
+      if (filePath.endsWith('.html') || ['robots.txt', 'sitemap.xml'].includes(path.basename(filePath))) {
         res.set('Cache-Control', 'public, max-age=0, must-revalidate');
       } else {
         res.set('Cache-Control', 'public, max-age=604800');

@@ -53,8 +53,8 @@ test('coverage article keeps the agreed prices and full-team coverage', () => {
 test('main pages link to the journal without changing their shared presentation', () => {
   for (const path of ['index.html', 'pricing/index.html', 'portfolio/index.html']) {
     const html = read(path);
-    assert.match(html, /href="(?:\.\.\/)?blog\/index.html" class="nav-link">Journal/);
-    assert.match(html, /href="(?:\.\.\/)?blog\/index.html" class="mobile-nav-link">Journal/);
+    assert.match(html, /href="(?:\.\.\/)?blog\/" class="nav-link">Journal/);
+    assert.match(html, /href="(?:\.\.\/)?blog\/" class="mobile-nav-link">Journal/);
     assert.match(html, /editorial\.css\?v=4/);
   }
 });

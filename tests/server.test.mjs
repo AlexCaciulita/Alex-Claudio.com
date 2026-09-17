@@ -65,6 +65,45 @@ test('submission endpoint validates requests and silently accepts honeypots', as
   });
 });
 
+test('canonical redirects preserve queries and leave service endpoints alone', async () => {
+  await withServer(async (origin) => {
+    for (const [alias, canonical] of [
+      ['/index.html', '/'], ['/index', '/'], ['/portfolio', '/portfolio/'],
+      ['/pricing/index.html', '/pricing/'], ['/blog/index.html', '/blog/'],
+      ['/blog/wedding-photography-timeline/index.html', '/blog/wedding-photography-timeline/']
+    ]) {
+      for (const method of ['GET', 'HEAD']) {
+        const response = await fetch(`${origin}${alias}?utm_source=test&collection=essential`, { method, redirect: 'manual' });
+        assert.equal(response.status, 301, alias);
+        assert.equal(response.headers.get('location'), `${canonical}?utm_source=test&collection=essential`);
+      }
+      const destination = await fetch(`${origin}${canonical}`, { redirect: 'manual' });
+      assert.equal(destination.status, 200, canonical);
+    }
+    const www = await fetch(`${origin}/blog/index.html?utm_source=test`, {
+      headers: { 'X-Forwarded-Host': 'www.alex-claudio.com' }, redirect: 'manual'
+    });
+    assert.equal(www.status, 301);
+    assert.equal(www.headers.get('location'), 'https://alex-claudio.com/blog/?utm_source=test');
+    const health = await fetch(`${origin}/health`, { headers: { 'X-Forwarded-Host': 'www.alex-claudio.com' }, redirect: 'manual' });
+    assert.equal(health.status, 200);
+    const post = await fetch(`${origin}/api/submissions`, {
+      method: 'POST', headers: { 'X-Forwarded-Host': 'www.alex-claudio.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company: 'honeypot' }), redirect: 'manual'
+    });
+    assert.equal(post.status, 200);
+    const gallery = await fetch(`${origin}/gallery/?c=client-code`, { redirect: 'manual' });
+    assert.equal(gallery.status, 200);
+    const missing = await fetch(`${origin}/not-a-page/index.html`, { redirect: 'manual' });
+    assert.equal(missing.status, 404);
+    for (const route of ['/robots.txt', '/sitemap.xml']) {
+      const response = await fetch(`${origin}${route}`);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('cache-control'), 'public, max-age=0, must-revalidate');
+    }
+  });
+});
+
 test('gallery endpoint rejects malformed codes before accessing R2', async () => {
   await withServer(async (origin) => {
     const response = await fetch(`${origin}/api/gallery?c=bad`);
