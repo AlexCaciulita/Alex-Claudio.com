@@ -55,6 +55,6 @@ test('main pages link to the journal without changing their shared presentation'
     const html = read(path);
     assert.match(html, /href="(?:\.\.\/)?blog\/" class="nav-link">Journal/);
     assert.match(html, /href="(?:\.\.\/)?blog\/" class="mobile-nav-link">Journal/);
-    assert.match(html, /editorial\.css\?v=4/);
+    assert.match(html, /editorial\.css\?v=5/);
   }
 });

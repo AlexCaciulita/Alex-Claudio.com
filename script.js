@@ -77,80 +77,6 @@ let currentLightboxIndex = 0;
 let currentGalleryOrder = [];
 let currentTestimonial = 0;
 let testimonialInterval;
-const portfolioQuotes = [
-    'We photograph your wedding together, with room for candid moments and a little guidance when you need it.',
-    'Two perspectives on your wedding day, from the people beside you to the reactions across the room.'
-];
-// Curated ordering: favorites first, then remaining set.
-const portfolioImages = [
-    // Hero picks
-    '5DM32249.jpg',
-    '5DM32274.jpg',
-    '5DM32811.jpg',
-    '5DM34024.jpg',
-    'Sarah&Michael - Wedding Day-278.jpg',
-    'Dawn & Richard - Wedding Day-207.jpg',
-    'Devin&Laura - Engagement Session  (14).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (387).jpg',
-    'Amy&Paul - Wedding Day-423.jpg',
-    'resized.jpg',
-    // Rest of the gallery
-    '5DM30850.jpg',
-    '5DM30897.jpg',
-    '5DM31222.jpg',
-    '5DM31468.jpg',
-    '5DM31542.jpg',
-    '5DM31821.jpg',
-    '5DM32209.jpg',
-    '5DM32240.jpg',
-    '5DM32262.jpg',
-    '5DM32928.jpg',
-    '5DM32943.jpg',
-    '5DM33137.jpg',
-    '5DM34020.jpg',
-    '5DM34202.jpg',
-    'Amy&Paul - Wedding Day-179.jpg',
-    'Amy&Paul - Wedding Day-424.jpg',
-    'Amy&Paul - Wedding Day-426.jpg',
-    'Amy&Paul - Wedding Day-437.jpg',
-    'Amy&Paul - Wedding Day-485.jpg',
-    'Amy&Paul - Wedding Day-491.jpg',
-    'Amy&Paul - Wedding Day-595.jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (170).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (193).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (379).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (399).jpg',
-    'Ana&Iulian - Nunta - 22 August 2015 (488).jpg',
-    'Devin&Laura - Engagement Session  (10).jpg',
-    'Devin&Laura - Engagement Session  (102).jpg',
-    'Devin&Laura - Engagement Session  (58).jpg',
-    'Devin&Laura - Engagement Session  (68).jpg',
-    'Diane & Chris - Engagement Session-100.jpg',
-    'Diane & Chris - Engagement Session-103.jpg',
-    'Diane & Chris - Engagement Session-115.jpg',
-    'Diane & Chris - Engagement Session-122.jpg',
-    'Diane & Chris - Engagement Session-140.jpg',
-    'Diane & Chris - Engagement Session-145.jpg',
-    'Iuliana & Florin 27.07 (41).jpg',
-    'Iuliana & Florin 27.07 (60).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (337).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (354).jpg',
-    'Nunta Madalina & Catalin - 2 Iulie 2016 (371).jpg',
-    'resized222.jpg',
-    'Sarah&Michael - Wedding Day-275.jpg',
-    'Sarah&Michael - Wedding Day-286.jpg',
-    'Jess&Fenn - Engagement Session-33.jpg',
-    'Jess&Fenn - Engagement Session-41.jpg',
-    'Jess&Fenn - Engagement Session-57.jpg',
-    'Jess&Fenn - Engagement Session-63.jpg',
-    'Jess&Fenn - Engagement Session-102.jpg',
-    'Jess&Fenn - Engagement Session-116.jpg',
-    'Jess&Fenn - Engagement Session-119.jpg',
-    'Jess&Fenn - Engagement Session-123.jpg',
-    'Jess&Fenn - Engagement Session-126.jpg',
-    'Jess&Fenn - Engagement Session-134.jpg'
-];
-
 function showSlide(index) {
     if (heroSlides.length === 0) return;
     // Remove active class from all slides and dots
@@ -650,59 +576,16 @@ function stopTestimonialAutoplay() {
 }
 
 function renderPortfolioGallery() {
-    if (!portfolioGallery || !Array.isArray(portfolioImages)) return;
-
-    currentGalleryOrder = [...portfolioImages];
-    portfolioGallery.innerHTML = '';
-
-    // Insert quotes at fixed spots: after first row, and mid of fourth row.
-    const quoteInsertions = [3, 8]; // zero-based counts of images already placed
-    let nextQuoteIndex = 0;
-    let imagesPlaced = 0;
-
-    currentGalleryOrder.forEach((file, idx) => {
-        if (nextQuoteIndex < quoteInsertions.length && imagesPlaced === quoteInsertions[nextQuoteIndex]) {
-            portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
-            nextQuoteIndex += 1;
-        }
-
-        const figure = document.createElement('figure');
-        figure.className = 'portfolio-photo masonry-item';
-
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.src = `../Portofolio/${encodeURIComponent(file)}`;
-        img.alt = createAltFromFilename(file);
-        img.dataset.index = idx.toString();
-        img.addEventListener('click', () => openLightbox(idx));
-
-        figure.appendChild(img);
-        portfolioGallery.appendChild(figure);
-        imagesPlaced += 1;
+    if (!portfolioGallery) return;
+    const links = Array.from(portfolioGallery.querySelectorAll('[data-gallery-image]'));
+    currentGalleryOrder = links.map(link => ({ src: link.href, alt: link.querySelector('img').alt }));
+    links.forEach((link, index) => {
+        link.addEventListener('click', event => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            openLightbox(index);
+        });
     });
-
-    // Append any remaining quotes if gallery shorter than expected.
-    while (nextQuoteIndex < portfolioQuotes.length) {
-        portfolioGallery.appendChild(createQuoteFigure(portfolioQuotes[nextQuoteIndex]));
-        nextQuoteIndex += 1;
-    }
-}
-
-function shuffleArray(array) {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-function createAltFromFilename(name) {
-    return name
-        .replace(/\.[^/.]+$/, '')
-        .replace(/[-_]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
 }
 
 function openLightbox(index) {
@@ -713,22 +596,6 @@ function openLightbox(index) {
     document.body.classList.add('lightbox-open');
 }
 
-function createQuoteFigure(message) {
-    const figure = document.createElement('figure');
-    figure.className = 'portfolio-quote masonry-item';
-
-    const card = document.createElement('div');
-    card.className = 'portfolio-quote-card';
-
-    const text = document.createElement('p');
-    text.className = 'portfolio-quote-text';
-    text.textContent = message;
-
-    card.appendChild(text);
-    figure.appendChild(card);
-    return figure;
-}
-
 function closeLightbox() {
     if (!lightboxOverlay) return;
     lightboxOverlay.classList.add('hidden');
@@ -737,9 +604,9 @@ function closeLightbox() {
 
 function updateLightboxImage() {
     if (!lightboxImage || !currentGalleryOrder.length) return;
-    const file = currentGalleryOrder[currentLightboxIndex];
-    lightboxImage.src = `../Portofolio/${encodeURIComponent(file)}`;
-    lightboxImage.alt = createAltFromFilename(file);
+    const image = currentGalleryOrder[currentLightboxIndex];
+    lightboxImage.src = image.src;
+    lightboxImage.alt = image.alt;
 }
 
 function showPrevLightbox() {
@@ -1216,6 +1083,7 @@ function addImageLoadingStates() {
 
 // Add scroll-triggered animations
 function initScrollAnimations() {
+    if (document.body.classList.contains('premium-site')) return;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const revealSelectors = [
         '.reveal',

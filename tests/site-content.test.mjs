@@ -9,19 +9,20 @@ const script = read('script.js');
 const offers = JSON.parse(pricing.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])
   .hasOfferCatalog.itemListElement;
 
-test('public marketing copy describes the photography team without relationship labels', () => {
+test('public marketing copy describes the team and preserves the homepage relationship context', () => {
   const relationshipLabels = /husband[\s-]+and[\s-]+wife|partners in life/i;
   for (const path of ['index.html', 'pricing/index.html', 'portfolio/index.html', 'links/index.html', 'lead/index.html']) {
     const source = read(path);
     assert.match(source, /wedding photograph(?:ers|y)/i, path);
-    assert.doesNotMatch(source, relationshipLabels, path);
+    if (path !== 'index.html') assert.doesNotMatch(source, relationshipLabels, path);
     assert.doesNotMatch(source, /\bluxury\b/i, path);
     assert.doesNotMatch(source, /Alex \+ a second photographer|joins me for every|Tell me about|email me directly|I.ll send availability/, path);
-    assert.match(source, /script\.js\?v=38/, path);
+    assert.match(source, /script\.js\?v=39/, path);
     assert.match(source, /<link rel="icon" type="image\/svg\+xml" href="(?:\.\.\/)?logo-badge\.svg">/, path);
   }
   assert.doesNotMatch(script, relationshipLabels);
-  assert.match(home, /We Photographed weddings since 2014/);
+  assert.match(home, /We've photographed weddings since 2014/);
+  assert.match(home, /Seattle \(husband and wife\)/);
   assert.match(home, /Every collection includes both of us for the full coverage/);
   assert.match(pricing, /Two photographers\. Every collection\./);
 });
@@ -103,7 +104,7 @@ test('editorial presentation keeps original images, anonymous notes, and the agr
   assert.doesNotMatch(home, /as seen (?:in|on)|award-winning|world.class|limited weddings/i);
   for (const path of ['index.html', 'pricing/index.html', 'portfolio/index.html']) {
     const source = read(path);
-    assert.match(source, /editorial\.css\?v=4/, path);
+    assert.match(source, /editorial\.css\?v=5/, path);
     assert.match(source, />The studio<\/a>/, path);
   }
 });

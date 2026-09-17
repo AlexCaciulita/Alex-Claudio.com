@@ -8,16 +8,18 @@ const origin = 'https://alex-claudio.com';
 const articles = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
 const text = html => html.replace(/<br\s*\/?\s*>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
-test('sitemap contains every public page once, with matching canonical and indexable HTML', () => {
+test('sitemap contains every search landing page once, with matching canonical and indexable HTML', () => {
   const urls = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(urls.length, 9);
+  assert.equal(urls.length, 8);
   assert.equal(new Set(urls).size, urls.length);
-  for (const route of ['/', '/portfolio/', '/pricing/', '/blog/', ...articles.map(slug => `/blog/${slug}/`), '/links/', '/lead/']) {
+  for (const route of ['/', '/portfolio/', '/pricing/', '/blog/', ...articles.map(slug => `/blog/${slug}/`), '/links/']) {
     assert.ok(urls.includes(origin + route), route);
     const html = read(`${route.slice(1)}index.html`);
     assert.match(html, new RegExp(`rel="canonical" href="${origin + route}"`));
     assert.doesNotMatch(html, /<meta[^>]+name="robots"[^>]+content="[^"]*noindex/i);
   }
+  assert.ok(!urls.includes(origin + '/lead/'));
+  assert.match(read('lead/index.html'), /name="robots" content="noindex, follow"/);
   assert.match(read('robots.txt'), /Sitemap: https:\/\/alex-claudio.com\/sitemap.xml/);
 });
 
