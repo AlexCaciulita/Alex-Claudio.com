@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { test } from 'node:test';
 
 const root = new URL('../', import.meta.url);
-const slugs = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
+const slugs = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips'];
 const pages = ['blog/index.html', ...slugs.map(slug => `blog/${slug}/index.html`)];
 const read = path => readFileSync(new URL(path, root), 'utf8');
 
@@ -17,7 +17,7 @@ test('journal pages have local navigation, real photos, and unique page metadata
     assert.match(html, /href="https:\/\/alex-claudio.com\/blog\//);
     assert.match(html, /journal\.css\?v=3/);
     const images = [...html.matchAll(/<img[^>]+src="([^"]+)"[^>]+alt="([^"]+)"/g)];
-    const expectedImageCount = path === 'blog/index.html' ? 3 : 1;
+    const expectedImageCount = path === 'blog/index.html' ? 4 : 1;
     assert.equal(images.length, expectedImageCount, path);
     assert.equal(new Set(images.map(image => image[1])).size, images.length, `No duplicate images on ${path}`);
     for (const [, source] of images) assert.ok(existsSync(new URL(source, new URL(path, root))), source);
