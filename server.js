@@ -137,6 +137,9 @@ function createApp() {
 
   app.use('/investment', (req, res) => res.redirect(301, '/'));
 
+  // Short Instagram bio link: alex-claudio.com/ig -> inquiry form, tagged for attribution.
+  app.get('/ig', (req, res) => res.redirect(302, '/?utm_source=instagram&utm_medium=social&utm_campaign=bio#contact'));
+
   app.use((req, res, next) => {
     let pathname;
     try {

@@ -33,6 +33,12 @@ test('Railway service exposes health and static pages', async () => {
     assert.equal(legacy.status, 301);
     assert.equal(legacy.headers.get('location'), '/');
 
+    for (const shortPath of ['/ig', '/ig/', '/IG']) {
+      const igLink = await fetch(`${origin}${shortPath}`, { redirect: 'manual' });
+      assert.equal(igLink.status, 302, shortPath);
+      assert.equal(igLink.headers.get('location'), '/?utm_source=instagram&utm_medium=social&utm_campaign=bio#contact', shortPath);
+    }
+
     for (const privatePath of ['/package.json', '/server.js', '/server/gallery.js', '/tests/server.test.mjs']) {
       const response = await fetch(`${origin}${privatePath}`);
       assert.equal(response.status, 404, privatePath);
