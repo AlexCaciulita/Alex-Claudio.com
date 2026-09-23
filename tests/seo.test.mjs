@@ -5,12 +5,12 @@ import { test } from 'node:test';
 const root = new URL('../', import.meta.url);
 const read = path => readFileSync(new URL(path, root), 'utf8');
 const origin = 'https://alex-claudio.com';
-const articles = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
+const articles = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips'];
 const text = html => html.replace(/<br\s*\/?\s*>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
 test('sitemap contains every search landing page once, with matching canonical and indexable HTML', () => {
   const urls = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(urls.length, 8);
+  assert.equal(urls.length, 9);
   assert.equal(new Set(urls).size, urls.length);
   for (const route of ['/', '/portfolio/', '/pricing/', '/blog/', ...articles.map(slug => `/blog/${slug}/`), '/links/']) {
     assert.ok(urls.includes(origin + route), route);
