@@ -250,9 +250,34 @@ Private galleries use Cloudflare R2 and require:
 - `R2_BUCKET_NAME`
 - `R2_PUBLIC_DOMAIN` — hostname or HTTPS origin for the public R2 bucket
 
-At least one inquiry destination (Resend or Google Sheets) must be configured.
-The server rejects a submission instead of displaying a false success if no
+At least one inquiry destination (Resend, Google Sheets or the studio database) must be
+configured. The server rejects a submission instead of displaying a false success if no
 destination accepts it.
+
+## Studio dashboard
+
+`/admin` is the private studio dashboard: every inquiry with its status (new, replied,
+booked, not booked), private notes, agreed and received amounts, a wedding calendar, and
+a read-only view of tables an earlier dashboard left in the database. It needs:
+
+- `ADMIN_PASSWORD` — the sign-in password, at least 12 characters. Without it the
+  sign-in page says the dashboard isn't set up and nobody can sign in.
+- `DATABASE_URL` — the PostgreSQL connection. On Railway, set it to
+  `${{Postgres.DATABASE_URL}}` (or create a PostgreSQL database first with
+  Create → Database → PostgreSQL). `DATABASE_PRIVATE_URL` or `PGHOST`/`PGUSER`/
+  `PGPASSWORD`/`PGDATABASE` also work.
+
+With a database connected, each letter from the website is also saved there. The
+dashboard creates and uses its own tables in a separate `dashboard` schema and only reads
+anything else; columns that look like passwords, hashes or keys are never shown. Sign-ins
+are held in memory, so a deploy or restart signs everyone out. After five wrong passwords
+from one address, sign-in pauses for 15 minutes, and after 50 from anywhere it pauses for
+browsers that haven't signed in before; browsers that have are remembered for 180 days by
+a cookie signed with a key kept in the database, so strangers can't lock the owner out.
+Changing `ADMIN_PASSWORD` forgets every remembered browser.
+
+`.railway/railway.ts` does not describe the database: don't run `railway config apply`
+with it, or Railway would remove what the file doesn't list.
 
 ## Lead capture to Excel/Sheets
 

@@ -6,7 +6,8 @@ const require = createRequire(import.meta.url);
 const { createApp } = require('../server');
 
 async function withServer(run) {
-  const server = createApp().listen(0, '127.0.0.1');
+  // No database in these tests, even if the shell running them has DATABASE_URL set.
+  const server = createApp({ store: null }).listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => {
     server.once('listening', resolve);
     server.once('error', reject);

@@ -113,16 +113,20 @@ async function appendToSheet(formName, data) {
   return true;
 }
 
-async function processSubmission(formName, data) {
+// options.save, when given, keeps a copy of the inquiry (the studio dashboard's database).
+// The inquiry counts as delivered when any one of email, Sheet or database accepted it.
+async function processSubmission(formName, data, { save = null } = {}) {
   validateSubmission(formName, data);
-  const results = await Promise.allSettled([
-    sendResendEmail(formName, data),
-    appendToSheet(formName, data)
-  ]);
+  const tasks = [
+    ['Email delivery failed:', sendResendEmail(formName, data)],
+    ['Sheet append failed:', appendToSheet(formName, data)]
+  ];
+  if (save) tasks.push(['Saving the inquiry failed:', Promise.resolve().then(() => save(formName, data)).then(() => true)]);
+  const results = await Promise.allSettled(tasks.map(([, task]) => task));
 
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
-      console.error(index === 0 ? 'Email delivery failed:' : 'Sheet append failed:', result.reason);
+      console.error(tasks[index][0], result.reason);
     }
   });
 

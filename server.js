@@ -3,6 +3,8 @@ const { Readable } = require('node:stream');
 const express = require('express');
 const { GalleryError, getGallery, getPublicOrigin } = require('./server/gallery');
 const { SubmissionError, processSubmission } = require('./server/submissions');
+const { createAdminRouter } = require('./server/admin');
+const { createStore, safeMessage } = require('./server/admin/store');
 
 const ROOT = __dirname;
 const SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
@@ -58,7 +60,13 @@ function safeDownloadName(key) {
   return path.basename(key).replace(/["\r\n]/g, '_') || 'download';
 }
 
-function createApp() {
+// options.env and options.store let tests run the site with their own settings and a stand-in database.
+function createApp(options = {}) {
+  const env = options.env || process.env;
+  const store = Object.prototype.hasOwnProperty.call(options, 'store') ? options.store : createStore(env);
+  const saveInquiry = store
+    ? (formName, data) => store.insertInquiry(formName, data).catch((error) => { throw new Error(safeMessage(error)); })
+    : null;
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -82,12 +90,13 @@ function createApp() {
     express.urlencoded({ extended: false, limit: '64kb' }),
     express.json({ limit: '64kb' }),
     async (req, res) => {
-      if (String(req.body.company || '').trim()) {
+      const body = req.body || {};
+      if (String(body.company || '').trim()) {
         return res.status(200).json({ ok: true });
       }
-      const formName = String(req.body['form-name'] || '');
+      const formName = String(body['form-name'] || '');
       try {
-        await processSubmission(formName, req.body);
+        await processSubmission(formName, body, { save: saveInquiry });
         res.status(200).json({ ok: true });
       } catch (error) {
         if (!(error instanceof SubmissionError)) console.error('Submission failed:', error);
@@ -184,6 +193,9 @@ function createApp() {
     next();
   });
 
+  // The private studio dashboard: sign-in, inquiries, calendar and older records.
+  app.use('/admin', createAdminRouter({ store, env }));
+
   app.use(express.static(ROOT, {
     dotfiles: 'ignore',
     extensions: ['html'],
@@ -203,9 +215,15 @@ function createApp() {
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  createApp().listen(port, '0.0.0.0', () => {
+  const store = createStore(process.env);
+  createApp({ store }).listen(port, '0.0.0.0', () => {
     console.log(`Alex Claudio site listening on port ${port}`);
   });
+  if (store) {
+    store.ready()
+      .then(() => console.log('Studio database ready'))
+      .catch((error) => console.error('Studio database is not ready yet:', safeMessage(error)));
+  }
 }
 
 module.exports = { createApp };

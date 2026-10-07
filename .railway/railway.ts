@@ -1,5 +1,9 @@
 import { defineRailway, github, preserve, project, service } from "railway/iac";
 
+// Do not run `railway config apply` with this file as it stands. It describes only the website
+// service; applying it would remove anything it doesn't list, including the PostgreSQL database
+// that holds the studio dashboard's inquiries and notes, and variables such as DATABASE_URL and
+// ADMIN_PASSWORD. Add those first if this file is ever used to manage the project.
 export default defineRailway(() => {
   const alexClaudioSite = service("alex-claudio-site", {
     source: github("AlexCaciulita/Alex-Claudio.com", { checkSuites: false }),
