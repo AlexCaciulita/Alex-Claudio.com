@@ -863,9 +863,9 @@
       const data = new URLSearchParams();
       data.set('form-name', 'contact');
       $$('input[name]', form).forEach((el) => { if (!el.hasAttribute('data-fold')) data.set(el.name, el.value.trim()); });
-      const hours = hoursSel.value === 'unsure' ? 'Not sure yet' : hoursSel.options[hoursSel.selectedIndex].text + ' hours';
+      data.set('hours', hoursSel.value === 'unsure' ? 'Not sure yet' : hoursSel.options[hoursSel.selectedIndex].text + ' hours');
       const care = $('#fCare').value.trim();
-      data.set('message', 'Coverage they are thinking about: ' + hours + '.' + (care ? '\nThe part of the day they care about most: ' + care : ''));
+      if (care) data.set('care', care);
       form.classList.add('sending');
       send.disabled = true;
       err.textContent = 'Sending your letter…';
