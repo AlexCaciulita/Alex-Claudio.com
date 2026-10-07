@@ -7,14 +7,17 @@ const { SubmissionError, processSubmission } = require('./server/submissions');
 const ROOT = __dirname;
 const SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
 const SUBMISSION_LIMIT = 10;
+const GALLERY_SLUG = /^\/gallery\/([a-z0-9-]{6,64})\/?$/;
 const PUBLIC_PAGES = new Set([
-  '/', '/portfolio/', '/pricing/', '/links/', '/lead/', '/blog/',
+  '/', '/portfolio/', '/links/', '/lead/', '/blog/', '/privacy/',
   '/blog/seattle-wedding-rain-plan/',
   '/blog/how-many-hours-wedding-photography/',
-  '/blog/wedding-photography-timeline/'
+  '/blog/wedding-photography-timeline/',
+  '/blog/wedding-day-photography-tips/'
 ]);
 const PRIVATE_PATHS = new Set([
   'ads',
+  'design',
   'docs',
   'netlify',
   'node_modules',
@@ -137,8 +140,20 @@ function createApp() {
 
   app.use('/investment', (req, res) => res.redirect(301, '/'));
 
+  // Pricing now lives on the homepage.
+  app.use('/pricing', (req, res) => {
+    const queryAt = req.originalUrl.indexOf('?');
+    res.redirect(301, `/${queryAt < 0 ? '' : req.originalUrl.slice(queryAt)}#collections`);
+  });
+
   // Short Instagram bio link: alex-claudio.com/ig -> inquiry form, tagged for attribution.
   app.get('/ig', (req, res) => res.redirect(302, '/?utm_source=instagram&utm_medium=social&utm_campaign=bio#contact'));
+
+  // Client galleries shared as /gallery/<code>; the page reads the code from its own path.
+  app.get(GALLERY_SLUG, (req, res) => {
+    res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+    res.sendFile(path.join(ROOT, 'gallery', 'index.html'));
+  });
 
   app.use((req, res, next) => {
     let pathname;

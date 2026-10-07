@@ -12,6 +12,8 @@ const FIELD_LABELS = {
   location: 'Venue / location',
   budget: 'Estimated budget',
   collection: 'Collection',
+  hours: 'Coverage',
+  care: 'The part of the day they care about most',
   message: 'Message',
   source: 'How they found you',
   referral: 'How they found you'
@@ -39,7 +41,7 @@ function validateSubmission(formName, data) {
     throw new SubmissionError(400, 'A valid email is required');
   }
   const required = formName === 'contact'
-    ? ['names', 'event_date', 'location', 'message']
+    ? ['names', 'event_date']
     : ['name'];
   if (required.some((field) => !String(data[field] || '').trim())) {
     throw new SubmissionError(400, 'Required fields are missing');

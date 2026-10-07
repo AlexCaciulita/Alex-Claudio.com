@@ -501,7 +501,7 @@ async function handleFormSubmit(event) {
             contactForm.reset();
             submitButtonEl.textContent = originalText;
             submitButtonEl.disabled = false;
-            showFormSuccess("Your inquiry is in! We'll respond personally within 24 hours. Check your inbox (and spam folder) for our reply.");
+            showFormSuccess("Your inquiry is in! We'll reply personally within a few hours. Check your inbox (and spam folder) for our reply.");
             trackFormSubmission();
         } else {
             throw new Error('Form submission failed');
@@ -1034,34 +1034,10 @@ window.addEventListener('error', (event) => {
     console.error('JavaScript error:', event.error);
 });
 
-// ===== ANALYTICS READY (placeholder) =====
-function trackEvent(eventName, eventData = {}) {
-    if (typeof window.gtag === 'function') {
-        window.gtag('event', eventName, eventData);
-    }
+// Successful inquiry events run only after the server has stored the submission.
+function trackFormSubmission() {
 }
-
-// Track form submissions
-function trackFormSubmission(formName = 'wedding_inquiry') {
-    trackEvent('contact_form_submitted', {
-        form_name: formName,
-        timestamp: new Date().toISOString()
-    });
-
-    if (typeof window.fbq === 'function') {
-        window.fbq('track', 'Lead', {
-            content_name: formName
-        });
-    }
-}
-
-// Track portfolio clicks
-function trackPortfolioClick(coupleName) {
-    trackEvent('portfolio_clicked', {
-        couple: coupleName,
-        timestamp: new Date().toISOString()
-    });
-}
+function trackPortfolioClick() {}
 
 // ===== ADDITIONAL ENHANCEMENTS =====
 
