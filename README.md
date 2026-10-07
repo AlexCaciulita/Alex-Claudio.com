@@ -205,6 +205,30 @@ interfaces and exposes `GET /health` for deployment health checks.
 
 **Built with ❤️ for Alex Claudio Photography**
 
+## Editing the main pages
+
+The homepage (`/`), portfolio (`/portfolio/`), Journal (`/blog/` and its articles)
+and privacy notice (`/privacy/`) are generated. Edit the sources in `design/`, not the
+HTML files they produce:
+
+- `design/the-day.*` — homepage structure, styles and motion (shared by every page)
+- `design/work.*` and `design/portfolio-source.html` — the portfolio and its 64 photographs
+- `design/journal.*`, `design/journal-src/` and `design/build-journal.js` — the Journal articles and privacy notice
+- `design/fonts.json` — the two single-line handwriting fonts (see `design/FONTS-OFL.txt`)
+
+Then rebuild and test:
+
+```
+node design/build-production.js
+npm test
+```
+
+The build writes the eight pages above, `favicon.svg` and the font licence, and stops if
+any preview wording, `noindex` tag, third-party request or broken link would reach a page.
+Fonts (Fraunces, DM Mono) and photographs are served from this site; no page loads
+analytics, advertising pixels or third-party scripts. `/pricing/` redirects to
+`/#collections`, and client galleries open at `/gallery/<code>`.
+
 ## Runtime environment variables
 
 Inquiry submissions are accepted at `POST /api/submissions`. They are emailed

@@ -39,9 +39,38 @@ test('Railway service exposes health and static pages', async () => {
       assert.equal(igLink.headers.get('location'), '/?utm_source=instagram&utm_medium=social&utm_campaign=bio#contact', shortPath);
     }
 
-    for (const privatePath of ['/package.json', '/server.js', '/server/gallery.js', '/tests/server.test.mjs']) {
+    for (const privatePath of ['/package.json', '/server.js', '/server/gallery.js', '/tests/server.test.mjs', '/design/build-production.js', '/design/fonts.json']) {
       const response = await fetch(`${origin}${privatePath}`);
       assert.equal(response.status, 404, privatePath);
+    }
+  });
+});
+
+test('pricing moved to the homepage and old pricing links still arrive there', async () => {
+  await withServer(async (origin) => {
+    for (const [from, to] of [
+      ['/pricing/', '/#collections'],
+      ['/pricing', '/#collections'],
+      ['/pricing/index.html', '/#collections'],
+      ['/pricing/?collection=signature', '/?collection=signature#collections']
+    ]) {
+      const response = await fetch(`${origin}${from}`, { redirect: 'manual' });
+      assert.equal(response.status, 301, from);
+      assert.equal(response.headers.get('location'), to, from);
+    }
+  });
+});
+
+test('client galleries open from /gallery/<code> links and from ?c= links', async () => {
+  await withServer(async (origin) => {
+    for (const route of ['/gallery/sarah-michael-2026', '/gallery/sarah-michael-2026/', '/gallery/?c=sarah-michael-2026']) {
+      const response = await fetch(`${origin}${route}`, { redirect: 'manual' });
+      assert.equal(response.status, 200, route);
+      assert.match(await response.text(), /id="galleryHero"|class="gallery/, route);
+    }
+    for (const route of ['/gallery/BAD', '/gallery/no', '/gallery/a/b']) {
+      const response = await fetch(`${origin}${route}`, { redirect: 'manual' });
+      assert.equal(response.status, 404, route);
     }
   });
 });
@@ -62,6 +91,22 @@ test('submission endpoint validates requests and silently accepts honeypots', as
     });
     assert.equal(invalid.status, 400);
 
+    const missingDate = await fetch(`${origin}/api/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'form-name=contact&names=Ana+and+Iulian&email=ana%40example.com'
+    });
+    assert.equal(missingDate.status, 400);
+
+    // A short letter (no venue or message yet) passes validation; with no email or sheet
+    // configured in tests, delivery then reports itself unavailable instead of succeeding.
+    const short = await fetch(`${origin}/api/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'form-name=contact&names=Ana+and+Iulian&event_date=June+2027&email=ana%40example.com&message=Coverage%3A+eight+hours.'
+    });
+    assert.equal(short.status, 503);
+
     const unknown = await fetch(`${origin}/api/submissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -75,8 +120,9 @@ test('canonical redirects preserve queries and leave service endpoints alone', a
   await withServer(async (origin) => {
     for (const [alias, canonical] of [
       ['/index.html', '/'], ['/index', '/'], ['/portfolio', '/portfolio/'],
-      ['/pricing/index.html', '/pricing/'], ['/blog/index.html', '/blog/'],
-      ['/blog/wedding-photography-timeline/index.html', '/blog/wedding-photography-timeline/']
+      ['/privacy/index.html', '/privacy/'], ['/blog/index.html', '/blog/'],
+      ['/blog/wedding-photography-timeline/index.html', '/blog/wedding-photography-timeline/'],
+      ['/blog/wedding-day-photography-tips', '/blog/wedding-day-photography-tips/']
     ]) {
       for (const method of ['GET', 'HEAD']) {
         const response = await fetch(`${origin}${alias}?utm_source=test&collection=essential`, { method, redirect: 'manual' });

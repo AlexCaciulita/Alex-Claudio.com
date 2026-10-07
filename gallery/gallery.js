@@ -63,7 +63,8 @@
 
   function getSlug() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('c') || '';
+    const pathMatch = window.location.pathname.match(/^\/gallery\/([a-z0-9-]{6,64})\/?$/);
+    return pathMatch ? pathMatch[1] : params.get('c') || '';
   }
 
   function formatDate(iso) {
@@ -81,6 +82,7 @@
       return false;
     }
     heroImg.src = data.hero;
+    heroImg.style.objectPosition = /^\d{1,3}% \d{1,3}%$/.test(data.heroPosition || '') ? data.heroPosition : '50% 50%';
     heroImg.alt = data.name ? `${data.name} — gallery hero` : 'Gallery hero image';
     heroTitleEl.textContent = data.name || '';
     heroTitleEl.hidden = !data.name;
