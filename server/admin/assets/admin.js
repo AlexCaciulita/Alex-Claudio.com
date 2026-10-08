@@ -6,8 +6,8 @@
   const app = document.getElementById('app');
   const STATUSES = [['new', 'New'], ['replied', 'Replied'], ['booked', 'Booked'], ['not_booked', 'Not booked']];
   const STATUS_LABEL = Object.fromEntries(STATUSES);
-  const FORM_LABEL = { contact: 'Website letter', 'wedding-show-lead': 'Wedding show sign-up', manual: 'Added by hand' };
-  const LIMITS = { names: 300, email: 300, phone: 100, event_date: 200, location: 300, hours: 100, care: 1000, message: 5000, source: 300 };
+  const FORM_LABEL = { contact: 'Website letter', 'wedding-show-lead': 'Wedding show sign-up', manual: 'Added by hand', 'earlier-dashboard': 'From the earlier dashboard' };
+  const LIMITS = { names: 300, email: 300, phone: 100, event_date: 200, location: 300, hours: 300, care: 1000, message: 5000, source: 300 };
   const TEXT_FIELDS = Object.keys(LIMITS);
   // Only plain addresses become mailto links, so nothing a visitor typed can add recipients or headers.
   const LINKABLE_EMAIL = /^[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
@@ -205,7 +205,7 @@
         const { inquiries } = await api(`/inquiries${query ? `?${query}` : ''}`);
         if (mine === listSeq && live()) drawList(listWrap, inquiries);
       } catch (error) {
-        if (mine === listSeq && live()) clear(listWrap).append(problem(error, 'Inquiries appear here once the database is connected.'));
+        if (mine === listSeq && live()) clear(listWrap).append(problem(error, 'Inquiries appear here once the website has a volume to save to.'));
       }
     }
 
@@ -227,10 +227,10 @@
 
   function databaseBanner(db) {
     return h('div', { class: 'banner', role: 'note' },
-      h('strong', {}, db.configured ? 'The database isn\u2019t answering.' : 'No database is connected yet.'),
+      h('strong', {}, db.configured ? 'The dashboard\u2019s file can\u2019t be opened.' : 'The dashboard has nowhere to save yet.'),
       h('p', {}, db.configured
-        ? 'Letters still arrive by email. They will be saved here again as soon as the database answers.'
-        : 'Letters still arrive by email, but they aren\u2019t saved here until a database is connected.'),
+        ? 'Letters still arrive by email. They will be saved here again as soon as the file can be opened.'
+        : 'Letters still arrive by email, but they aren\u2019t saved here until the website has a volume.'),
       h('a', { href: '#setup' }, 'See Setup'));
   }
 
@@ -618,7 +618,7 @@
       try {
         ({ weddings } = await api(`/calendar?from=${isoOf(start)}&to=${isoOf(end)}`));
       } catch (error) {
-        if (mine === seq && live()) agenda.append(problem(error, 'Weddings appear here once the database is connected.'));
+        if (mine === seq && live()) agenda.append(problem(error, 'Weddings appear here once the website has a volume to save to.'));
         return;
       }
       if (mine !== seq || !live()) return;
@@ -669,7 +669,7 @@
     const tableBox = h('section', { class: 'record-table', hidden: true, 'aria-live': 'polite' });
     root.append(
       h('div', { class: 'view-head' }, h('div', {}, h('p', { class: 'eyebrow' }, 'Read only'), h('h1', {}, 'Old records'))),
-      h('p', { class: 'intro' }, 'Everything an earlier version of this dashboard left in the database, exactly as it was saved. Nothing here can be changed, and columns that look like passwords or keys are never shown.'),
+      h('p', { class: 'intro' }, 'Everything the earlier dashboard saved, exactly as it was. Its weddings and notes were also copied into Inquiries, where they can be changed; nothing here can be, and columns that look like passwords or keys are never shown.'),
       holder, tableBox);
 
     let seq = 0;
@@ -681,12 +681,12 @@
       try {
         data = await api(`/archive/${encodeURIComponent(schema)}/${encodeURIComponent(name)}?page=${page}`);
       } catch (error) {
-        if (mine === seq && live()) clear(tableBox).append(problem(error, 'Connect the database to see older records.'));
+        if (mine === seq && live()) clear(tableBox).append(problem(error, 'Older records appear here once the website has a volume.'));
         return;
       }
       if (mine !== seq || !live()) return;
       const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
-      const label = schema === 'public' ? name : `${schema}.${name}`;
+      const label = schema === 'public' || schema === 'main' ? name : `${schema}.${name}`;
       append(clear(tableBox), [
         h('div', { class: 'record-head' },
           h('h2', {}, label),
@@ -711,13 +711,13 @@
       try {
         ({ tables } = await api('/archive'));
       } catch (error) {
-        if (live()) clear(holder).append(problem(error, 'Connect the database to see older records.'));
+        if (live()) clear(holder).append(problem(error, 'Older records appear here once the website has a volume.'));
         return;
       }
       if (!live()) return;
       clear(holder);
       if (!tables.length) {
-        holder.append(h('p', { class: 'empty' }, 'The database has no older tables. Everything is in Inquiries.'));
+        holder.append(h('p', { class: 'empty' }, 'There is no earlier dashboard file to show.'));
         return;
       }
       const buttons = tables.map((table) => h('button', {
@@ -728,7 +728,7 @@
           openTable(table.schema, table.name, 0);
         }
       },
-      h('strong', {}, table.schema === 'public' ? table.name : `${table.schema}.${table.name}`),
+      h('strong', {}, table.schema === 'public' || table.schema === 'main' ? table.name : `${table.schema}.${table.name}`),
       h('small', {}, [
         table.rows === null ? 'rows unknown' : plural(table.rows, 'row', 'rows'),
         plural(table.columns, 'column', 'columns'),
@@ -759,28 +759,39 @@
   }
 
   function databasePanel(db) {
-    const panel = h('section', { class: 'panel' }, h('h2', {}, 'Database'));
+    const panel = h('section', { class: 'panel' }, h('h2', {}, 'Where everything is kept'));
     if (db.connected) {
-      panel.append(
-        h('p', { class: 'state' }, h('span', { class: 'dot ok', 'aria-hidden': 'true' }), `Connected to \u201c${db.database}\u201d (PostgreSQL ${String(db.version || '').split(' ')[0]}).`),
-        h('p', { class: 'muted small' }, 'Letters from the website are saved here as they arrive, as well as being emailed. This dashboard keeps its own tables in a separate \u201cdashboard\u201d schema; anything older is only read, under Old records.'));
+      const latest = db.backups && db.backups.latest;
+      append(panel, [
+        h('p', { class: 'state' }, h('span', { class: 'dot ok', 'aria-hidden': 'true' }),
+          `Saved in ${db.file} on the website\u2019s Railway volume (SQLite ${db.version}${db.size === null || db.size === undefined ? '' : `, ${fmtSize(db.size)}`}).`),
+        h('p', { class: 'muted small' }, 'Letters from the website are saved here as they arrive, as well as being emailed.'),
+        h('p', {},
+          latest
+            ? `A copy is made every day and the newest ${db.backups.kept} are kept in ${db.backups.folder}. Latest: ${latest.name.replace(/^studio-|\.sqlite$/g, '')}.`
+            : `A copy is made every day and the newest ${db.backups.kept} are kept in ${db.backups.folder}.`),
+        h('p', { class: 'muted small' }, 'Those copies live on the same volume, so keep one somewhere else now and then:'),
+        h('a', { class: 'button', href: '/admin/api/backup', download: '' }, 'Download a copy'),
+        db.earlier
+          ? h('p', { class: 'muted small backup-note' }, db.earlier.found
+            ? `The earlier dashboard\u2019s file (${db.earlier.file}) is left exactly as it was. ${plural(db.earlier.imported, 'wedding was', 'weddings were')} copied into Inquiries with their notes; everything else in it is under Old records.`
+            : `The earlier dashboard\u2019s file (${db.earlier.file}) wasn\u2019t found.`)
+          : null]);
       return panel;
     }
     if (db.configured) {
       append(panel, [
-        h('p', { class: 'state' }, h('span', { class: 'dot bad', 'aria-hidden': 'true' }), 'A database is set, but it isn\u2019t answering.'),
+        h('p', { class: 'state' }, h('span', { class: 'dot bad', 'aria-hidden': 'true' }), `The dashboard\u2019s file (${db.file}) can\u2019t be opened.`),
         db.error ? h('p', {}, h('code', {}, db.error)) : null,
-        h('p', { class: 'muted small' }, 'Check on Railway that the PostgreSQL service is running and that DATABASE_URL points at it. Letters still arrive by email in the meantime.')]);
+        h('p', { class: 'muted small' }, 'Check on Railway that the volume is still attached to the website service. Letters still arrive by email in the meantime.')]);
       return panel;
     }
     panel.append(
-      h('p', { class: 'state' }, h('span', { class: 'dot bad', 'aria-hidden': 'true' }), 'No database is connected.'),
-      h('p', {}, 'Letters still arrive by email. To keep them here as well, connect the PostgreSQL database on Railway:'),
+      h('p', { class: 'state' }, h('span', { class: 'dot bad', 'aria-hidden': 'true' }), 'The dashboard has nowhere to save yet.'),
+      h('p', {}, 'Letters still arrive by email. To keep them here as well, give the website a volume on Railway:'),
       h('ol', { class: 'steps' },
-        h('li', {}, 'Open the project on Railway. If it has no PostgreSQL service, choose Create \u2192 Database \u2192 PostgreSQL.'),
-        h('li', {}, 'Open the website service (alex-claudio-site) \u2192 Variables \u2192 New Variable.'),
-        h('li', {}, 'Name it ', h('code', {}, 'DATABASE_URL'), ' and set the value to ', h('code', {}, '${{Postgres.DATABASE_URL}}'), '. If the database service has another name, use that name instead of Postgres.'),
-        h('li', {}, 'Deploy the change. A minute later this page shows the connection.')));
+        h('li', {}, 'Open the website service (alex-claudio-site) \u2192 Settings \u2192 Volumes, and add a volume mounted at ', h('code', {}, '/data'), '.'),
+        h('li', {}, 'Deploy the change. A minute later this page shows where everything is kept.')));
     return panel;
   }
 
@@ -798,7 +809,7 @@
   function volumePanel(volume) {
     return h('section', { class: 'panel' },
       h('h2', {}, 'Railway volume'),
-      h('p', { class: 'muted small' }, `Mounted at ${volume.path}. Listed for reference; the dashboard doesn\u2019t change these files.`),
+      h('p', { class: 'muted small' }, `Mounted at ${volume.path}. The dashboard writes only studio.sqlite and backups/studio/; the earlier dashboard\u2019s admin.sqlite files are left as they were.`),
       volume.files && volume.files.length
         ? h('ul', { class: 'files' }, volume.files.map((file) => h('li', {}, h('code', {}, file.path), h('span', { class: 'muted small' }, file.size === null ? '' : fmtSize(file.size)))))
         : h('p', { class: 'muted' }, 'The volume is empty.'));

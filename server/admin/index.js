@@ -23,19 +23,15 @@ const EDITABLE = {
 };
 const SETTINGS = [
   ['ADMIN_PASSWORD', 'Studio sign-in password'],
-  ['DATABASE_URL', 'Database connection'],
-  ['DATABASE_PRIVATE_URL', 'Database connection (private network)'],
-  ['PGHOST', 'Database host'],
-  ['MYSQL_URL', 'MySQL database'],
-  ['MONGO_URL', 'MongoDB database'],
-  ['REDIS_URL', 'Redis'],
+  ['RAILWAY_VOLUME_MOUNT_PATH', 'Railway volume (where the dashboard keeps its file)'],
+  ['STUDIO_DB_PATH', 'Another location for the dashboard\u2019s file (optional)'],
+  ['DATABASE_PATH', 'The earlier dashboard\u2019s file (read only)'],
   ['RESEND_API_KEY', 'Inquiry emails (Resend)'],
   ['CONTACT_TO_EMAIL', 'Inquiry email recipient'],
   ['GOOGLE_SHEET_ID', 'Google Sheet for inquiries'],
-  ['R2_BUCKET_NAME', 'Client gallery storage'],
-  ['RAILWAY_VOLUME_MOUNT_PATH', 'Railway volume']
+  ['R2_BUCKET_NAME', 'Client gallery storage']
 ];
-const SHOW_VALUE = new Set(['CONTACT_TO_EMAIL', 'RAILWAY_VOLUME_MOUNT_PATH']);
+const SHOW_VALUE = new Set(['CONTACT_TO_EMAIL', 'RAILWAY_VOLUME_MOUNT_PATH', 'STUDIO_DB_PATH', 'DATABASE_PATH']);
 
 const sha256 = (value) => crypto.createHash('sha256').update(String(value), 'utf8').digest();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -376,7 +372,7 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
   });
 
   api.use((req, res, next) => {
-    if (!store) return res.status(503).json({ error: 'No database is connected yet. See Setup.', code: 'no-database' });
+    if (!store) return res.status(503).json({ error: 'The dashboard has nowhere to save yet. See Setup.', code: 'no-database' });
     next();
   });
 
@@ -459,6 +455,21 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
     const result = await store.legacyRows(String(req.params.schema), String(req.params.table), pageNumber);
     if (!result) return res.status(404).json({ error: 'Not found.' });
     res.json(result);
+  });
+
+  // The whole dashboard as one SQLite file, to keep a copy somewhere other than Railway.
+  api.get('/backup', async (req, res) => {
+    const file = await store.snapshot();
+    let stamp;
+    try {
+      stamp = new Intl.DateTimeFormat('en-CA', { timeZone: env.STUDIO_TIMEZONE || 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    } catch (error) {
+      stamp = new Date().toISOString().slice(0, 10);
+    }
+    res.set('Content-Type', 'application/vnd.sqlite3');
+    res.download(file, `alex-claudio-studio-${stamp}.sqlite`, { cacheControl: false, headers: { 'Content-Type': 'application/vnd.sqlite3' } }, () => {
+      fs.rm(file, { force: true }, () => {});
+    });
   });
 
   api.use((req, res) => res.status(404).json({ error: 'Not found.' }));
