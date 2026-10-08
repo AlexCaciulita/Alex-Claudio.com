@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import os from 'node:os';
+import path from 'node:path';
 import { test } from 'node:test';
 
 const require = createRequire(import.meta.url);
@@ -71,6 +74,13 @@ function fakeStore() {
     async legacyRows(schema, name, page) {
       if (schema !== 'public' || name !== 'leads') return null;
       return { schema, name, total: 1, page, pageSize: 50, columns: [{ name: 'id', type: 'integer' }, { name: 'name', type: 'text' }], hidden: ['password_hash'], orderedBy: null, rows: [[1, 'Old couple']] };
+    },
+    snapshots: [],
+    async snapshot() {
+      const file = path.join(os.tmpdir(), `studio-test-download-${process.pid}-${Date.now()}.sqlite`);
+      fs.writeFileSync(file, 'SQLite format 3\u0000 stand-in');
+      store.snapshots.push(file);
+      return file;
     }
   };
   return store;
@@ -231,22 +241,47 @@ test('strangers tripping the site-wide limit cannot lock out a browser that sign
   });
 });
 
-test('a database address that cannot be read never takes the website down', async () => {
+test('a dashboard file that cannot be opened never takes the website down', async () => {
   const { createStore } = require('../server/admin/store');
-  let tried = 0;
-  for (const url of ['postgresql://user:pa#ss@db.example.com:5432/db', 'postgres://user:secret@:5432/railway', 'postgres://user@db.example.com:port/db']) {
-    const store = createStore({ DATABASE_URL: url });
-    if (!store) continue;
-    tried += 1;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-blocked-'));
+  const blocker = path.join(dir, 'not-a-folder');
+  fs.writeFileSync(blocker, 'a file where the folder should be');
+  const env = { ADMIN_PASSWORD: PASSWORD, STUDIO_DB_PATH: path.join(blocker, 'studio.sqlite') };
+  const store = createStore(env);
+  try {
     let pending;
-    assert.doesNotThrow(() => { pending = store.ready(); }, url);
-    await assert.rejects(pending, url);
-    const ping = await store.ping();
-    assert.equal(ping.connected, false, url);
-    assert.doesNotMatch(ping.error, /secret|pa#ss/, url);
+    assert.doesNotThrow(() => { pending = store.ready(); });
+    await assert.rejects(pending);
+    await withSite({ env, store }, async (origin) => {
+      assert.equal((await fetch(`${origin}/health`)).status, 200);
+      assert.equal((await fetch(`${origin}/`)).status, 200);
+      const { cookie } = await signIn(origin);
+      const overview = await (await fetch(`${origin}/admin/api/overview`, { headers: { cookie } })).json();
+      assert.equal(overview.db.configured, true);
+      assert.equal(overview.db.connected, false);
+      assert.ok(overview.db.error);
+      assert.equal((await fetch(`${origin}/admin/api/inquiries`, { headers: { cookie } })).status, 500);
+    });
+  } finally {
     await store.close();
+    fs.rmSync(dir, { recursive: true, force: true });
   }
-  assert.ok(tried > 0, 'at least one bad address reached the store');
+});
+
+test('a copy of the dashboard can be downloaded, only when signed in', async () => {
+  const store = fakeStore();
+  await withSite({ env: { ADMIN_PASSWORD: PASSWORD }, store }, async (origin) => {
+    assert.equal((await fetch(`${origin}/admin/api/backup`)).status, 401);
+    const { cookie } = await signIn(origin);
+    const response = await fetch(`${origin}/admin/api/backup`, { headers: { cookie } });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-disposition'), /^attachment; filename="alex-claudio-studio-\d{4}-\d{2}-\d{2}\.sqlite"$/);
+    assert.equal(response.headers.get('content-type'), 'application/vnd.sqlite3');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.match(Buffer.from(await response.arrayBuffer()).toString('latin1'), /^SQLite format 3/);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(fs.existsSync(store.snapshots[0]), false, 'the temporary copy is deleted');
+  });
 });
 
 test('the dashboard API needs the session and a CSRF token from this site', async () => {

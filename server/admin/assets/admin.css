@@ -199,7 +199,8 @@ dialog.sheet::backdrop { background: rgba(23, 20, 18, .4); }
 .panel { margin-bottom: 18px; padding: 20px 22px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
 .panel h2 { margin-bottom: 10px; }
 .settings, .files { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 9px; }
-.settings li { display: grid; grid-template-columns: 16px minmax(180px, 240px) minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.settings li { display: grid; grid-template-columns: 16px minmax(160px, 240px) auto minmax(0, 1fr); align-items: center; gap: 10px; }
+.settings li > :last-child { text-align: right; overflow-wrap: anywhere; }
 .files li { display: flex; justify-content: space-between; gap: 16px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #c9c1b6; }
 .dot.ok { background: var(--green); }
@@ -266,4 +267,6 @@ dialog.sheet::backdrop { background: rgba(23, 20, 18, .4); }
   .calendar { min-width: 640px; }
   .settings li { grid-template-columns: 16px minmax(0, 1fr); }
   .settings li > :nth-child(n+3) { grid-column: 2; }
+  .settings li > :last-child { text-align: left; }
 }
+.backup-note { margin-top: 14px; }
