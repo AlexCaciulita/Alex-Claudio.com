@@ -156,9 +156,40 @@
   margin: var(--space-8) 0 0;
 }
 
+/* On phones the hero is too short for the caption to sit over it without covering
+   the subject, so the name and date move below the photo in the plain header's colors. */
 @media (max-width: 600px) {
   .gallery-hero {
+    aspect-ratio: auto;
+    overflow: visible;
+    background: none;
+  }
+
+  .gallery-hero-img {
+    position: static;
+    height: auto;
     aspect-ratio: 16 / 10;
+    background: var(--color-ink);
+  }
+
+  .gallery-hero-caption {
+    position: static;
+    padding: var(--space-24) var(--space-16) 0;
+    background: none;
+  }
+
+  .gallery-hero-eyebrow {
+    color: var(--color-accent-muted);
+    margin-bottom: var(--space-8);
+  }
+
+  .gallery-hero-title {
+    color: var(--color-ink);
+    text-shadow: none;
+  }
+
+  .gallery-hero-date {
+    color: var(--color-muted-ink);
   }
 }
 
