@@ -14,6 +14,10 @@
   const SHOWN_FIELDS = new Set(['names', 'name', 'email', 'phone', 'phone_number', 'event_date', 'location', 'hours', 'care', 'message', 'source', 'referral']);
   const EXTRA_LABELS = { budget: 'Estimated budget', collection: 'Collection' };
   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const NOT_COUNTED = 'ac-not-counted';
+
+  // This browser belongs to the studio, so the website stops counting its visits (assets/visits.js reads this).
+  try { if (localStorage.getItem(NOT_COUNTED) === null) localStorage.setItem(NOT_COUNTED, '1'); } catch (error) { /* storage is blocked */ }
 
   /* ---------- Building blocks ---------- */
 
@@ -116,6 +120,7 @@
 
   const views = {
     inquiries: { label: 'Inquiries', render: renderInquiries },
+    analytics: { label: 'Analytics', render: renderAnalytics },
     calendar: { label: 'Calendar', render: renderCalendar },
     records: { label: 'Old records', render: renderRecords },
     setup: { label: 'Setup', render: renderSetup }
@@ -577,6 +582,411 @@
       form);
     if (!editor.open) editor.showModal();
     form.elements.names.focus();
+  }
+
+  /* ---------- Analytics ---------- */
+
+  const RANGES = [['today', 'Today'], ['7d', '7 days'], ['30d', '30 days'], ['90d', '90 days'], ['12m', '12 months']];
+  const VERSUS = { today: 'yesterday by this time', '7d': 'the 7 days before', '30d': 'the 30 days before', '90d': 'the 90 days before', '12m': 'the year before' };
+  const PAGE_NAMES = {
+    '/': 'Home', '/portfolio/': 'Portfolio', '/blog/': 'Journal', '/privacy/': 'Privacy',
+    '/links/': 'Links (Instagram bio)', '/lead/': 'Wedding show sign-up', '/AlexClaudioVentures/': 'Alex Claudio Ventures'
+  };
+  const CHANNELS = {
+    Search: ['Google', 'Bing', 'DuckDuckGo', 'Yahoo', 'Ecosia', 'Yandex', 'Baidu', 'Brave Search'],
+    Social: ['Instagram', 'Facebook', 'Pinterest', 'X', 'LinkedIn', 'Reddit', 'TikTok', 'YouTube', 'Threads'],
+    'AI assistant': ['ChatGPT', 'Perplexity', 'Claude', 'Gemini', 'Copilot'],
+    'Wedding site': ['The Knot', 'WeddingWire', 'Zola', 'Junebug Weddings', 'Yelp'],
+    Email: ['Gmail', 'Email'],
+    'Typed or bookmarked': ['Direct']
+  };
+  const CHANNEL_OF = new Map(Object.entries(CHANNELS).flatMap(([channel, names]) => names.map((name) => [name, channel])));
+  const analyticsState = { range: '30d' };
+  const regionNames = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch (error) { return null; } })();
+
+  const fmtCount = (n) => Number(n || 0).toLocaleString('en-US');
+  const share = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : '\u2014');
+  const fmtDuration = (s) => {
+    if (s === null || s === undefined) return '\u2014';
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
+    return `${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}m`;
+  };
+  const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+  const countryName = (code) => {
+    if (!code) return 'Unknown';
+    try { return (regionNames && regionNames.of(code)) || code; } catch (error) { return code; }
+  };
+  const zoneName = (zone) => (zone ? zone.split('/').pop().replace(/_/g, ' ') : 'Unknown');
+  // "renee-alan" -> "Renee & Alan"; a random code at the end of older gallery links is left out.
+  const galleryName = (slug) => {
+    const words = String(slug).split('-').filter((word) => word && !/^[0-9a-f]{8,}$/.test(word)).map(capital);
+    return words.length === 2 ? words.join(' & ') : words.join(' ') || slug;
+  };
+  const pageName = (path) => {
+    if (PAGE_NAMES[path]) return PAGE_NAMES[path];
+    if (path.startsWith('/blog/')) return `Journal: ${capital(path.slice(6).replace(/\/$/, '').replace(/-/g, ' '))}`;
+    if (path.startsWith('/gallery/')) return `Gallery: ${galleryName(path.slice(9))}`;
+    return path;
+  };
+  const dayLabel = (iso, options) => localDate(iso).toLocaleDateString('en-US', options);
+  // "2026-10-15T09" -> "9 AM", or "9\u201310 AM" in full ("11 AM\u201312 PM" across noon).
+  const hourLabel = (key, full) => {
+    const hour = Number(key.slice(11, 13));
+    const twelve = (h) => h % 12 || 12;
+    const half = (h) => (h % 24 < 12 ? 'AM' : 'PM');
+    if (!full) return `${twelve(hour)} ${half(hour)}`;
+    return half(hour) === half(hour + 1)
+      ? `${twelve(hour)}\u2013${twelve(hour + 1)} ${half(hour)}`
+      : `${twelve(hour)} ${half(hour)}\u2013${twelve(hour + 1)} ${half(hour + 1)}`;
+  };
+  // How a chart slot is named: an hour today, a day, or a month (with its year when that isn't this year's).
+  const slotLabel = (point, bucket, full, lastYear) => {
+    if (bucket === 'hour') return hourLabel(point.key, full);
+    if (bucket === 'day') return dayLabel(point.key, full ? { weekday: 'long', month: 'long', day: 'numeric' } : { month: 'short', day: 'numeric' });
+    if (full) return dayLabel(`${point.key}-01`, { month: 'long', year: 'numeric' });
+    const month = dayLabel(`${point.key}-01`, { month: 'short' });
+    return point.key.slice(0, 4) === lastYear ? month : `${month} \u2019${point.key.slice(2, 4)}`;
+  };
+
+  function renderAnalytics(root, live) {
+    const body = h('div', { class: 'analytics' }, h('p', { class: 'muted' }, 'Loading\u2026'));
+    const chips = RANGES.map(([value, label]) => h('button', {
+      type: 'button',
+      'aria-pressed': String(analyticsState.range === value),
+      onclick: (event) => {
+        analyticsState.range = value;
+        for (const chip of chips) chip.setAttribute('aria-pressed', String(chip === event.currentTarget));
+        load();
+      }
+    }, label));
+    root.append(
+      h('div', { class: 'view-head' }, h('div', {}, h('p', { class: 'eyebrow' }, 'Visits to the website'), h('h1', {}, 'Analytics'))),
+      h('div', { class: 'toolbar' }, h('div', { class: 'chips', role: 'group', 'aria-label': 'Period' }, chips)),
+      body);
+
+    let seq = 0;
+    async function load() {
+      const mine = ++seq;
+      body.setAttribute('aria-busy', 'true');
+      try {
+        const data = await api(`/analytics?range=${encodeURIComponent(analyticsState.range)}`);
+        if (mine === seq && live()) drawAnalytics(body, data);
+      } catch (error) {
+        if (mine === seq && live()) clear(body).append(problem(error, 'Visits are counted once the website has a volume to save to.'));
+      } finally {
+        if (mine === seq) body.removeAttribute('aria-busy');
+      }
+    }
+    state.refresh = load;
+    load();
+  }
+
+  function drawAnalytics(body, data) {
+    const { totals: now, previous: before, range } = data;
+    const versus = VERSUS[range.key];
+    const delta = (current, earlier, upIsGood = true) => {
+      if (!earlier) return current ? h('small', { class: 'delta' }, `none in ${versus}`) : null;
+      const change = Math.round(((current - earlier) / earlier) * 100);
+      if (!change) return h('small', { class: 'delta' }, `same as ${versus}`);
+      const good = change > 0 === upIsGood;
+      return h('small', { class: `delta ${good ? 'good' : 'bad'}` }, `${change > 0 ? '\u25b2' : '\u25bc'} ${Math.abs(change)}% vs ${versus}`);
+    };
+    const card = (label, value, note, change) => h('div', { class: 'card' },
+      h('span', { class: 'card-label' }, label), h('strong', {}, value), h('small', {}, note), change);
+    const period = range.key === 'today'
+      ? `Today, ${dayLabel(range.to, { month: 'short', day: 'numeric' })}`
+      : `${dayLabel(range.from, { month: 'short', day: 'numeric', year: range.from.slice(0, 4) === range.to.slice(0, 4) ? undefined : 'numeric' })} \u2013 ${dayLabel(range.to, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const started = data.counting_since;
+
+    append(clear(body), [
+      !started
+        ? h('p', { class: 'intro' }, 'Nothing counted yet. Visits show up here a few seconds after someone opens a page on the website.')
+        : started > range.from
+          ? h('p', { class: 'muted small' }, `Counting started on ${dayLabel(started, { month: 'long', day: 'numeric', year: 'numeric' })}, so earlier days are empty.`)
+          : null,
+      h('div', { class: 'cards' },
+        card('Visitors', fmtCount(now.visitors), `${plural(now.visits, 'visit', 'visits')}`, delta(now.visitors, before.visitors)),
+        card('Page views', fmtCount(now.views), now.visits ? `${(now.views / now.visits).toFixed(1)} pages per visit` : 'no visits yet', delta(now.views, before.views)),
+        card('Time per visit', fmtDuration(now.seconds_per_visit), `${share(now.single_page, now.visits)} looked at one page`, delta(now.seconds_per_visit, before.seconds_per_visit)),
+        card('Inquiries', fmtCount(now.inquiries), now.visits ? `from ${share(now.inquiry_visits, now.visits)} of visits` : 'sent from the website', delta(now.inquiries, before.inquiries))),
+      panel(`Visitors by ${range.bucket}`, period, columnChart(data.series, range.bucket), seriesTable(data.series, range.bucket)),
+      panel('Pages', 'What people opened, most viewed first', barTable({
+        head: 'Page', rows: data.pages, empty: 'No page views in this period.',
+        label: (row) => pageName(row.path), sub: (row) => row.path,
+        metrics: [
+          { label: 'Views', value: (row) => row.views },
+          { label: 'Visitors', value: (row) => row.visitors, optional: true },
+          { label: 'First page', value: (row) => row.landings, optional: true, title: 'Visits that started on this page' },
+          { label: 'Time', value: (row) => row.seconds, text: (row) => fmtDuration(row.seconds), title: 'Average time the page stayed open' }
+        ]
+      })),
+      h('div', { class: 'panels' },
+        panel('How they found the site', null,
+          barTable({
+            head: 'Source', rows: data.sources, empty: 'No visits in this period.',
+            label: (row) => row.name, sub: (row) => CHANNEL_OF.get(row.name) || 'Another website',
+            metrics: [{ label: 'Visits', value: (row) => row.visits }, { label: 'Inquiries', value: (row) => row.inquiries }]
+          }),
+          data.referrers.length ? h('h3', { class: 'sub-head' }, 'Linking websites') : null,
+          data.referrers.length ? barTable({ head: 'Website', rows: data.referrers, label: (row) => row.name, metrics: [{ label: 'Visits', value: (row) => row.visits }] }) : null,
+          data.campaigns.length ? h('h3', { class: 'sub-head' }, 'Tagged links') : null,
+          data.campaigns.length ? barTable({
+            head: 'Campaign', rows: data.campaigns,
+            label: (row) => row.campaign || '(no campaign)', sub: (row) => [row.source, row.medium].filter(Boolean).join(' \u00b7 '),
+            metrics: [{ label: 'Visits', value: (row) => row.visits }]
+          }) : null),
+        panel('Where they are', 'From each device\u2019s time zone',
+          barTable({
+            head: 'Country', rows: data.countries, empty: 'No visits in this period.', label: (row) => countryName(row.name),
+            metrics: [{ label: 'Visits', value: (row) => row.visits }, { label: 'Share', value: (row) => row.visits, text: (row) => share(row.visits, now.visits) }]
+          }),
+          data.timezones.length ? h('h3', { class: 'sub-head' }, 'Time zones') : null,
+          data.timezones.length ? barTable({
+            head: 'Time zone', rows: data.timezones, label: (row) => zoneName(row.name), sub: (row) => row.name,
+            metrics: [{ label: 'Visits', value: (row) => row.visits }]
+          }) : null),
+        panel('Devices', null,
+          ...[['Device', data.devices], ['Browser', data.browsers], ['System', data.systems]].flatMap(([head, rows], index) => [
+            index && rows.length ? h('h3', { class: 'sub-head' }, `${head}s`) : null,
+            barTable({
+              head, rows, empty: index ? null : 'No visits in this period.', label: (row) => row.name || 'Other', limit: 5,
+              metrics: [{ label: 'Visits', value: (row) => row.visits }, { label: 'Share', value: (row) => row.visits, text: (row) => share(row.visits, now.visits) }]
+            })
+          ])),
+        panel('Client galleries', 'Opened and downloaded', galleryTable(data.galleries))),
+      panel('Latest visits', 'Newest first, page by page', recentVisits(data.recent)),
+      h('p', { class: 'muted small analytics-note' },
+        'No cookies or IP addresses are kept. Each visitor is counted once a day, so the same person on two days counts twice. Visits are kept for 13 months.'),
+      ownerNote()]);
+  }
+
+  function panel(title, note, ...kids) {
+    return h('section', { class: 'panel' },
+      h('div', { class: 'panel-head' }, h('h2', {}, title), note ? h('span', { class: 'muted small' }, note) : null),
+      kids);
+  }
+
+  // A ranked table whose first column carries a bar as long as its share of the top row.
+  function barTable({ head, rows, label, sub, metrics, empty, limit = 8 }) {
+    if (!rows.length) return empty ? h('p', { class: 'muted' }, empty) : null;
+    const max = Math.max(1, ...rows.map((row) => metrics[0].value(row) || 0));
+    const tbody = h('tbody');
+    const drawRows = (all) => clear(tbody).append(...(all ? rows : rows.slice(0, limit)).map((row) => {
+      const fill = h('span', { class: 'fill', 'aria-hidden': 'true' });
+      fill.style.width = `${Math.max(1.5, ((metrics[0].value(row) || 0) / max) * 100)}%`;
+      const detail = sub ? sub(row) : '';
+      return h('tr', {},
+        h('th', { scope: 'row', class: 'name' }, fill, h('span', { class: 'label' }, label(row), detail ? h('small', {}, detail) : null)),
+        metrics.map((metric) => h('td', { class: metric.optional ? 'num optional' : 'num' }, metric.text ? metric.text(row) : fmtCount(metric.value(row)))));
+    }));
+    drawRows(false);
+    const box = h('div', { class: 'bar-table' },
+      h('table', { class: 'bars' },
+        h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, head),
+          metrics.map((metric) => h('th', { scope: 'col', class: metric.optional ? 'num optional' : 'num', title: metric.title }, metric.label)))),
+        tbody));
+    if (rows.length > limit) {
+      let all = false;
+      const more = h('button', {
+        class: 'link more', type: 'button',
+        onclick: () => { all = !all; drawRows(all); more.textContent = all ? 'Show fewer' : `Show all ${rows.length}`; }
+      }, `Show all ${rows.length}`);
+      box.append(more);
+    }
+    return box;
+  }
+
+  // Visitors per day (or month) as columns, with the exact numbers on hover, focus and in the table below.
+  function columnChart(series, bucket) {
+    const SVG = 'http://www.w3.org/2000/svg';
+    const svgEl = (tag, attrs, text) => {
+      const el = document.createElementNS(SVG, tag);
+      for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, String(value));
+      if (text !== undefined) el.textContent = text;
+      return el;
+    };
+    // Months from an earlier year carry it ("Oct \u201925"), so the two Octobers of a year view differ.
+    const lastYear = series.length ? series[series.length - 1].key.slice(0, 4) : '';
+    const short = (point) => slotLabel(point, bucket, false, lastYear);
+    const long = (point) => slotLabel(point, bucket, true, lastYear);
+    const wrap = h('div', { class: 'chart' });
+    const tip = h('div', { class: 'chart-tip', hidden: true });
+    let marks = [];
+    let active = -1;
+    let drawnWidth = 0;
+
+    const show = (index) => {
+      active = index;
+      marks.forEach((mark, i) => mark.bar.classList.toggle('on', i === index));
+      const { point, cx, top } = marks[index];
+      clear(tip).append(
+        h('span', { class: 'tip-when' }, long(point)),
+        h('strong', {}, plural(point.visitors, 'visitor', 'visitors')),
+        h('span', {}, `${plural(point.visits, 'visit', 'visits')} \u00b7 ${plural(point.views, 'page view', 'page views')}`));
+      tip.hidden = false;
+      const half = tip.offsetWidth / 2;
+      tip.style.left = `${Math.min(Math.max(cx, half), drawnWidth - half)}px`;
+      tip.style.top = `${Math.max(0, top - tip.offsetHeight - 10)}px`;
+    };
+    const hide = () => {
+      active = -1;
+      tip.hidden = true;
+      for (const mark of marks) mark.bar.classList.remove('on');
+    };
+
+    const draw = () => {
+      const width = Math.round(wrap.clientWidth);
+      if (!width || width === drawnWidth) return;
+      drawnWidth = width;
+      const height = 230;
+      const m = { top: 14, right: 4, bottom: 28, left: 42 };
+      const plotW = width - m.left - m.right;
+      const plotH = height - m.top - m.bottom;
+      const base = m.top + plotH;
+      const highest = Math.max(0, ...series.map((point) => point.visitors));
+      const rough = Math.max(1, highest / 4);
+      const magnitude = 10 ** Math.floor(Math.log10(rough));
+      const step = Math.max(1, [1, 2, 5, 10].find((n) => n * magnitude >= rough) * magnitude);
+      const top = Math.max(step, Math.ceil(highest / step) * step);
+      const y = (value) => base - (value / top) * plotH;
+      const slot = plotW / series.length;
+      const barW = Math.max(1, Math.min(24, slot - 2));
+
+      const svg = svgEl('svg', {
+        width, height, viewBox: `0 0 ${width} ${height}`, tabindex: 0, role: 'img',
+        'aria-label': `Visitors per ${bucket}. Use the arrow keys to read each ${bucket}; every number is also in the table below.`
+      });
+      for (let value = 0; value <= top; value += step) {
+        svg.append(svgEl('line', { class: 'gridline', x1: m.left, x2: width - m.right, y1: y(value), y2: y(value) }));
+        svg.append(svgEl('text', { class: 'tick', x: m.left - 8, y: y(value) + 4, 'text-anchor': 'end' }, fmtCount(value)));
+      }
+      marks = series.map((point, i) => {
+        const x = m.left + i * slot + (slot - barW) / 2;
+        const tall = point.visitors ? Math.max(2, (point.visitors / top) * plotH) : 0;
+        const r = Math.min(4, barW / 2, tall);
+        const yTop = base - tall;
+        const bar = svgEl('path', {
+          class: 'bar',
+          d: tall ? `M${x},${base}V${yTop + r}Q${x},${yTop} ${x + r},${yTop}H${x + barW - r}Q${x + barW},${yTop} ${x + barW},${yTop + r}V${base}Z` : ''
+        });
+        svg.append(bar);
+        return { bar, point, cx: x + barW / 2, top: tall ? yTop : base };
+      });
+      const every = Math.max(1, Math.ceil(series.length / Math.max(2, Math.floor(plotW / 70))));
+      series.forEach((point, i) => {
+        if (i % every) return;
+        svg.append(svgEl('text', { class: 'tick', x: marks[i].cx, y: height - 8, 'text-anchor': 'middle' }, short(point)));
+      });
+      series.forEach((point, i) => {
+        const hit = svgEl('rect', { class: 'hit', x: m.left + i * slot, y: m.top, width: slot, height: plotH });
+        hit.addEventListener('pointerenter', () => show(i));
+        svg.append(hit);
+      });
+      svg.addEventListener('pointerleave', () => { if (document.activeElement !== svg) hide(); });
+      svg.addEventListener('focus', () => show(active >= 0 ? active : series.length - 1));
+      svg.addEventListener('blur', hide);
+      svg.addEventListener('keydown', (event) => {
+        const move = { ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity }[event.key];
+        if (move === undefined) return;
+        event.preventDefault();
+        show(Math.min(series.length - 1, Math.max(0, (active < 0 ? series.length - 1 : active) + move)));
+      });
+      wrap.replaceChildren(svg, tip);
+      active = -1;
+    };
+
+    if (typeof ResizeObserver === 'function') {
+      const watcher = new ResizeObserver(() => {
+        if (!wrap.isConnected) { watcher.disconnect(); return; }
+        draw();
+      });
+      watcher.observe(wrap);
+    } else {
+      requestAnimationFrame(draw);
+    }
+    return wrap;
+  }
+
+  function seriesTable(series, bucket) {
+    const when = (point) => (bucket === 'day'
+      ? dayLabel(point.key, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+      : slotLabel(point, bucket, true, ''));
+    return h('details', { class: 'chart-table' },
+      h('summary', {}, 'Show as a table'),
+      h('div', { class: 'scroll' }, h('table', { class: 'grid' },
+        h('thead', {}, h('tr', {}, [capital(bucket), 'Visitors', 'Visits', 'Page views'].map((title) => h('th', { scope: 'col' }, title)))),
+        h('tbody', {}, [...series].reverse().map((point) => h('tr', {},
+          h('td', {}, when(point)), h('td', {}, fmtCount(point.visitors)), h('td', {}, fmtCount(point.visits)), h('td', {}, fmtCount(point.views))))))));
+  }
+
+  function galleryTable(galleries) {
+    if (!galleries.length) return h('p', { class: 'muted' }, 'No client gallery was opened in this period.');
+    const when = (stamp) => (stamp ? fmtStamp(stamp) : '\u2014');
+    return h('div', { class: 'bar-table' }, h('table', { class: 'bars plain' },
+      h('thead', {}, h('tr', {},
+        h('th', { scope: 'col' }, 'Gallery'),
+        h('th', { scope: 'col', class: 'num' }, 'Opened'),
+        h('th', { scope: 'col', class: 'num', title: 'Single photos downloaded' }, 'Photos'),
+        h('th', { scope: 'col', class: 'num', title: '\u201cDownload all\u201d zips' }, 'Zips'),
+        h('th', { scope: 'col', class: 'num optional' }, 'Last opened'))),
+      h('tbody', {}, galleries.map((gallery) => h('tr', {},
+        h('th', { scope: 'row', class: 'name' }, h('span', { class: 'label' },
+          h('a', { href: `/gallery/${encodeURIComponent(gallery.slug)}`, target: '_blank', rel: 'noopener' }, galleryName(gallery.slug)),
+          h('small', {}, gallery.visitors ? plural(gallery.visitors, 'visitor', 'visitors') : gallery.slug))),
+        h('td', { class: 'num' }, fmtCount(gallery.views)),
+        h('td', { class: 'num' }, fmtCount(gallery.photos)),
+        h('td', { class: 'num' }, fmtCount(gallery.zips)),
+        h('td', { class: 'num optional' }, when(gallery.last_view)))))));
+  }
+
+  function recentVisits(visits) {
+    if (!visits.length) return h('p', { class: 'muted' }, 'No visits in this period.');
+    const actionText = (action) => {
+      if (action.kind === 'inquiry') return action.detail === 'wedding-show-lead' ? 'Signed up at a wedding show' : 'Sent an inquiry';
+      if (action.kind === 'zip') return `Downloaded all of ${galleryName(action.detail)}`;
+      return action.count > 1 ? `Downloaded ${action.count} photos from ${galleryName(action.detail)}` : `Downloaded a photo from ${galleryName(action.detail)}`;
+    };
+    return h('ol', { class: 'visits' }, visits.map((visit) => {
+      // Many downloads in a row read as one step.
+      const actions = [];
+      for (const action of visit.actions) {
+        const last = actions[actions.length - 1];
+        if (last && last.kind === action.kind && last.detail === action.detail) last.count += 1;
+        else actions.push({ ...action, count: 1 });
+      }
+      const steps = [...visit.pages.map((page) => ({ at: page.at, page })), ...actions.map((action) => ({ at: action.at, action }))]
+        .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+      return h('li', {},
+        h('div', { class: 'visit-meta' },
+          h('strong', {}, fmtStamp(visit.started_at)),
+          h('span', {}, visit.source),
+          h('span', {}, visit.timezone ? `${visit.country ? countryName(visit.country) : 'Country unknown'}, ${zoneName(visit.timezone)} time` : 'Country unknown'),
+          h('span', {}, `${visit.device} \u00b7 ${visit.browser} on ${visit.os}`)),
+        h('ol', { class: 'trail' }, steps.map((step) => (step.page
+          ? h('li', {}, pageName(step.page.path), step.page.seconds ? h('small', {}, fmtDuration(step.page.seconds)) : null)
+          : h('li', { class: 'did' }, actionText(step.action))))));
+    }));
+  }
+
+  function ownerNote() {
+    let flag;
+    try { flag = localStorage.getItem(NOT_COUNTED); } catch (error) { return null; }
+    const note = h('p', { class: 'muted small analytics-note' });
+    const draw = () => {
+      clear(note).append(
+        flag === '1' ? 'Your own visits from this browser aren\u2019t counted. ' : 'Visits from this browser are counted. ',
+        h('button', {
+          class: 'link', type: 'button',
+          onclick: () => {
+            flag = flag === '1' ? '0' : '1';
+            try { localStorage.setItem(NOT_COUNTED, flag); } catch (error) { /* storage is blocked */ }
+            draw();
+          }
+        }, flag === '1' ? 'Count them' : 'Stop counting them'));
+    };
+    draw();
+    return note;
   }
 
   /* ---------- Calendar ---------- */
