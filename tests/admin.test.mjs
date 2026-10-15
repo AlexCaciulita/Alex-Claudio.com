@@ -70,6 +70,7 @@ function fakeStore() {
     async calendar(from, to) {
       return [...inquiries.values()].filter((inquiry) => inquiry.wedding_date && inquiry.wedding_date >= from && inquiry.wedding_date <= to && inquiry.status !== 'not_booked');
     },
+    analytics: async (range) => ({ range: { key: range }, totals: { visitors: 3 } }),
     legacyTables: async () => [{ schema: 'public', name: 'leads', rows: 1, columns: 3, hidden: ['password_hash'] }],
     async legacyRows(schema, name, page) {
       if (schema !== 'public' || name !== 'leads') return null;
@@ -352,6 +353,20 @@ test('the dashboard API needs the session and a CSRF token from this site', asyn
     assert.equal(logout.status, 204);
     assert.match(logout.headers.get('set-cookie'), /^ac_studio=; Path=\/admin; HttpOnly; SameSite=Lax; Max-Age=0$/);
     assert.equal((await call('/overview')).status, 401);
+  });
+});
+
+test('website visits are shown only to the signed-in studio', async () => {
+  const store = fakeStore();
+  await withSite({ env: { ADMIN_PASSWORD: PASSWORD }, store }, async (origin) => {
+    const signedOut = await fetch(`${origin}/admin/api/analytics?range=7d`);
+    assert.equal(signedOut.status, 401);
+    const { cookie } = await signIn(origin);
+    const week = await fetch(`${origin}/admin/api/analytics?range=7d`, { headers: { cookie } });
+    assert.equal(week.status, 200);
+    assert.deepEqual(await week.json(), { range: { key: '7d' }, totals: { visitors: 3 } });
+    const odd = await fetch(`${origin}/admin/api/analytics?range=__proto__`, { headers: { cookie } });
+    assert.equal((await odd.json()).range.key, '30d', 'anything else shows the last 30 days');
   });
 });
 

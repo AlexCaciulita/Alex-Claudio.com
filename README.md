@@ -281,6 +281,18 @@ remembered for 180 days by a cookie signed with a key kept in the dashboard's fi
 strangers can't lock the owner out. Changing `ADMIN_PASSWORD` forgets every remembered
 browser.
 
+Analytics shows visits to the website, counted by the site itself in the same file. Every
+public page and client gallery loads `assets/visits.js`, which sends the page, the referring
+site, UTM tags, the device type and the time zone to `POST /api/visit`, then how long the
+page stayed in front. The server keeps only summaries: the referring host, the browser and
+system, and the country the time zone belongs to (`server/timezones.js`). It sets no
+cookies and stores no IP addresses. Visits are grouped by a keyed hash of the address and
+browser whose key changes daily, so nobody can be followed from one day to the next.
+Inquiries and `/cdn` gallery downloads are counted with the visit they happened in. Visits
+older than 13 months are deleted. Opening the dashboard marks that browser so its own visits
+aren't counted; the note at the bottom of Analytics switches this off and on. If counting
+changes, update the "Counting visits" section of the privacy page (`design/build-journal.js`).
+
 `.railway/railway.ts` does not describe the volume: don't run `railway config apply` with
 it, or Railway would remove what the file doesn't list.
 

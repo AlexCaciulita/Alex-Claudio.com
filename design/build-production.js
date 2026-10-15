@@ -176,6 +176,8 @@ for (const page of PAGES) {
     };
   }
   if (ld) html = replaceOnce(html, '</head>', `<script type="application/ld+json">${JSON.stringify(ld, null, 2)}</script>\n</head>`, 'head end');
+  // Visit counts for the studio dashboard: no cookies, and nothing kept on the visitor's device.
+  html = replaceOnce(html, '</head>', '<script src="/assets/visits.js?v=1" defer></script>\n</head>', 'head end');
 
   // 5. Footer credit for the public site.
   html = html.replace(/<p class="credit">[\s\S]*?<\/p>/, () =>

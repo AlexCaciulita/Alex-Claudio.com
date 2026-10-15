@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const express = require('express');
 const { STATUSES, TEXT_LIMITS, safeMessage } = require('./store');
+const { RANGES } = require('./analytics');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 
 const ASSETS = path.join(__dirname, 'assets');
@@ -444,6 +445,11 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
       return res.status(400).json({ error: 'Invalid date range.' });
     }
     res.json({ weddings: await store.calendar(from, to) });
+  });
+
+  api.get('/analytics', async (req, res) => {
+    const range = has(RANGES, req.query.range) ? req.query.range : '30d';
+    res.json(await store.analytics(range));
   });
 
   api.get('/archive', async (req, res) => {

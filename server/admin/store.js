@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { ANALYTICS_MIGRATION, analyticsMethods } = require('./analytics');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 
 const STATUSES = ['new', 'replied', 'booked', 'not_booked'];
@@ -189,6 +190,7 @@ function createStore(env = process.env, sqlite) {
     try {
       handle.exec('PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
       handle.exec(MIGRATION);
+      handle.exec(ANALYTICS_MIGRATION);
     } catch (error) {
       handle.close();
       throw error;
@@ -303,9 +305,11 @@ function createStore(env = process.env, sqlite) {
           console.error('Copying from the earlier dashboard failed:', safeMessage(error));
         }
         try { backupToday(); } catch (error) { console.error('The daily backup failed:', safeMessage(error)); }
+        store.pruneAnalytics().catch((error) => console.error('Clearing old visits failed:', safeMessage(error)));
         if (!timer) {
           timer = setInterval(() => {
             try { backupToday(); } catch (error) { console.error('The daily backup failed:', safeMessage(error)); }
+            store.pruneAnalytics().catch((error) => console.error('Clearing old visits failed:', safeMessage(error)));
           }, 6 * 60 * 60 * 1000);
           timer.unref();
         }
@@ -496,6 +500,8 @@ function createStore(env = process.env, sqlite) {
     }),
 
     backupToday: () => use(() => backupToday()),
+
+    ...analyticsMethods({ use, timeZone: paths.timeZone }),
 
     close: async () => {
       if (timer) clearInterval(timer);

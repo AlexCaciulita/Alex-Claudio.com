@@ -77,5 +77,18 @@ test('no page loads trackers, third-party fonts or third-party scripts', () => {
   }
   const privacy = read('privacy/index.html');
   assert.match(privacy, /sets no cookies/);
-  assert.match(privacy, /no analytics/);
+  assert.match(privacy, /runs no advertising/);
+});
+
+test('every public page counts its visits with the site\u2019s own script, as the privacy notice describes', () => {
+  for (const path of publicPages) {
+    assert.match(read(path), /<script src="\/assets\/visits\.js\?v=\d+" defer><\/script>\s*<\/head>/, path);
+  }
+  const counter = read('assets/visits.js');
+  assert.doesNotMatch(counter, /document\.cookie|localStorage\.setItem|sessionStorage|indexedDB/, 'the page script saves nothing on the visitor\u2019s device');
+  const privacy = read('privacy/index.html');
+  assert.match(privacy, /<h2>Counting visits<\/h2>/);
+  assert.match(privacy, /doesn&rsquo;t store your IP address/);
+  assert.match(privacy, /deleted after 13 months/);
+  assert.doesNotMatch(privacy, /runs no analytics/);
 });
