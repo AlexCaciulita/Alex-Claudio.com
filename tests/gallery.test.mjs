@@ -53,3 +53,20 @@ test('gallery API drops a hero position that is not two percentages', async (t) 
   const gallery = await getGallery('renee-alan');
   assert.equal(gallery.heroPosition, null);
 });
+
+test('gallery API serves a session category and the manifest\'s section labels', async (t) => {
+  useBucket(t, {
+    'nitu-lucache/session/Fall Session - 2026-2.jpg': '',
+    'nitu-lucache/session/Fall Session - 2026-10.jpg': '',
+    'nitu-lucache/nitu-lucache-session.zip': '',
+    'nitu-lucache/manifest.json': JSON.stringify({
+      name: 'Nitu-Lucache',
+      labels: { session: ' Fall Mini Session ', wedding: 42, portraits: 'Not a category' }
+    })
+  });
+  const gallery = await getGallery('nitu-lucache');
+  assert.deepEqual(gallery.session.map((photo) => photo.name), ['Fall Session - 2026-2.jpg', 'Fall Session - 2026-10.jpg']);
+  assert.deepEqual(gallery.wedding, []);
+  assert.deepEqual(gallery.labels, { session: 'Fall Mini Session' });
+  assert.equal(gallery.zips.session.url, '/cdn/nitu-lucache/nitu-lucache-session.zip');
+});
