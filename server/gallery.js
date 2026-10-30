@@ -1,7 +1,8 @@
 const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 
 const SLUG_RE = /^[a-z0-9-]{6,64}$/;
-const CATEGORIES = ['engagement', 'wedding'];
+// `session` covers everything that is not a wedding or an engagement: fall minis, family and portrait sessions.
+const CATEGORIES = ['engagement', 'session', 'wedding'];
 const IMAGE_RE = /\.(jpe?g|png|webp|gif|avif|heic)$/i;
 const HERO_POSITION_RE = /^\d{1,3}% \d{1,3}%$/;
 
@@ -85,7 +86,7 @@ async function getGallery(slug) {
     throw new GalleryError(404, 'Gallery not found');
   }
 
-  const result = { name: null, date: null, message: null, hero: null, heroPosition: null, zips: {} };
+  const result = { name: null, date: null, message: null, hero: null, heroPosition: null, labels: {}, zips: {} };
   for (const category of CATEGORIES) result[category] = [];
 
   let manifestKey;
@@ -142,6 +143,13 @@ async function getGallery(slug) {
       // CSS object-position for the hero crop, e.g. "50% 100%" to keep the bottom of the photo.
       if (typeof manifest.heroPosition === 'string' && HERO_POSITION_RE.test(manifest.heroPosition)) {
         result.heroPosition = manifest.heroPosition;
+      }
+      // Optional per-gallery section titles, e.g. { "session": "Fall Mini Session" }, in place of the defaults.
+      if (manifest.labels && typeof manifest.labels === 'object') {
+        for (const category of CATEGORIES) {
+          const label = manifest.labels[category];
+          if (typeof label === 'string' && label.trim()) result.labels[category] = label.trim();
+        }
       }
     }
   }

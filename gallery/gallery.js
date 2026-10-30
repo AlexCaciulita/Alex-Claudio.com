@@ -3,9 +3,10 @@
 
   const CATEGORY_LABELS = {
     engagement: 'Engagement Session',
+    session: 'Portrait Session',
     wedding: 'Wedding Day'
   };
-  const CATEGORY_ORDER = ['engagement', 'wedding'];
+  const CATEGORY_ORDER = ['engagement', 'session', 'wedding'];
   // zip.js streams each photo from the network straight into the archive (and,
   // where supported, straight to disk), so a full wedding gallery of several GB
   // never has to be held in memory at once — unlike a build-the-whole-blob zipper.
@@ -51,6 +52,12 @@
         });
       }, { rootMargin: '800px 0px' })
     : null;
+
+  // The manifest can rename a section (e.g. "Fall Mini Session" for a `session` category).
+  function categoryLabel(category) {
+    const custom = galleryData && galleryData.labels && galleryData.labels[category];
+    return typeof custom === 'string' && custom ? custom : CATEGORY_LABELS[category];
+  }
 
   function showStatus(html) {
     statusEl.innerHTML = html;
@@ -121,7 +128,7 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'gallery-tab';
-      btn.textContent = CATEGORY_LABELS[cat];
+      btn.textContent = categoryLabel(cat);
       btn.dataset.cat = cat;
       btn.setAttribute('role', 'tab');
       btn.addEventListener('click', () => switchTo(cat));
@@ -198,7 +205,7 @@
 
     const heading = document.createElement('h2');
     heading.className = 'gallery-section-title';
-    heading.textContent = CATEGORY_LABELS[category];
+    heading.textContent = categoryLabel(category);
     head.appendChild(heading);
 
     const meta = document.createElement('div');

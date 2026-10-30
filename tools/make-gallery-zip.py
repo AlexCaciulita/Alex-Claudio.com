@@ -32,7 +32,7 @@ Usage
 -----
   python3 make-gallery-zip.py <slug> [category ...]
 
-  # both categories that exist for the gallery (default):
+  # every category that exists for the gallery (default):
   python3 make-gallery-zip.py jess-fenn
 
   # just one:
@@ -55,7 +55,7 @@ BUCKET = os.environ.get("R2_BUCKET_NAME", "alex-claudio-galleries")
 SITE_ORIGIN = os.environ.get("SITE_ORIGIN", "https://alex-claudio.com")
 LIST_FN = f"{SITE_ORIGIN}/api/gallery"
 UA = "make-gallery-zip/1.0"
-CATEGORIES = ["engagement", "wedding"]
+CATEGORIES = ["engagement", "session", "wedding"]
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".heic")
 
 
@@ -211,7 +211,7 @@ def upload(zip_path, key, attempts=5):
 def main():
     ap = argparse.ArgumentParser(description="Build + upload per-category gallery zips to R2.")
     ap.add_argument("slug")
-    ap.add_argument("categories", nargs="*", help="engagement and/or wedding (default: whichever exist)")
+    ap.add_argument("categories", nargs="*", help="engagement, session and/or wedding (default: whichever exist)")
     ap.add_argument("--src", action="append", default=[],
                     help="category=DIR to zip local originals instead of downloading from R2")
     ap.add_argument("--work-dir",
@@ -229,7 +229,7 @@ def main():
     manifest = fetch_manifest(args.slug)
     wanted = args.categories or [c for c in CATEGORIES if manifest.get(c)]
     if not wanted:
-        raise SystemExit(f"No engagement/wedding photos found for '{args.slug}'.")
+        raise SystemExit(f"No engagement/session/wedding photos found for '{args.slug}'.")
 
     tmpctx = (lambda: _NullCtx(args.work_dir)) if args.work_dir else tempfile.TemporaryDirectory
     if args.work_dir:
