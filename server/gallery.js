@@ -73,38 +73,48 @@ async function getGallery(slug) {
     throw new GalleryError(500, 'Server misconfigured');
   }
 
-  let objects;
-  try {
-    objects = await listAll(getClient(), bucket, `${slug}/`);
-  } catch (error) {
-    if (error instanceof GalleryError) throw error;
-    console.error('R2 list failed:', error);
-    throw new GalleryError(502, 'Storage unavailable');
-  }
+  const list = async (prefix) => {
+    try {
+      return await listAll(getClient(), bucket, `${prefix}/`);
+    } catch (error) {
+      if (error instanceof GalleryError) throw error;
+      console.error('R2 list failed:', error);
+      throw new GalleryError(502, 'Storage unavailable');
+    }
+  };
 
+  let objects = await list(slug);
   if (!objects.length) {
     throw new GalleryError(404, 'Gallery not found');
+  }
+
+  // The gallery's own manifest names it. With "photosFrom": "<other-slug>" it shows that gallery's photos,
+  // which lets a gallery move to a corrected URL without uploading the photos again.
+  const ownManifestKey = `${slug}/manifest.json`;
+  const manifest = objects.some((object) => object.Key === ownManifestKey)
+    ? await readJson(getClient(), bucket, ownManifestKey)
+    : null;
+  let source = slug;
+  if (manifest && typeof manifest.photosFrom === 'string' && SLUG_RE.test(manifest.photosFrom) && manifest.photosFrom !== slug) {
+    source = manifest.photosFrom;
+    objects = await list(source);
   }
 
   const result = { name: null, date: null, message: null, hero: null, heroPosition: null, labels: {}, zips: {} };
   for (const category of CATEGORIES) result[category] = [];
 
-  let manifestKey;
   let dimensionsKey;
   for (const object of objects) {
     const key = object.Key;
     if (!key || key.endsWith('/')) continue;
-    const relativeKey = key.slice(slug.length + 1);
-    if (relativeKey === 'manifest.json') {
-      manifestKey = key;
-      continue;
-    }
+    const relativeKey = key.slice(source.length + 1);
+    if (relativeKey === 'manifest.json') continue;
     if (relativeKey === 'dimensions.json') {
       dimensionsKey = key;
       continue;
     }
 
-    const zipCategory = CATEGORIES.find((category) => relativeKey === `${slug}-${category}.zip`);
+    const zipCategory = CATEGORIES.find((category) => relativeKey === `${source}-${category}.zip`);
     if (zipCategory) {
       result.zips[zipCategory] = { url: `/cdn/${encodeURI(key)}`, size: object.Size || 0 };
       continue;
@@ -134,22 +144,19 @@ async function getGallery(slug) {
     }));
   }
 
-  if (manifestKey) {
-    const manifest = await readJson(getClient(), bucket, manifestKey);
-    if (manifest && typeof manifest === 'object') {
-      for (const field of ['name', 'date', 'message', 'hero']) {
-        result[field] = typeof manifest[field] === 'string' ? manifest[field] : null;
-      }
-      // CSS object-position for the hero crop, e.g. "50% 100%" to keep the bottom of the photo.
-      if (typeof manifest.heroPosition === 'string' && HERO_POSITION_RE.test(manifest.heroPosition)) {
-        result.heroPosition = manifest.heroPosition;
-      }
-      // Optional per-gallery section titles, e.g. { "session": "Fall Mini Session" }, in place of the defaults.
-      if (manifest.labels && typeof manifest.labels === 'object') {
-        for (const category of CATEGORIES) {
-          const label = manifest.labels[category];
-          if (typeof label === 'string' && label.trim()) result.labels[category] = label.trim();
-        }
+  if (manifest && typeof manifest === 'object') {
+    for (const field of ['name', 'date', 'message', 'hero']) {
+      result[field] = typeof manifest[field] === 'string' ? manifest[field] : null;
+    }
+    // CSS object-position for the hero crop, e.g. "50% 100%" to keep the bottom of the photo.
+    if (typeof manifest.heroPosition === 'string' && HERO_POSITION_RE.test(manifest.heroPosition)) {
+      result.heroPosition = manifest.heroPosition;
+    }
+    // Optional per-gallery section titles, e.g. { "session": "Fall Mini Session" }, in place of the defaults.
+    if (manifest.labels && typeof manifest.labels === 'object') {
+      for (const category of CATEGORIES) {
+        const label = manifest.labels[category];
+        if (typeof label === 'string' && label.trim()) result.labels[category] = label.trim();
       }
     }
   }
@@ -171,7 +178,7 @@ async function getGallery(slug) {
   if (result.hero) {
     const relativeHero = result.hero.replace(/^\/+/, '');
     result.hero = IMAGE_RE.test(relativeHero) && !relativeHero.includes('..')
-      ? `${publicOrigin}/${encodeURI(`${slug}/${relativeHero}`)}`
+      ? `${publicOrigin}/${encodeURI(`${source}/${relativeHero}`)}`
       : null;
   }
 
@@ -183,4 +190,4 @@ async function getGallery(slug) {
   return result;
 }
 
-module.exports = { GalleryError, getGallery, getPublicOrigin };
+module.exports = { CATEGORIES, GalleryError, getGallery, getPublicOrigin };

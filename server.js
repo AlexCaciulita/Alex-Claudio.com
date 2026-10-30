@@ -1,7 +1,7 @@
 const path = require('node:path');
 const { Readable } = require('node:stream');
 const express = require('express');
-const { GalleryError, getGallery, getPublicOrigin } = require('./server/gallery');
+const { CATEGORIES: GALLERY_CATEGORIES, GalleryError, getGallery, getPublicOrigin } = require('./server/gallery');
 const { SubmissionError, processSubmission } = require('./server/submissions');
 const { createAdminRouter } = require('./server/admin');
 const { createStore, safeMessage } = require('./server/admin/store');
@@ -71,8 +71,8 @@ function countedPath(value) {
 function downloadOf(key) {
   const [slug, second, ...rest] = key.split('/');
   if (!slug || !second) return null;
-  if (!rest.length && [`${slug}-wedding.zip`, `${slug}-engagement.zip`].includes(second)) return { kind: 'zip', slug };
-  if (rest.length === 1 && ['wedding', 'engagement'].includes(second)) return { kind: 'photo', slug };
+  if (!rest.length && GALLERY_CATEGORIES.some((category) => second === `${slug}-${category}.zip`)) return { kind: 'zip', slug };
+  if (rest.length === 1 && GALLERY_CATEGORIES.includes(second)) return { kind: 'photo', slug };
   return null;
 }
 
