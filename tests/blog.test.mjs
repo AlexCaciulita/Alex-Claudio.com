@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { test } from 'node:test';
 
 const root = new URL('../', import.meta.url);
-const slugs = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips'];
+const slugs = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips', 'seattle-engagement-photos'];
 const pages = ['blog/index.html', ...slugs.map(slug => `blog/${slug}/index.html`)];
 const read = path => readFileSync(new URL(path, root), 'utf8');
 const markup = html => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style>[\s\S]*?<\/style>/g, '');

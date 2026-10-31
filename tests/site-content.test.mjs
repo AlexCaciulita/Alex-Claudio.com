@@ -9,6 +9,7 @@ const publicPages = [
   'index.html', 'portfolio/index.html', 'privacy/index.html', 'blog/index.html',
   'blog/seattle-wedding-rain-plan/index.html', 'blog/how-many-hours-wedding-photography/index.html',
   'blog/wedding-photography-timeline/index.html', 'blog/wedding-day-photography-tips/index.html',
+  'blog/seattle-engagement-photos/index.html',
   'links/index.html', 'lead/index.html', 'gallery/index.html', 'AlexClaudioVentures/index.html'
 ];
 
