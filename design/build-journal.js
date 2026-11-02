@@ -58,14 +58,14 @@ function fixHours(s) {
   if (a < 0 || b <= a) throw new Error('content fix did not match: section 6 body');
   const section6 = '<section class="article-section" id="section-6"><h3>What every wedding includes</h3>\n' +
     '<p>Weddings start at $4,000. That includes both of us for every hour you book, a consultation and timeline planning before the day, every photograph edited by us in high resolution, and a private online gallery with downloads and personal printing rights.</p>\n' +
-    '<p>Engagement sessions, extra hours and custom-designed leather albums can be added. Your proposal sets out the coverage, tax, travel and any additions before you book, so you can check it against the moments you marked in Part 1.</p>\n</section>\n';
+    '<p><a href="../../blog/seattle-engagement-photos/">Engagement sessions</a>, extra hours and custom-designed leather albums can be added. Your proposal sets out the coverage, tax, travel and any additions before you book, so you can check it against the moments you marked in Part 1.</p>\n</section>\n';
   return s.slice(0, a) + section6 + s.slice(b);
 }
 const fixAll = (s) => s.split('02 / The collection').join('02 / Coverage');
 
 /* ---------- Parse the articles ---------- */
 
-const SLUGS = ['wedding-day-photography-tips', 'seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
+const SLUGS = ['seattle-engagement-photos', 'wedding-day-photography-tips', 'seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 const pick = (re, s, label) => { const m = s.match(re); if (!m) throw new Error('could not find ' + label); return m; };
 const stripTags = (h) => h.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
@@ -171,6 +171,7 @@ const img = (c, sizes, cls, extra = '') => `<img${cls ? ` class="${cls}"` : ''} 
 /* ---------- Journal index ---------- */
 
 const INDEX_EXCERPTS = {
+  'seattle-engagement-photos': 'Choose a place you love, start before sunset, and bring the dog.',
   'wedding-day-photography-tips': 'From the rings on the table in the morning to the last toast, and the small decision that makes each moment easier.',
   'seattle-wedding-rain-plan': 'Choose your indoor spaces, then agree on the weather decisions and practical arrangements.',
   'how-many-hours-wedding-photography': 'Choose coverage around the moments you would be disappointed to miss.',
@@ -179,10 +180,11 @@ const INDEX_EXCERPTS = {
 const INDEX_TITLES = {
   'seattle-wedding-rain-plan': 'A Seattle wedding<br><em>rain plan.</em>',
   'how-many-hours-wedding-photography': 'Six, eight,<br><em>or ten hours?</em>',
-  'wedding-photography-timeline': 'A wedding timeline<br><em>with time for your guests.</em>'
+  'wedding-photography-timeline': 'A wedding timeline<br><em>with time for your guests.</em>',
+  'wedding-day-photography-tips': 'Your wedding day,<br><em>in ten moments.</em>'
 };
-const lead = bySlug['wedding-day-photography-tips'];
-const rest = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'].map((s) => bySlug[s]);
+const lead = bySlug['seattle-engagement-photos'];
+const rest = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips'].map((s) => bySlug[s]);
 
 const indexPage = `${head('The Journal', 'Wedding planning notes from Alex Claudio Photography.')}
 <body data-tone="paper" class="journal-page journal-index">

@@ -13,6 +13,12 @@ const ORIGIN = 'https://alex-claudio.com';
 const BUSINESS = { '@type': 'Organization', '@id': ORIGIN + '/#business', name: 'Alex Claudio Photography', url: ORIGIN + '/' };
 
 const ARTICLES = {
+  'seattle-engagement-photos': {
+    title: 'Seattle Engagement Photos: Places, Timing, Outfits | Alex Claudio',
+    description: 'Plan a Seattle engagement session: where to go in each season, when to start for the best light, what to wear, and what to do if it rains.',
+    image: '/Portofolio/Jess%26Fenn%20-%20Engagement%20Session-134.jpg', published: '2026-10-31T07:45:00-07:00', modified: '2026-10-31T07:45:00-07:00',
+    crumb: 'An engagement session in Seattle.'
+  },
   'wedding-day-photography-tips': {
     title: 'Wedding Day Photography Tips: 10 Moments to Plan | Alex Claudio',
     description: 'Ten moments of a wedding day, from the morning details to the last toast, and the small decision that makes each one easier to photograph and enjoy.',
