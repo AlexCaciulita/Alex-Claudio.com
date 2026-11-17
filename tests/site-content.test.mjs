@@ -16,6 +16,8 @@ test('marketing copy describes Alex as a solo photographer, not a team', () => {
   const teamLabels = /husband[\s-]+and[\s-]+wife|partners in life|photography team|two photographers|both photographers|second photographer|one of us/i;
   assert.match(home, /I&rsquo;m Alex, a wedding photographer from Seattle/);
   assert.doesNotMatch(home, /both of us|two of us/i);
+  assert.match(home, /Since 2014, I have photographed weddings across Seattle, the PNW, and Europe/);
+  assert.match(home, /I photograph with a quiet presence, help when direction is useful/);
   for (const path of publicPages.filter((path) => path !== 'AlexClaudioVentures/index.html')) {
     assert.doesNotMatch(read(path), teamLabels, path);
   }

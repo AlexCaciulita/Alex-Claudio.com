@@ -43,7 +43,7 @@ const PAGES = [
   {
     study: 'index.html', out: 'index.html', url: '/', type: 'website', image: '/Portofolio/hero_upscaled.jpg',
     title: 'Seattle Wedding Photographers | Alex Claudio Photography',
-    description: 'Wedding photography in Seattle, the Pacific Northwest and Europe by Alex Claudio. Weddings start at $4,000.',
+    description: 'Documentary wedding photography in Seattle and the Pacific Northwest with an editorial eye, calm direction, and a timeline-first process. View full galleries and inquire.',
     ld: {
       '@context': 'https://schema.org',
       '@type': ['LocalBusiness', 'ProfessionalService'],

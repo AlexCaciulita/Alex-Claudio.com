@@ -294,6 +294,7 @@ html:not(.fine) .hint-touch { display: inline; }
 /* VIII. Studio */
 .studio { padding: 16vh var(--gut) 18vh; border-top: 1px solid var(--rule); }
 .studio > div { max-width: 900px; }
+.studio .body + .body { margin-top: 1em; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */
