@@ -296,6 +296,8 @@ html:not(.fine) .hint-touch { display: inline; }
 .studio-portrait { margin: 0; max-width: 480px; }
 .studio-portrait img { width: 100%; height: auto; }
 .studio .body + .body { margin-top: 1em; }
+.studio .body { max-width: 54ch; }
+.studio .body a { color: inherit; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */
