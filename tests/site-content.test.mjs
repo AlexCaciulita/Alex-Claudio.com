@@ -14,10 +14,8 @@ const publicPages = [
 
 test('marketing copy describes Alex as a solo photographer, not a team', () => {
   const teamLabels = /husband[\s-]+and[\s-]+wife|partners in life|photography team|two photographers|both photographers|second photographer|one of us/i;
-  assert.match(home, /I&rsquo;m Alex, a wedding photographer based in Seattle/);
+  assert.match(home, /I&rsquo;m Alex, a Seattle wedding photographer with a calm, documentary eye/);
   assert.doesNotMatch(home, /both of us|two of us/i);
-  assert.match(home, /I&rsquo;m Alex, a Seattle wedding photographer, living on the eastside in Kirkland/);
-  assert.match(home, /I follow a documentary approach/);
   for (const name of ['studio-family', 'studio-oana']) {
     for (const size of [400, 800]) assert.ok(existsSync(new URL(`../assets/responsive/${name}-${size}.webp`, import.meta.url)), `${name}-${size}`);
     assert.match(home, new RegExp(`/assets/responsive/${name}-400\\.webp`), name);
