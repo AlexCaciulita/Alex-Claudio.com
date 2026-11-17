@@ -322,6 +322,9 @@ html:not(.fine) .hint-touch { display: inline; }
 .studio .body + .body { margin-top: 1em; }
 .studio .body { max-width: 54ch; }
 .studio .body a { color: inherit; }
+.studio-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(12px, 1.6vw, 22px); margin-top: 6vh; max-width: 54ch; }
+.studio-pair figure { margin: 0; }
+.studio-pair img { width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */
@@ -742,6 +745,10 @@ html.reduce .aperture { clip-path: none !important; }
       <p class="body" data-rise>I follow a documentary approach, looking to create beautiful images that capture authentic moments, within the natural flow of the day. This includes photographing your family and friends as if they were my own, and always trying to be a positive addition to the day.</p>
       <p class="body" data-rise>As far as I&rsquo;m concerned the photos should feel secondary to the experience on the day. If you go about enjoying your day with the people you love the most I can&rsquo;t help but get lots of wonderful, natural photos without obstructing the flow of the day.</p>
       <p class="body" data-rise>If this aligns with what you are looking for then please <a href="#letter" data-ul data-ul-always>get in touch</a>!</p>
+      <div class="studio-pair">
+        <figure data-lb="studio" data-full="/assets/responsive/studio-family-800.webp" data-caption="Oana, Olivia, Amelie and me."><img data-develop src="/assets/responsive/studio-family-400.webp" srcset="/assets/responsive/studio-family-400.webp 400w, /assets/responsive/studio-family-800.webp 800w" sizes="(max-width: 900px) 45vw, 22vw" alt="Alex with his wife Oana and their daughters Olivia and Amelie under an autumn tree in a park" width="800" height="1200" loading="lazy"></figure>
+        <figure data-lb="studio" data-full="/assets/responsive/studio-oana-800.webp" data-caption="Oana and me, on a blanket in the leaves."><img data-develop src="/assets/responsive/studio-oana-400.webp" srcset="/assets/responsive/studio-oana-400.webp 400w, /assets/responsive/studio-oana-800.webp 800w" sizes="(max-width: 900px) 45vw, 22vw" alt="Alex and Oana sitting on a blanket in an autumn park, laughing with their noses almost touching, in black and white" width="800" height="1200" loading="lazy"></figure>
+      </div>
     </div>
   </section>
 

@@ -298,6 +298,9 @@ html:not(.fine) .hint-touch { display: inline; }
 .studio .body + .body { margin-top: 1em; }
 .studio .body { max-width: 54ch; }
 .studio .body a { color: inherit; }
+.studio-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(12px, 1.6vw, 22px); margin-top: 6vh; max-width: 54ch; }
+.studio-pair figure { margin: 0; }
+.studio-pair img { width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */

@@ -18,6 +18,10 @@ test('marketing copy describes Alex as a solo photographer, not a team', () => {
   assert.doesNotMatch(home, /both of us|two of us/i);
   assert.match(home, /I&rsquo;m Alex, a Seattle wedding photographer, living on the eastside in Kirkland/);
   assert.match(home, /I follow a documentary approach/);
+  for (const name of ['studio-family', 'studio-oana']) {
+    for (const size of [400, 800]) assert.ok(existsSync(new URL(`../assets/responsive/${name}-${size}.webp`, import.meta.url)), `${name}-${size}`);
+    assert.match(home, new RegExp(`/assets/responsive/${name}-400\\.webp`), name);
+  }
   for (const path of publicPages.filter((path) => path !== 'AlexClaudioVentures/index.html')) {
     assert.doesNotMatch(read(path), teamLabels, path);
   }
