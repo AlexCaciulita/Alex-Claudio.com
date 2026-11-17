@@ -27,7 +27,7 @@ const ARTICLES = {
   },
   'how-many-hours-wedding-photography': {
     title: '6, 8 or 10 Hours of Wedding Photography? | Alex Claudio',
-    description: 'Compare 6, 8 and 10 hours of wedding photography, see what two photographers cover, and choose coverage around the moments you want to keep.',
+    description: 'Compare 6, 8 and 10 hours of wedding photography, see what each length covers, and choose coverage around the moments you want to keep.',
     image: '/assets/blog/rings-paper.jpg', published: '2026-09-16T20:12:52-07:00', modified: '2026-10-06T12:00:00-07:00',
     crumb: 'Six, eight, or ten hours?'
   },
@@ -43,7 +43,7 @@ const PAGES = [
   {
     study: 'index.html', out: 'index.html', url: '/', type: 'website', image: '/Portofolio/hero_upscaled.jpg',
     title: 'Seattle Wedding Photographers | Alex Claudio Photography',
-    description: 'Wedding photography in Seattle, the Pacific Northwest and Europe by a husband-and-wife team. Both of us photograph every hour you book, and weddings start at $4,000.',
+    description: 'Documentary wedding photography in Seattle and the Pacific Northwest with an editorial eye, calm direction, and a timeline-first process. View full galleries and inquire.',
     ld: {
       '@context': 'https://schema.org',
       '@type': ['LocalBusiness', 'ProfessionalService'],
@@ -53,7 +53,7 @@ const PAGES = [
       image: ORIGIN + '/Portofolio/hero_upscaled.jpg',
       email: 'contact@alex-claudio.com',
       sameAs: ['https://www.instagram.com/alexclaudiophotography/'],
-      description: 'Wedding photography in Seattle, the Pacific Northwest and Europe. Weddings start at $4,000, with both photographers for every hour you book.',
+      description: 'Wedding photography in Seattle, the Pacific Northwest and Europe. Weddings start at $4,000.',
       priceRange: '$$$',
       address: { '@type': 'PostalAddress', addressLocality: 'Seattle', addressRegion: 'WA', addressCountry: 'US' },
       areaServed: ['Seattle', 'Bellevue', 'Kirkland', 'Redmond', 'Tacoma', 'Puget Sound'],
@@ -63,7 +63,7 @@ const PAGES = [
   {
     study: 'work/index.html', out: 'portfolio/index.html', url: '/portfolio/', type: 'website', image: '/assets/home/faq-craft-1600.jpg',
     title: 'Seattle Wedding Photography Portfolio | Alex Claudio',
-    description: 'Explore the wedding portfolio of Alex Claudio Photography, a wedding photography team based in Seattle and serving the Pacific Northwest.'
+    description: 'Explore the wedding portfolio of Alex Claudio Photography, a wedding photographer based in Seattle and serving the Pacific Northwest.'
   },
   {
     study: 'journal/index.html', out: 'blog/index.html', url: '/blog/', type: 'website', image: '/assets/blog/rain-window.jpg',

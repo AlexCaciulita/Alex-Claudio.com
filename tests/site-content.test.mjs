@@ -12,29 +12,34 @@ const publicPages = [
   'links/index.html', 'lead/index.html', 'gallery/index.html', 'AlexClaudioVentures/index.html'
 ];
 
-test('marketing copy describes the team, with the relationship context only on the homepage', () => {
-  const relationshipLabels = /husband[\s-]+and[\s-]+wife|partners in life/i;
-  assert.match(home, /husband-and-wife team from Seattle/);
+test('marketing copy describes Alex as a solo photographer, not a team', () => {
+  const teamLabels = /husband[\s-]+and[\s-]+wife|partners in life|photography team|two photographers|both photographers|second photographer|one of us/i;
+  assert.match(home, /I&rsquo;m Alex, a Seattle wedding photographer with a calm, documentary eye/);
+  assert.doesNotMatch(home, /both of us|two of us/i);
+  for (const name of ['studio-family', 'studio-oana']) {
+    for (const size of [400, 800]) assert.ok(existsSync(new URL(`../assets/responsive/${name}-${size}.webp`, import.meta.url)), `${name}-${size}`);
+    assert.match(home, new RegExp(`/assets/responsive/${name}-400\\.webp`), name);
+  }
+  for (const path of publicPages.filter((path) => path !== 'AlexClaudioVentures/index.html')) {
+    assert.doesNotMatch(read(path), teamLabels, path);
+  }
   for (const path of ['portfolio/index.html', 'links/index.html', 'lead/index.html']) {
-    const source = read(path);
-    assert.match(source, /wedding photograph(?:ers|y)/i, path);
-    assert.doesNotMatch(source, relationshipLabels, path);
+    assert.match(read(path), /wedding photograph(?:er|y)/i, path);
   }
   for (const path of publicPages) {
     const visible = read(path).replace(/<script[\s\S]*?<\/script>/g, '');
     assert.doesNotMatch(visible, /\bluxury\b|award-winning|world.class|as seen (?:in|on)/i, path);
   }
-  assert.doesNotMatch(script, relationshipLabels);
+  assert.doesNotMatch(script, teamLabels);
 });
 
 test('pages agree on price, coverage, reply time and editing', () => {
   assert.match(home, /Weddings start at\s*<\/p>\s*<p class="price-big">\$4,000<\/p>/);
-  assert.match(home, /<li>Both of us, for every hour you book<\/li>/);
-  assert.match(home, /<li>Every photograph edited by us, in high resolution<\/li>/);
-  assert.match(home, /While you get ready in separate rooms, one of us stays with each of you\./);
-  assert.match(home, /We answer every inquiry ourselves, within a few hours\./);
-  assert.match(script, /We'll reply personally within a few hours\./);
-  assert.match(script, /email us directly at contact@alex-claudio\.com/);
+  assert.match(home, /<li>The photographer you met, for every hour you book<\/li>/);
+  assert.match(home, /<li>Every photograph edited by me, in high resolution<\/li>/);
+  assert.match(home, /I answer every inquiry myself, within a few hours\./);
+  assert.match(script, /I'll reply personally within a few hours\./);
+  assert.match(script, /email me directly at contact@alex-claudio\.com/);
   for (const path of publicPages) {
     const source = read(path);
     assert.doesNotMatch(source, /24 hours|\$5,700|\$7,500|\$4,200|\$9,500/, path);
@@ -59,11 +64,10 @@ test('older links into the homepage still land on the right section', () => {
   }
 });
 
-test('studio portraits and couples\u2019 notes are unchanged', () => {
-  for (const name of ['studio-photographer-editorial', 'studio-alex-editorial']) {
-    const src = home.match(new RegExp(`src="(/assets/responsive/${name}-\\d+\\.webp)"`))[1];
-    assert.ok(existsSync(new URL(`..${src}`, import.meta.url)), src);
-  }
+test('the studio portraits are gone and couples\u2019 notes are unchanged', () => {
+  assert.doesNotMatch(home, /studio-photographer-editorial|studio-alex-editorial|class="portraits"/);
+  const portrait = home.match(/class="studio-portrait"[^>]*><img[^>]* src="(\/assets\/responsive\/studio-alex-solo-\d+\.webp)"/);
+  assert.ok(portrait && existsSync(new URL(`..${portrait[1]}`, import.meta.url)), 'solo studio portrait');
   assert.match(home, /Alex moved through our day like a ghost with a camera/);
   assert.match(home, /We hired Alex for the pictures/);
   assert.doesNotMatch(home, /<cite|testimonial-author/);

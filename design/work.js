@@ -22,7 +22,7 @@
   const headEls = $$('.work-head [data-split], .work-head [data-rise]');
   $$('[data-split], [data-rise]').forEach((el) => { if (!headEls.includes(el)) watch(el, el._onIn); });
 
-  /* ---------- Nav: signature, underlines, the oval round "Write to us" ---------- */
+  /* ---------- Nav: signature, underlines, the oval round "Write to me" ---------- */
 
   const SIG = 'Alex Claudio';
   const sigOpts = (em, label) => ({
