@@ -42,6 +42,18 @@ const ARTICLES = {
     description: 'Build a wedding photography timeline with a first-look decision, manageable family portraits, daylight planning, and time to spend with your guests.',
     image: '/assets/blog/reception-table.jpg', published: '2026-09-16T20:12:52-07:00', modified: '2026-09-22T14:30:00-07:00',
     crumb: 'A wedding timeline with time for your guests.'
+  },
+  'seattle-wedding-photographer-cost': {
+    title: 'Seattle Wedding Photographer Cost | Alex Claudio Photography',
+    description: 'What a wedding photographer costs in Seattle, what the price pays for, how tax, travel and albums add to it, and four questions to ask before you compare quotes.',
+    image: '/assets/responsive/portfolio-29-1200.webp', published: '2026-11-16T12:00:00-08:00', modified: '2026-11-16T12:00:00-08:00',
+    crumb: 'What a wedding photographer costs in Seattle.'
+  },
+  'seattle-wedding-sunset-times': {
+    title: 'Seattle Wedding Sunset Times by Month | Alex Claudio',
+    description: 'Sunset times in Seattle for every month of 2027, when to step out for portraits, and how to work back from sunset to a ceremony time that keeps you in good light.',
+    image: '/assets/responsive/portfolio-62-1200.webp', published: '2026-11-16T12:00:00-08:00', modified: '2026-11-16T12:00:00-08:00',
+    crumb: 'Sunset times for a Seattle wedding.'
   }
 };
 
