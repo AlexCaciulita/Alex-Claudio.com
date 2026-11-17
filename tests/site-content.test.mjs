@@ -14,7 +14,7 @@ const publicPages = [
 
 test('marketing copy describes Alex as a solo photographer, not a team', () => {
   const teamLabels = /husband[\s-]+and[\s-]+wife|partners in life|photography team|two photographers|both photographers|second photographer|one of us/i;
-  assert.match(home, /I&rsquo;m Alex, a wedding photographer from Seattle/);
+  assert.match(home, /I&rsquo;m Alex, a wedding photographer based in Seattle/);
   assert.doesNotMatch(home, /both of us|two of us/i);
   assert.match(home, /Since 2014, I have photographed weddings across Seattle, the PNW, and Europe/);
   assert.match(home, /I photograph with a quiet presence, help when direction is useful/);
@@ -33,7 +33,7 @@ test('marketing copy describes Alex as a solo photographer, not a team', () => {
 
 test('pages agree on price, coverage, reply time and editing', () => {
   assert.match(home, /Weddings start at\s*<\/p>\s*<p class="price-big">\$4,000<\/p>/);
-  assert.match(home, /<li>Me, behind the camera for every hour you book<\/li>/);
+  assert.match(home, /<li>The photographer you met, for every hour you book<\/li>/);
   assert.match(home, /<li>Every photograph edited by me, in high resolution<\/li>/);
   assert.match(home, /I answer every inquiry myself, within a few hours\./);
   assert.match(script, /I'll reply personally within a few hours\./);
