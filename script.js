@@ -501,7 +501,7 @@ async function handleFormSubmit(event) {
             contactForm.reset();
             submitButtonEl.textContent = originalText;
             submitButtonEl.disabled = false;
-            showFormSuccess("Your inquiry is in! We'll reply personally within a few hours. Check your inbox (and spam folder) for our reply.");
+            showFormSuccess("Your inquiry is in! I'll reply personally within a few hours. Check your inbox (and spam folder) for my reply.");
             trackFormSubmission();
         } else {
             throw new Error('Form submission failed');
@@ -510,7 +510,7 @@ async function handleFormSubmit(event) {
         console.error('Submission error:', error);
         submitButtonEl.textContent = originalText;
         submitButtonEl.disabled = false;
-        showFormError('Something went wrong sending your inquiry. Please try again, or email us directly at contact@alex-claudio.com.');
+        showFormError('Something went wrong sending your inquiry. Please try again, or email me directly at contact@alex-claudio.com.');
     }
 }
 
@@ -853,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let hasError = false;
             let firstInvalid = null;
             if (!name) { setLeadError('leadName', 'Please share your name.'); hasError = true; firstInvalid = firstInvalid || 'leadName'; }
-            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so we can send details.'); hasError = true; firstInvalid = firstInvalid || 'leadEmail'; }
+            if (!email || !validateEmail(email)) { setLeadError('leadEmail', 'Add a valid email so I can send details.'); hasError = true; firstInvalid = firstInvalid || 'leadEmail'; }
             // no phone validation needed
 
             if (hasError) {

@@ -292,12 +292,8 @@ html:not(.fine) .hint-touch { display: inline; }
 .card.dragging { transition: none; cursor: grabbing; }
 
 /* VIII. Studio */
-.studio { padding: 16vh var(--gut) 18vh; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 6vw; align-items: center; border-top: 1px solid var(--rule); }
-.portraits { position: relative; display: flex; gap: clamp(14px, 2vw, 28px); perspective: 1000px; padding-bottom: 40px; }
-.portraits figure { margin: 0; width: 50%; transition: transform .9s var(--ease); }
-.portraits figure:nth-child(2) { margin-top: 70px; }
-.portraits img { width: 100%; aspect-ratio: 3 / 4.3; object-fit: cover; object-position: center 12%; }
-.studio-note { position: absolute; left: 2%; bottom: -26px; }
+.studio { padding: 16vh var(--gut) 18vh; border-top: 1px solid var(--rule); }
+.studio > div { max-width: 900px; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */
@@ -386,8 +382,7 @@ html.reduce .aperture { clip-path: none !important; }
   .dayline { min-width: 860px; }
   .stack { height: 430px; }
   .notes-side h2 { max-width: none; }
-  .portraits figure:nth-child(2) { margin-top: 44px; }
-  .foot-cols { grid-template-columns: 1fr 1fr; }
+    .foot-cols { grid-template-columns: 1fr 1fr; }
   .table { gap: 18px 14px; padding: 30px 12px; }
   .mount { padding: 6px 6px 20px; }
   .mount img { height: 25vw; }

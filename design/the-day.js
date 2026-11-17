@@ -663,7 +663,7 @@
     fit.textContent = outside.length === 0
       ? 'Everything on this example day fits inside the window.'
       : 'Inside the window: ' + inside.length + ' of ' + MOMENTS.length + ' moments. Outside it: ' + listJoin(outside) + '.';
-    windowNote.textContent = 'Your window: ' + HOURS_WORD[hours] + ' hours, ' + fmtRange(start, end) + ". We\u2019ll price your proposal around it.";
+    windowNote.textContent = 'Your window: ' + HOURS_WORD[hours] + ' hours, ' + fmtRange(start, end) + ". I\u2019ll price your proposal around it.";
   }
 
   const hourBtns = $$('.hours button');
@@ -810,20 +810,6 @@
   layoutCards();
   watch($('#nextNote'), () => { const u = $('#nextNote > .ul'); if (u) setTimeout(() => u.classList.add('drawn'), 600); });
 
-  /* ---------- VIII. Studio portraits lean toward the cursor ---------- */
-
-  if (fine && !reduce) {
-    $$('.portraits figure').forEach((f) => {
-      f.addEventListener('pointermove', (e) => {
-        const r = f.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-        f.style.transition = 'transform .25s ease-out';
-        f.style.transform = 'rotateY(' + r1(x * 12) + 'deg) rotateX(' + r1(-y * 10) + 'deg)';
-      });
-      f.addEventListener('pointerleave', () => { f.style.transition = ''; f.style.transform = ''; });
-    });
-  }
-
   /* ---------- IX. The letter ---------- */
 
   const form = $('#letterForm');
@@ -851,7 +837,7 @@
     });
     const err = $('#formError');
     if (bad.length) {
-      err.textContent = 'Your names, the date and an email are all we need to reply.';
+      err.textContent = 'Your names, the date and an email are all I need to reply.';
       bad[0].focus();
       return;
     }
@@ -890,8 +876,8 @@
     const box = $('#thanks');
     box.innerHTML = '';
     const em = innerWidth < 600 ? 26 : 40;
-    const lines = innerWidth < 600 ? ['thank you.', "we'll write back", 'within a few hours.'] : ['thank you.', "we'll write back within a few hours."];
-    const pens = lines.map((t, i) => pen(box, t, { font: 'felix', em, sw: 1.6, label: i === 0 ? "Thank you. We'll write back within a few hours." : undefined }));
+    const lines = innerWidth < 600 ? ['thank you.', "I'll write back", 'within a few hours.'] : ['thank you.', "I'll write back within a few hours."];
+    const pens = lines.map((t, i) => pen(box, t, { font: 'felix', em, sw: 1.6, label: i === 0 ? "Thank you. I'll write back within a few hours." : undefined }));
     for (const [i, p] of pens.entries()) await p.play({ duration: i === 0 ? 900 : 1500, delay: i ? 120 : 0 });
   });
 

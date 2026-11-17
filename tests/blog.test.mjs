@@ -39,11 +39,11 @@ test('every article has working section links and two related stories', () => {
   for (const slug of slugs) assert.ok(index.includes(`href="/blog/${slug}/"`), slug);
 });
 
-test('coverage article matches the starting-at pricing and full-team coverage', () => {
+test('coverage article matches the starting-at pricing and solo coverage', () => {
   const html = read('blog/how-many-hours-wedding-photography/index.html');
   assert.match(html, /Weddings start at \$4,000/);
-  assert.match(html, /both of us photographing the whole time/);
-  assert.match(html, /While you get ready in separate rooms, one of us stays with each of you/);
+  assert.match(html, /I book coverage in consecutive hours and photograph the whole time myself/);
+  assert.doesNotMatch(html, /both of us|one of us|two photographers/i);
   assert.match(html, /personal printing rights/);
   assert.doesNotMatch(html, /\$5,700|\$7,500|Essential|Signature|Heirloom|When access and timing allow/);
 });

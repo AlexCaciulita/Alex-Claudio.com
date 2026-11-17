@@ -4,24 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seattle Wedding Photographers | Alex Claudio Photography</title>
-<meta name="description" content="Wedding photography in Seattle, the Pacific Northwest and Europe by a husband-and-wife team. Both of us photograph every hour you book, and weddings start at $4,000.">
+<meta name="description" content="Wedding photography in Seattle, the Pacific Northwest and Europe by Alex Claudio. Weddings start at $4,000.">
 <link rel="canonical" href="https://alex-claudio.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Alex Claudio Photography">
 <meta property="og:title" content="Seattle Wedding Photographers | Alex Claudio Photography">
-<meta property="og:description" content="Wedding photography in Seattle, the Pacific Northwest and Europe by a husband-and-wife team. Both of us photograph every hour you book, and weddings start at $4,000.">
+<meta property="og:description" content="Wedding photography in Seattle, the Pacific Northwest and Europe by Alex Claudio. Weddings start at $4,000.">
 <meta property="og:url" content="https://alex-claudio.com/">
 <meta property="og:image" content="https://alex-claudio.com/Portofolio/hero_upscaled.jpg">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Seattle Wedding Photographers | Alex Claudio Photography">
-<meta name="twitter:description" content="Wedding photography in Seattle, the Pacific Northwest and Europe by a husband-and-wife team. Both of us photograph every hour you book, and weddings start at $4,000.">
+<meta name="twitter:description" content="Wedding photography in Seattle, the Pacific Northwest and Europe by Alex Claudio. Weddings start at $4,000.">
 <meta name="twitter:image" content="https://alex-claudio.com/Portofolio/hero_upscaled.jpg">
 <script>document.documentElement.classList.add('js');</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/fraunces-normal-200-700-latin.woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts/the-day.css">
-<link rel="preload" as="image" href="/assets/responsive/home-hero-blanket-1333.webp" imagesrcset="/assets/responsive/home-hero-blanket-800.webp 800w, /assets/responsive/home-hero-blanket-1200.webp 1200w, /assets/responsive/home-hero-blanket-1333.webp 1333w" imagesizes="100vw">
+<link rel="preload" as="image" href="/assets/responsive/home-hero-2000-1600.webp">
 <style>@property --bg { syntax: '<color>'; inherits: true; initial-value: #f2ede4; }
 @property --fg { syntax: '<color>'; inherits: true; initial-value: #171412; }
 @property --fg2 { syntax: '<color>'; inherits: true; initial-value: #3d3731; }
@@ -188,7 +188,7 @@ html.js [data-develop].in { filter: none; }
 .slide { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity 1.6s var(--ease); transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0); }
 .slide.on { opacity: 1; z-index: 1; }
 .slide img { width: 100%; height: 100%; object-fit: cover; }
-.slide:nth-child(1) img { object-position: 50% 60%; }
+.slide:nth-child(1) img { object-position: 47% 74%; }
 .slide:nth-child(2) img { object-position: 30% 55%; }
 .slide:nth-child(3) img { object-position: 28% 62%; }
 .slide:nth-child(4) img { object-position: 56% 50%; }
@@ -316,19 +316,13 @@ html:not(.fine) .hint-touch { display: inline; }
 .card.dragging { transition: none; cursor: grabbing; }
 
 /* VIII. Studio */
-.studio { padding: 16vh var(--gut) 18vh; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 6vw; align-items: center; border-top: 1px solid var(--rule); }
-.portraits { position: relative; display: flex; gap: clamp(14px, 2vw, 28px); perspective: 1000px; padding-bottom: 40px; }
-.portraits figure { margin: 0; width: 50%; transition: transform .9s var(--ease); }
-.portraits figure:nth-child(2) { margin-top: 70px; }
-.portraits img { width: 100%; aspect-ratio: 3 / 4.3; object-fit: cover; object-position: center 12%; }
-.studio-note { position: absolute; left: 2%; bottom: -26px; }
+.studio { padding: 16vh var(--gut) 18vh; border-top: 1px solid var(--rule); }
+.studio > div { max-width: 900px; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */
 .letter { padding: 18vh var(--gut) 16vh; display: grid; grid-template-columns: minmax(0, .62fr) minmax(0, 1.38fr); gap: 5vw; border-top: 1px solid var(--rule); }
 .letter h2 { margin-bottom: 26px; }
-.letter-photo { margin: 6vh 0 0; max-width: 360px; }
-.letter-photo img { width: 100%; height: auto; }
 .letter-form { font-size: clamp(24px, 2.4vw, 38px); line-height: 1.8; font-weight: 300; font-variation-settings: "opsz" 72, "SOFT" 100; }
 .lines { transition: opacity .8s var(--ease); }
 .letter-form p { margin: 0 0 .3em; }
@@ -392,7 +386,6 @@ html.reduce .night .pin { position: relative; height: 92vh; }
 html.reduce .aperture { clip-path: none !important; }
 
 @media (max-width: 900px) {
-  .letter-photo { max-width: 240px; margin-top: 4vh; }
   :root { --nav: 64px; }
   body { font-size: 17px; }
   .nav-links { display: none; }
@@ -413,8 +406,7 @@ html.reduce .aperture { clip-path: none !important; }
   .dayline { min-width: 860px; }
   .stack { height: 430px; }
   .notes-side h2 { max-width: none; }
-  .portraits figure:nth-child(2) { margin-top: 44px; }
-  .foot-cols { grid-template-columns: 1fr 1fr; }
+    .foot-cols { grid-template-columns: 1fr 1fr; }
   .table { gap: 18px 14px; padding: 30px 12px; }
   .mount { padding: 6px 6px 20px; }
   .mount img { height: 25vw; }
@@ -458,7 +450,7 @@ html.reduce .aperture { clip-path: none !important; }
   "sameAs": [
     "https://www.instagram.com/alexclaudiophotography/"
   ],
-  "description": "Wedding photography in Seattle, the Pacific Northwest and Europe. Weddings start at $4,000, with both photographers for every hour you book.",
+  "description": "Wedding photography in Seattle, the Pacific Northwest and Europe. Weddings start at $4,000.",
   "priceRange": "$$$",
   "address": {
     "@type": "PostalAddress",
@@ -501,7 +493,7 @@ html.reduce .aperture { clip-path: none !important; }
     <a href="/portfolio/" data-ul>Work</a>
     <a href="/blog/" data-ul>Journal</a>
     <a href="#collections" data-ul>Pricing</a>
-    <a href="#letter" class="nav-write" id="navWrite">Write to us</a>
+    <a href="#letter" class="nav-write" id="navWrite">Write to me</a>
   </nav>
   <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
 </header>
@@ -511,7 +503,7 @@ html.reduce .aperture { clip-path: none !important; }
   <a href="/portfolio/">Work</a>
   <a href="/blog/">Journal</a>
   <a href="#collections">Pricing</a>
-  <a href="#letter">Write to us</a>
+  <a href="#letter">Write to me</a>
   <p class="mono">Seattle &middot; Pacific Northwest &middot; Europe</p>
 </div>
 
@@ -526,8 +518,8 @@ html.reduce .aperture { clip-path: none !important; }
     <div class="pin">
       <div class="spread">
         <p class="kicker">Alex Claudio Photography &middot; Seattle &amp; Europe &middot; since 2014</p>
-        <h1 data-split>We photograph the day you&rsquo;ll be too busy to <em class="see">see.</em></h1>
-        <p class="lede" data-rise style="--d:420ms">We&rsquo;re a husband-and-wife team from Seattle, working across the Pacific Northwest and Europe. Both of us photograph every hour you book.</p>
+        <h1 data-split>I photograph the day you&rsquo;ll be too busy to <em class="see">see.</em></h1>
+        <p class="lede" data-rise style="--d:420ms">I&rsquo;m Alex, a wedding photographer from Seattle, working across the Pacific Northwest and Europe. I photograph every hour you book myself.</p>
         <div class="actions" data-rise style="--d:600ms">
           <a class="btn" href="#letter" data-magnetic>Check your date <span class="arr" aria-hidden="true">&rarr;</span></a>
           <a class="link" href="#morning" data-ul data-ul-always>Walk through the day</a>
@@ -535,8 +527,8 @@ html.reduce .aperture { clip-path: none !important; }
       </div>
 
       <div class="plate" id="plate">
-        <figure class="slide on" data-focus="0.5 0.6" data-note="a blanket in the leaves" data-lb="open" data-full="/assets/responsive/home-hero-blanket-1333.webp" data-caption="A blanket in the leaves.">
-          <img src="/assets/responsive/home-hero-blanket-1333.webp" srcset="/assets/responsive/home-hero-blanket-800.webp 800w, /assets/responsive/home-hero-blanket-1200.webp 1200w, /assets/responsive/home-hero-blanket-1333.webp 1333w" sizes="100vw" alt="A couple sitting close on a blanket in a park scattered with autumn leaves, smiling at the camera, in black and white" width="1333" height="2000" fetchpriority="high">
+        <figure class="slide on" data-focus="0.47 0.74" data-note="the valley road" data-lb="open" data-full="/assets/responsive/home-hero-2000-1600.webp" data-caption="The valley road.">
+          <img src="/assets/responsive/home-hero-2000-1600.webp" srcset="/assets/responsive/home-hero-2000-800.webp 800w, /assets/responsive/home-hero-2000-1200.webp 1200w, /assets/responsive/home-hero-2000-1600.webp 1600w" sizes="100vw" alt="A couple kissing on a dirt road between wooden fences, with a mountain valley behind them" width="1600" height="1066" fetchpriority="high">
         </figure>
         <figure class="slide" data-focus="0.3 0.55" data-note="a plain white wall" data-lb="open" data-full="/assets/responsive/hero-upscaled-2400.webp" data-caption="A plain white wall.">
           <img src="/assets/responsive/hero-upscaled-1600.webp" srcset="/assets/responsive/hero-upscaled-1200.webp 1200w, /assets/responsive/hero-upscaled-1600.webp 1600w, /assets/responsive/hero-upscaled-2400.webp 2400w" sizes="100vw" alt="Bride in a white gown and groom in a navy tuxedo standing against a pale wall" width="1600" height="1066" loading="lazy">
@@ -566,17 +558,17 @@ html.reduce .aperture { clip-path: none !important; }
     <div class="cams-text">
       <p class="chapter-no" data-rise><span>I</span> Getting ready</p>
       <h2 data-split>Half of your wedding happens behind your back.</h2>
-      <p class="body" data-rise>So there are two of us. While you get ready in separate rooms, one of us stays with each of you. At the ceremony, one of us watches you and the other watches everyone watching you.</p>
+      <p class="body" data-rise>So I plan the morning around both of your rooms, and neither of you gets left out. At the ceremony I watch you, and everyone watching you.</p>
     </div>
     <div class="cam-col cam-a">
-      <p class="cam-label"><span class="mono">Camera one</span><span class="pen-host" data-pen="with one of you" data-em="25"></span></p>
+      <p class="cam-label"><span class="mono">Room one</span><span class="pen-host" data-pen="with one of you" data-em="25"></span></p>
       <figure data-lb="day" data-caption="A round mirror, and the last of the makeup."><img data-develop src="/assets/responsive/portfolio-03-750.webp" alt="A bride doing her makeup, seen in a round mirror" width="750" height="500" loading="lazy"></figure>
       <figure data-lb="day" data-caption="The dress, finally moving."><img data-develop src="/assets/responsive/portfolio-05-800.webp" srcset="/assets/responsive/portfolio-05-800.webp 800w, /assets/responsive/portfolio-05-1000.webp 1000w" sizes="(max-width: 900px) 48vw, 30vw" alt="A bride laughing as she lifts her gown in a brick-walled room" width="800" height="1200" loading="lazy"></figure>
       <figure data-lb="day" data-caption="The earrings go on."><img data-develop src="/assets/responsive/portfolio-20-750.webp" alt="Hands fastening a chandelier earring" width="750" height="500" loading="lazy"></figure>
       <figure data-lb="day" data-caption="Lace on the grass, and the bouquet."><img data-develop src="/assets/responsive/portfolio-13-750.webp" alt="A lace gown and a bouquet of peach and white flowers on the grass" width="750" height="500" loading="lazy"></figure>
     </div>
     <div class="cam-col cam-b">
-      <p class="cam-label"><span class="mono">Camera two</span><span class="pen-host" data-pen="with the other" data-em="25"></span></p>
+      <p class="cam-label"><span class="mono">Room two</span><span class="pen-host" data-pen="with the other" data-em="25"></span></p>
       <figure data-lb="day" data-caption="Whatever the card said, it worked."><img data-develop src="/assets/responsive/portfolio-11-750.webp" alt="A groom laughing as he reads a card, in black and white" width="750" height="500" loading="lazy"></figure>
       <figure data-lb="day" data-caption="Help with the jacket, and a joke."><img data-develop src="/assets/responsive/portfolio-12-750.webp" alt="A groom laughing with an older man who helps him into his jacket, in black and white" width="750" height="500" loading="lazy"></figure>
       <figure data-lb="day" data-caption="Red carpet, red jacket."><img data-develop src="/assets/responsive/portfolio-35-800.webp" srcset="/assets/responsive/portfolio-35-800.webp 800w, /assets/responsive/portfolio-35-1200.webp 1200w" sizes="(max-width: 900px) 48vw, 30vw" alt="A groom in a burgundy jacket standing on a red carpet" width="800" height="1200" loading="lazy"></figure>
@@ -588,7 +580,7 @@ html.reduce .aperture { clip-path: none !important; }
     <div class="split-head">
       <div>
         <p class="chapter-no" data-rise><span>II</span> The ceremony</p>
-        <h2 data-split>One of us faces you. The other faces everyone who came.</h2>
+        <h2 data-split>I watch you, and everyone who came.</h2>
       </div>
       <p class="body" data-rise>You get your own faces, and theirs: your parents, your oldest friends, and a few people you didn&rsquo;t know were crying.</p>
     </div>
@@ -603,7 +595,7 @@ html.reduce .aperture { clip-path: none !important; }
       <div class="track" id="track">
         <div class="track-text">
           <p class="chapter-no" data-rise><span>III</span> Golden hour</p>
-          <h2 data-split>When the light turns, we&rsquo;ll borrow you for a few minutes.</h2>
+          <h2 data-split>When the light turns, I&rsquo;ll borrow you for a few minutes.</h2>
           <p class="body" data-rise>You&rsquo;ll be back with your guests before your drink gets warm.</p>
         </div>
         <figure class="shot" style="--ar:1.5" data-lb="day" data-full="/assets/responsive/portfolio-29-1500.webp" data-caption="A fence, a lake, and the mountains behind it.">
@@ -614,7 +606,7 @@ html.reduce .aperture { clip-path: none !important; }
           <div class="crop"><img data-develop src="/assets/responsive/portfolio-62-800.webp" alt="A couple holding each other in a meadow, lit from behind by a low sun" width="800" height="1200" loading="lazy"></div>
           <figcaption>21</figcaption>
         </figure>
-        <figure class="shot" style="--ar:1.5" data-lb="day" data-full="/assets/responsive/portfolio-59-1600.webp" data-caption="She looked back. We kept shooting.">
+        <figure class="shot" style="--ar:1.5" data-lb="day" data-full="/assets/responsive/portfolio-59-1600.webp" data-caption="She looked back. I kept shooting.">
           <div class="crop"><img data-develop src="/assets/responsive/portfolio-59-1200.webp" alt="A woman looks back over her shoulder while sitting close to her partner in tall grass by the water" width="1200" height="800" loading="lazy"></div>
           <figcaption>22</figcaption>
         </figure>
@@ -647,7 +639,7 @@ html.reduce .aperture { clip-path: none !important; }
       </div>
     </div>
     <div class="split-head night-copy">
-      <h2 data-split>Don&rsquo;t send us home at the first dance.</h2>
+      <h2 data-split>Don&rsquo;t send me home at the first dance.</h2>
       <p class="body" data-rise>You&rsquo;ll barely remember the end of the night. You were in the middle of it. If the send-off matters to you, book enough hours to reach it.</p>
     </div>
   </section>
@@ -656,10 +648,10 @@ html.reduce .aperture { clip-path: none !important; }
     <div class="split-head">
       <div>
         <p class="chapter-no" data-rise><span>V</span> A few weeks later</p>
-        <h2 data-split>Every photograph you receive was chosen by one of us.</h2>
+        <h2 data-split>Every photograph you receive is one I chose.</h2>
       </div>
       <div>
-        <p class="body" data-rise>We go through your whole day frame by frame, keep the ones worth keeping, and edit each of them ourselves.</p>
+        <p class="body" data-rise>I go through your whole day frame by frame, keep the ones worth keeping, and edit each of them myself.</p>
         <p class="hint mono" data-rise><span class="hint-fine">Move over a frame to look closer. Click to open it.</span><span class="hint-touch">Tap a frame to open it.</span></p>
       </div>
     </div>
@@ -683,9 +675,9 @@ html.reduce .aperture { clip-path: none !important; }
     <div class="split-head">
       <div>
         <p class="chapter-no" data-rise><span>VI</span> Pricing</p>
-        <h2 data-split>How much of the day should we keep?</h2>
+        <h2 data-split>How much of the day should I keep?</h2>
       </div>
-      <p class="body" data-rise>Weddings start at $4,000, with both of us photographing every hour. Slide the window across the day to find the hours you need, and we&rsquo;ll build your proposal around them.</p>
+      <p class="body" data-rise>Weddings start at $4,000, and I photograph every hour you book. Slide the window across the day to find the hours you need, and I&rsquo;ll build your proposal around them.</p>
     </div>
 
     <div class="instrument">
@@ -710,13 +702,13 @@ html.reduce .aperture { clip-path: none !important; }
       <p class="mono">Weddings start at</p>
       <p class="price-big">$4,000</p>
       <ul class="included" aria-label="Always included">
-        <li>Both of us, for every hour you book</li>
+        <li>Me, behind the camera for every hour you book</li>
         <li>A consultation and timeline planning before the day</li>
-        <li>Every photograph edited by us, in high resolution</li>
+        <li>Every photograph edited by me, in high resolution</li>
         <li>A private online gallery, with downloads and personal printing rights</li>
       </ul>
-      <p class="what">Engagement sessions, extra hours and custom-designed leather albums can be added. Ask us about elopements and destination weddings.</p>
-      <p class="window-note" id="windowNote" aria-live="polite">Your window: eight hours, 1:00 to 9:00 pm. We&rsquo;ll price your proposal around it.</p>
+      <p class="what">Engagement sessions, extra hours and custom-designed leather albums can be added. Ask me about elopements and destination weddings.</p>
+      <p class="window-note" id="windowNote" aria-live="polite">Your window: eight hours, 1:00 to 9:00 pm. I&rsquo;ll price your proposal around it.</p>
       <a class="btn" href="#letter" id="colAsk" data-magnetic>Ask about your date <span class="arr" aria-hidden="true">&rarr;</span></a>
       <p class="small-print">The starting price is in US dollars. Coverage, tax, travel and anything you add are confirmed in your proposal before you book.</p>
     </article>
@@ -736,32 +728,26 @@ html.reduce .aperture { clip-path: none !important; }
   </section>
 
   <section class="studio" id="studio" data-tone="paper">
-    <div class="portraits">
-      <figure><img src="/assets/responsive/studio-alex-editorial-800.webp" alt="Black-and-white portrait of Alex Claudio" width="800" height="1232" loading="lazy"></figure>
-      <figure><img src="/assets/responsive/studio-photographer-editorial-800.webp" alt="Black-and-white portrait of the studio's second photographer" width="800" height="1238" loading="lazy"></figure>
-      <div class="studio-note pen-host" data-pen="us, without the cameras" data-em="27"></div>
-    </div>
     <div>
-      <span id="intro"></span><p class="chapter-no" data-rise><span>VIII</span> The studio</p>
-      <h2 data-split>We&rsquo;re married, and we photograph every wedding together.</h2>
-      <p class="body" data-rise>We&rsquo;ve photographed weddings since 2014, at home around Puget Sound and across Europe. It starts with a conversation about your day, and both of us are there for every hour you book.</p>
+      <span id="intro"></span><p class="chapter-no" data-rise><span>VIII</span> The photographer</p>
+      <h2 data-split>I photograph every wedding myself.</h2>
+      <p class="body" data-rise>I&rsquo;ve photographed weddings since 2014, at home around Puget Sound and across Europe. It starts with a conversation about your day, and I&rsquo;m there for every hour you book.</p>
     </div>
   </section>
 
   <section class="letter" id="letter" data-tone="paper">
     <div>
-      <span id="contact"></span><p class="chapter-no" data-rise><span>IX</span> Write to us</p>
+      <span id="contact"></span><p class="chapter-no" data-rise><span>IX</span> Write to me</p>
       <h2 data-split>Start with a letter.</h2>
-      <p class="body" data-rise>We answer every inquiry ourselves, within a few hours.</p>
-      <figure class="letter-photo" data-rise><img data-develop src="/assets/responsive/home-letter-blanket-800.webp" srcset="/assets/responsive/home-letter-blanket-400.webp 400w, /assets/responsive/home-letter-blanket-800.webp 800w, /assets/responsive/home-letter-blanket-1200.webp 1200w" sizes="(max-width: 900px) 70vw, 26vw" alt="A couple on a blanket in an autumn park, laughing with their noses almost touching, in black and white" width="1200" height="1800" loading="lazy"></figure>
+      <p class="body" data-rise>I answer every inquiry myself, within a few hours.</p>
     </div>
     <form class="letter-form" id="letterForm" method="post" action="/api/submissions" data-endpoint="/api/submissions" novalidate>
       <input type="hidden" name="form-name" value="contact">
       <div class="sr" aria-hidden="true"><label for="fCompany">Company</label><input id="fCompany" name="company" tabindex="-1" autocomplete="off"></div>
       <div class="lines">
-        <p>Hello, you two.</p>
+        <p>Hello, Alex.</p>
         <p>We&rsquo;re <label class="sr" for="fNames">Your names</label><input id="fNames" name="names" required placeholder="your names" autocomplete="name">, and we&rsquo;re getting married on <label class="sr" for="fDate">Wedding date</label><input id="fDate" name="event_date" required placeholder="the date"> in <label class="sr" for="fPlace">Place</label><input id="fPlace" name="location" placeholder="the place">.</p>
-        <p>We&rsquo;re thinking about <label class="sr" for="fHours">Hours of coverage</label><select id="fHours" name="hours" data-fold><option value="6">six</option><option value="8" selected>eight</option><option value="10">ten</option><option value="unsure">we&rsquo;re not sure how many</option></select> hours. The part of the day we care about most is <label class="sr" for="fCare">The part you care about most</label><input id="fCare" name="care" placeholder="tell us" data-fold>.</p>
+        <p>We&rsquo;re thinking about <label class="sr" for="fHours">Hours of coverage</label><select id="fHours" name="hours" data-fold><option value="6">six</option><option value="8" selected>eight</option><option value="10">ten</option><option value="unsure">we&rsquo;re not sure how many</option></select> hours. The part of the day we care about most is <label class="sr" for="fCare">The part you care about most</label><input id="fCare" name="care" placeholder="tell me" data-fold>.</p>
         <p>You can write back to <label class="sr" for="fEmail">Email</label><input id="fEmail" type="email" name="email" required placeholder="your email" autocomplete="email">.</p>
       </div>
       <div class="sign">
@@ -1460,7 +1446,7 @@ html.reduce .aperture { clip-path: none !important; }
     fit.textContent = outside.length === 0
       ? 'Everything on this example day fits inside the window.'
       : 'Inside the window: ' + inside.length + ' of ' + MOMENTS.length + ' moments. Outside it: ' + listJoin(outside) + '.';
-    windowNote.textContent = 'Your window: ' + HOURS_WORD[hours] + ' hours, ' + fmtRange(start, end) + ". We\u2019ll price your proposal around it.";
+    windowNote.textContent = 'Your window: ' + HOURS_WORD[hours] + ' hours, ' + fmtRange(start, end) + ". I\u2019ll price your proposal around it.";
   }
 
   const hourBtns = $$('.hours button');
@@ -1607,20 +1593,6 @@ html.reduce .aperture { clip-path: none !important; }
   layoutCards();
   watch($('#nextNote'), () => { const u = $('#nextNote > .ul'); if (u) setTimeout(() => u.classList.add('drawn'), 600); });
 
-  /* ---------- VIII. Studio portraits lean toward the cursor ---------- */
-
-  if (fine && !reduce) {
-    $$('.portraits figure').forEach((f) => {
-      f.addEventListener('pointermove', (e) => {
-        const r = f.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-        f.style.transition = 'transform .25s ease-out';
-        f.style.transform = 'rotateY(' + r1(x * 12) + 'deg) rotateX(' + r1(-y * 10) + 'deg)';
-      });
-      f.addEventListener('pointerleave', () => { f.style.transition = ''; f.style.transform = ''; });
-    });
-  }
-
   /* ---------- IX. The letter ---------- */
 
   const form = $('#letterForm');
@@ -1648,7 +1620,7 @@ html.reduce .aperture { clip-path: none !important; }
     });
     const err = $('#formError');
     if (bad.length) {
-      err.textContent = 'Your names, the date and an email are all we need to reply.';
+      err.textContent = 'Your names, the date and an email are all I need to reply.';
       bad[0].focus();
       return;
     }
@@ -1687,8 +1659,8 @@ html.reduce .aperture { clip-path: none !important; }
     const box = $('#thanks');
     box.innerHTML = '';
     const em = innerWidth < 600 ? 26 : 40;
-    const lines = innerWidth < 600 ? ['thank you.', "we'll write back", 'within a few hours.'] : ['thank you.', "we'll write back within a few hours."];
-    const pens = lines.map((t, i) => pen(box, t, { font: 'felix', em, sw: 1.6, label: i === 0 ? "Thank you. We'll write back within a few hours." : undefined }));
+    const lines = innerWidth < 600 ? ['thank you.', "I'll write back", 'within a few hours.'] : ['thank you.', "I'll write back within a few hours."];
+    const pens = lines.map((t, i) => pen(box, t, { font: 'felix', em, sw: 1.6, label: i === 0 ? "Thank you. I'll write back within a few hours." : undefined }));
     for (const [i, p] of pens.entries()) await p.play({ duration: i === 0 ? 900 : 1500, delay: i ? 120 : 0 });
   });
 

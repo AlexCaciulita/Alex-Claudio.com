@@ -47,17 +47,14 @@ function mustReplace(s, from, to, label) {
 }
 function fixHours(s) {
   s = mustReplace(s, '<p>Our collections include six, eight, or ten consecutive hours, with both of us photographing throughout the booked coverage.</p>',
-    '<p>We book coverage in consecutive hours, with both of us photographing the whole time. Weddings start at $4,000, and your proposal is built around the hours you choose.</p>', 'intro');
+    '<p>I book coverage in consecutive hours and photograph the whole time myself. Weddings start at $4,000, and your proposal is built around the hours you choose.</p>', 'intro');
   s = mustReplace(s, 'Check what the collection includes', 'Check what&rsquo;s included', 'part 2 title');
-  s = mustReplace(s, 'An eight-hour collection gives you two photographers', 'Eight hours of coverage gives you two photographers', 'section 5');
-  s = mustReplace(s, 'When access and timing allow, one of us can photograph each of your preparations at the same time, or stay with your guests while the other takes portraits.',
-    'While you get ready in separate rooms, one of us stays with each of you. Later, one of us can stay with your guests while the other takes portraits.', 'section 5 preparations');
   s = mustReplace(s, 'Compare hours, albums, and sessions', 'What every wedding includes', 'section 6 title');
   const a = s.indexOf('<section class="article-section" id="section-6">');
   const b = s.indexOf('<section class="article-section" id="section-7">');
   if (a < 0 || b <= a) throw new Error('content fix did not match: section 6 body');
   const section6 = '<section class="article-section" id="section-6"><h3>What every wedding includes</h3>\n' +
-    '<p>Weddings start at $4,000. That includes both of us for every hour you book, a consultation and timeline planning before the day, every photograph edited by us in high resolution, and a private online gallery with downloads and personal printing rights.</p>\n' +
+    '<p>Weddings start at $4,000. That includes me for every hour you book, a consultation and timeline planning before the day, every photograph edited by me in high resolution, and a private online gallery with downloads and personal printing rights.</p>\n' +
     '<p>Engagement sessions, extra hours and custom-designed leather albums can be added. Your proposal sets out the coverage, tax, travel and any additions before you book, so you can check it against the moments you marked in Part 1.</p>\n</section>\n';
   return s.slice(0, a) + section6 + s.slice(b);
 }
@@ -136,7 +133,7 @@ const chrome = (R, current) => `<a class="skip" href="#main">Skip to content</a>
     <a href="${R}work/index.html" data-ul>Work</a>
     <a href="${R}journal/index.html"${current ? ` aria-current="${current}" data-ul data-ul-always` : ' data-ul'}>Journal</a>
     <a href="${R}index.html#collections" data-ul>Pricing</a>
-    <a href="${R}index.html#letter" class="nav-write" id="navWrite">Write to us</a>
+    <a href="${R}index.html#letter" class="nav-write" id="navWrite">Write to me</a>
   </nav>
   <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
 </header>
@@ -145,7 +142,7 @@ const chrome = (R, current) => `<a class="skip" href="#main">Skip to content</a>
   <a href="${R}work/index.html">Work</a>
   <a href="${R}journal/index.html"${current ? ` aria-current="${current}"` : ''}>Journal</a>
   <a href="${R}index.html#collections">Pricing</a>
-  <a href="${R}index.html#letter">Write to us</a>
+  <a href="${R}index.html#letter">Write to me</a>
   <p class="mono">Seattle &middot; Pacific Northwest &middot; Europe</p>
 </div>`;
 
@@ -223,8 +220,8 @@ ${rest.map((a) => `    <a class="j-row" href="${a.slug}/index.html" data-preview
   <section class="j-cta" data-tone="paper">
     <p class="chapter-no" data-rise><span>&rarr;</span> Your wedding</p>
     <h2 data-split>A day that feels like <em>you.</em></h2>
-    <p class="body" data-rise>Tell us what you have in mind. We answer every inquiry ourselves, within a few hours.</p>
-    <div data-rise><a class="btn" href="../index.html#letter" data-magnetic>Write to us <span class="arr" aria-hidden="true">&rarr;</span></a></div>
+    <p class="body" data-rise>Tell me what you have in mind. I answer every inquiry myself, within a few hours.</p>
+    <div data-rise><a class="btn" href="../index.html#letter" data-magnetic>Write to me <span class="arr" aria-hidden="true">&rarr;</span></a></div>
   </section>
 
   ${footer('../', 'Thank you for reading.', 'page')}
