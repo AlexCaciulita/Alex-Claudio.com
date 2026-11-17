@@ -123,7 +123,8 @@ test('canonical redirects preserve queries and leave service endpoints alone', a
       ['/index.html', '/'], ['/index', '/'], ['/portfolio', '/portfolio/'],
       ['/privacy/index.html', '/privacy/'], ['/blog/index.html', '/blog/'],
       ['/blog/wedding-photography-timeline/index.html', '/blog/wedding-photography-timeline/'],
-      ['/blog/wedding-day-photography-tips', '/blog/wedding-day-photography-tips/']
+      ['/blog/wedding-day-photography-tips', '/blog/wedding-day-photography-tips/'],
+      ['/blog/seattle-engagement-photos/index.html', '/blog/seattle-engagement-photos/']
     ]) {
       for (const method of ['GET', 'HEAD']) {
         const response = await fetch(`${origin}${alias}?utm_source=test&collection=essential`, { method, redirect: 'manual' });

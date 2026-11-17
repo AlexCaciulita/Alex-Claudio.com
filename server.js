@@ -18,7 +18,8 @@ const PUBLIC_PAGES = new Set([
   '/blog/seattle-wedding-rain-plan/',
   '/blog/how-many-hours-wedding-photography/',
   '/blog/wedding-photography-timeline/',
-  '/blog/wedding-day-photography-tips/'
+  '/blog/wedding-day-photography-tips/',
+  '/blog/seattle-engagement-photos/'
 ]);
 const PRIVATE_PATHS = new Set([
   'ads',

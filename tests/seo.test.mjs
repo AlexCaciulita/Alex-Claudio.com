@@ -5,13 +5,13 @@ import { test } from 'node:test';
 const root = new URL('../', import.meta.url);
 const read = path => readFileSync(new URL(path, root), 'utf8');
 const origin = 'https://alex-claudio.com';
-const articles = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips'];
+const articles = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips', 'seattle-engagement-photos'];
 const text = html => html.replace(/<br\s*\/?\s*>/g, ' ').replace(/<[^>]+>/g, '').replace(/&rsquo;/g, '\u2019').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 const meta = (html, attr, name) => (html.match(new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`)) || [])[1];
 
 test('sitemap lists every search landing page once, with matching canonical and indexable HTML', () => {
   const urls = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(urls.length, 9);
+  assert.equal(urls.length, 10);
   assert.equal(new Set(urls).size, urls.length);
   for (const route of ['/', '/portfolio/', '/blog/', ...articles.map(slug => `/blog/${slug}/`), '/links/', '/privacy/']) {
     assert.ok(urls.includes(origin + route), route);
