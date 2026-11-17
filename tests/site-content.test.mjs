@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { test } from 'node:test';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -64,6 +64,8 @@ test('older links into the homepage still land on the right section', () => {
 
 test('the studio portraits are gone and couples\u2019 notes are unchanged', () => {
   assert.doesNotMatch(home, /studio-photographer-editorial|studio-alex-editorial|class="portraits"/);
+  const portrait = home.match(/class="studio-portrait"[^>]*><img[^>]* src="(\/assets\/responsive\/studio-alex-solo-\d+\.webp)"/);
+  assert.ok(portrait && existsSync(new URL(`..${portrait[1]}`, import.meta.url)), 'solo studio portrait');
   assert.match(home, /Alex moved through our day like a ghost with a camera/);
   assert.match(home, /We hired Alex for the pictures/);
   assert.doesNotMatch(home, /<cite|testimonial-author/);

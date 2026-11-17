@@ -292,8 +292,9 @@ html:not(.fine) .hint-touch { display: inline; }
 .card.dragging { transition: none; cursor: grabbing; }
 
 /* VIII. Studio */
-.studio { padding: 16vh var(--gut) 18vh; border-top: 1px solid var(--rule); }
-.studio > div { max-width: 900px; }
+.studio { padding: 16vh var(--gut) 18vh; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 6vw; align-items: center; border-top: 1px solid var(--rule); }
+.studio-portrait { margin: 0; max-width: 480px; }
+.studio-portrait img { width: 100%; height: auto; }
 .studio .body + .body { margin-top: 1em; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
@@ -400,6 +401,7 @@ html.reduce .aperture { clip-path: none !important; }
   .collections { padding: 12vh var(--gut) 10vh; }
   .notes { padding: 10vh var(--gut) 12vh; }
   .studio { padding: 10vh var(--gut) 12vh; }
+  .studio-portrait { max-width: 320px; }
   .letter { padding: 12vh var(--gut) 10vh; }
   .foot { padding: 10vh var(--gut) 44px; }
 }
