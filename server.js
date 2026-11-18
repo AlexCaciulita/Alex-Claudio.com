@@ -20,7 +20,6 @@ const PUBLIC_PAGES = new Set([
   '/blog/wedding-photography-timeline/',
   '/blog/wedding-day-photography-tips/',
   '/blog/seattle-engagement-photos/',
-  '/blog/seattle-wedding-photographer-cost/',
   '/blog/seattle-wedding-sunset-times/'
 ]);
 const PRIVATE_PATHS = new Set([
