@@ -315,12 +315,12 @@ html:not(.fine) .hint-touch { display: inline; }
 .card.dragging { transition: none; cursor: grabbing; }
 
 /* VIII. Studio */
-.studio { padding: 16vh var(--gut) 18vh; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 6vw; align-items: center; border-top: 1px solid var(--rule); }
-.portraits { position: relative; display: flex; gap: clamp(14px, 2vw, 28px); perspective: 1000px; padding-bottom: 40px; }
-.portraits figure { margin: 0; width: 50%; transition: transform .9s var(--ease); }
-.portraits figure:nth-child(2) { margin-top: 70px; }
-.portraits img { width: 100%; aspect-ratio: 3 / 4.3; object-fit: cover; object-position: center 12%; }
-.studio-note { position: absolute; left: 2%; bottom: -26px; }
+.studio { padding: 16vh var(--gut) 18vh; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 6vw; align-items: center; border-top: 1px solid var(--rule); }
+.studio-portrait { margin: 0; max-width: 480px; }
+.studio-portrait img { width: 100%; height: auto; }
+.studio-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(12px, 1.6vw, 22px); margin-top: 4vh; max-width: 54ch; }
+.studio-pair figure { margin: 0; }
+.studio-pair img { width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; }
 .studio h2 { margin-bottom: 30px; max-width: 15ch; }
 
 /* IX. Letter */
@@ -409,8 +409,7 @@ html.reduce .aperture { clip-path: none !important; }
   .dayline { min-width: 860px; }
   .stack { height: 430px; }
   .notes-side h2 { max-width: none; }
-  .portraits figure:nth-child(2) { margin-top: 44px; }
-  .foot-cols { grid-template-columns: 1fr 1fr; }
+    .foot-cols { grid-template-columns: 1fr 1fr; }
   .table { gap: 18px 14px; padding: 30px 12px; }
   .mount { padding: 6px 6px 20px; }
   .mount img { height: 25vw; }
@@ -427,6 +426,7 @@ html.reduce .aperture { clip-path: none !important; }
   .collections { padding: 12vh var(--gut) 10vh; }
   .notes { padding: 10vh var(--gut) 12vh; }
   .studio { padding: 10vh var(--gut) 12vh; }
+  .studio-portrait { max-width: 320px; }
   .letter { padding: 12vh var(--gut) 10vh; }
   .foot { padding: 10vh var(--gut) 44px; }
 }
@@ -627,7 +627,7 @@ a:hover .read .ul path { stroke-dashoffset: 0; }
 <main id="main">
   <section class="j-head hero-reveal" data-tone="paper">
     <div>
-      <p class="kicker">Alex Claudio Photography &middot; wedding planning notes &middot; 5 stories</p>
+      <p class="kicker">Alex Claudio Photography &middot; wedding planning notes &middot; 6 stories</p>
       <h1 data-split>The <em class="see" id="titleWord">Journal.</em></h1>
     </div>
     <p class="j-aside" data-rise style="--d:420ms">Before the vows. Notes for the two of you.</p>
@@ -635,12 +635,12 @@ a:hover .read .ul path { stroke-dashoffset: 0; }
 
   <section class="j-lead" data-tone="paper" aria-label="Latest story">
     <div class="new-note" id="newNote" aria-hidden="true"></div>
-    <a class="lead-link" href="/blog/seattle-engagement-photos/">
-      <figure><img src="/assets/responsive/portfolio-64-800.webp" srcset="/assets/responsive/portfolio-64-400.webp 400w, /assets/responsive/portfolio-64-800.webp 800w, /assets/responsive/portfolio-64-1200.webp 1200w, /assets/responsive/portfolio-64-1600.webp 1600w" sizes="(max-width: 900px) 100vw, 62vw" alt="Couple walking through a sunlit meadow" width="1600" height="1066" decoding="async" data-develop loading="eager"></figure>
+    <a class="lead-link" href="/blog/seattle-wedding-sunset-times/">
+      <figure><img src="/assets/responsive/portfolio-62-800.webp" srcset="/assets/responsive/portfolio-62-400.webp 400w, /assets/responsive/portfolio-62-800.webp 800w, /assets/responsive/portfolio-62-1200.webp 1200w, /assets/responsive/portfolio-62-1600.webp 1600w" sizes="(max-width: 900px) 100vw, 62vw" alt="A couple holding each other in a meadow, lit from behind by a low sun" width="1600" height="2400" decoding="async" data-develop loading="eager"></figure>
       <div class="lead-copy" data-rise>
-        <p class="kick">05 / The session &middot; 5 min read</p>
-        <h2>An engagement session<br><em>in Seattle.</em></h2>
-        <p class="excerpt">Choose a place you love, start before sunset, and bring the dog.</p>
+        <p class="kick">06 / The light &middot; 3 min read</p>
+        <h2>Sunset times for<br><em>a Seattle wedding.</em></h2>
+        <p class="excerpt">Find your month in the table, then work back from sunset to your portraits and your ceremony.</p>
         <span class="read" data-ul>Read the story <span class="arr" aria-hidden="true">&rarr;</span></span>
       </div>
     </a>
@@ -675,6 +675,13 @@ a:hover .read .ul path { stroke-dashoffset: 0; }
       <p class="excerpt">From the rings on the table in the morning to the last toast, and the small decision that makes each moment easier.</p>
       <span class="go" aria-hidden="true">&rarr;</span>
       <img class="thumb" src="/assets/responsive/portfolio-52-800.webp" alt="" width="1500" height="1000" loading="lazy" decoding="async">
+    </a>
+    <a class="j-row" href="/blog/seattle-engagement-photos/" data-preview="/assets/responsive/portfolio-64-800.webp" data-rise>
+      <span class="num" aria-hidden="true">05</span>
+      <div><span class="kick">The session &middot; 5 min read</span><h2>An engagement session<br><em>in Seattle.</em></h2></div>
+      <p class="excerpt">Choose a place you love, start before sunset, and bring the dog.</p>
+      <span class="go" aria-hidden="true">&rarr;</span>
+      <img class="thumb" src="/assets/responsive/portfolio-64-800.webp" alt="" width="1600" height="1066" loading="lazy" decoding="async">
     </a>
   </section>
 

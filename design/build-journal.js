@@ -62,7 +62,7 @@ const fixAll = (s) => s.split('02 / The collection').join('02 / Coverage');
 
 /* ---------- Parse the articles ---------- */
 
-const SLUGS = ['seattle-engagement-photos', 'wedding-day-photography-tips', 'seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
+const SLUGS = ['seattle-wedding-sunset-times', 'seattle-engagement-photos', 'wedding-day-photography-tips', 'seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline'];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 const pick = (re, s, label) => { const m = s.match(re); if (!m) throw new Error('could not find ' + label); return m; };
 const stripTags = (h) => h.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
@@ -168,6 +168,7 @@ const img = (c, sizes, cls, extra = '') => `<img${cls ? ` class="${cls}"` : ''} 
 /* ---------- Journal index ---------- */
 
 const INDEX_EXCERPTS = {
+  'seattle-wedding-sunset-times': 'Find your month in the table, then work back from sunset to your portraits and your ceremony.',
   'seattle-engagement-photos': 'Choose a place you love, start before sunset, and bring the dog.',
   'wedding-day-photography-tips': 'From the rings on the table in the morning to the last toast, and the small decision that makes each moment easier.',
   'seattle-wedding-rain-plan': 'Choose your indoor spaces, then agree on the weather decisions and practical arrangements.',
@@ -175,13 +176,14 @@ const INDEX_EXCERPTS = {
   'wedding-photography-timeline': 'Make the planning decisions first, then adapt an eight-hour schedule to your day.'
 };
 const INDEX_TITLES = {
+  'seattle-engagement-photos': 'An engagement session<br><em>in Seattle.</em>',
   'seattle-wedding-rain-plan': 'A Seattle wedding<br><em>rain plan.</em>',
   'how-many-hours-wedding-photography': 'Six, eight,<br><em>or ten hours?</em>',
   'wedding-photography-timeline': 'A wedding timeline<br><em>with time for your guests.</em>',
   'wedding-day-photography-tips': 'Your wedding day,<br><em>in ten moments.</em>'
 };
-const lead = bySlug['seattle-engagement-photos'];
-const rest = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips'].map((s) => bySlug[s]);
+const lead = bySlug['seattle-wedding-sunset-times'];
+const rest = ['seattle-wedding-rain-plan', 'how-many-hours-wedding-photography', 'wedding-photography-timeline', 'wedding-day-photography-tips', 'seattle-engagement-photos'].map((s) => bySlug[s]);
 
 const indexPage = `${head('The Journal', 'Wedding planning notes from Alex Claudio Photography.')}
 <body data-tone="paper" class="journal-page journal-index">
