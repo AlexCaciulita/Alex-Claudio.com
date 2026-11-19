@@ -78,12 +78,44 @@
 
   /* ---------- The photographs ---------- */
 
-  const PLATES = new Set(['04', '29', '52', '59', '64']);
+  // The book's chapters, in reading order. Wedding frames of the couple alone go in "two"; the rest of the day goes in "day".
+  const TWO = new Set(['01', '02', '04', '06', '08', '10', '17', '18', '19', '22', '23', '24', '29', '30', '31', '49', '50', '51']);
+  const CHAPTERS = [
+    { key: 'day', title: 'The <em>day.</em>', cover: '28' },
+    { key: 'two', title: 'The two <em>of you.</em>', cover: '50' },
+    { key: 'engagement', title: 'Engagement<br><em>sessions.</em>', cover: '38' }
+  ];
+  const chapterOf = (d) => (d.cat === 'engagement' ? 'engagement' : TWO.has(d.n) ? 'two' : 'day');
   const SELECTS = { '38': 'this one', '58': 'yes', '21': 'check' };
   const gallery = $('#gallery');
   const stripLayer = document.createElement('div');
-  const capLayer = document.createElement('div');
-  gallery.append(stripLayer, capLayer);
+  gallery.append(stripLayer);
+
+  CHAPTERS.forEach((c) => {
+    const cover = WORK.find((d) => d.n === c.cover);
+    c.el = document.createElement('div');
+    c.el.className = 'chapter';
+    c.el.hidden = true;
+    const pane = document.createElement('div');
+    pane.className = 'chapter-pane';
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.sizes = '(max-width: 900px) 100vw, 50vw';
+    img.srcset = cover.srcset;
+    img.src = cover.mid;
+    const text = document.createElement('div');
+    text.className = 'chapter-text';
+    const h = document.createElement('h2');
+    h.innerHTML = c.title;
+    c.count = document.createElement('p');
+    text.append(h, c.count);
+    pane.append(img, text);
+    c.el.appendChild(pane);
+    gallery.appendChild(c.el);
+    watch(pane);
+  });
 
   const items = WORK.map((d) => {
     const el = document.createElement('figure');
@@ -107,8 +139,8 @@
     fno.textContent = d.n;
     fno.setAttribute('aria-hidden', 'true');
     el.append(img, fno);
-    gallery.insertBefore(el, capLayer);
-    return { d, el, img, ar: d.w / d.h, rect: null, shown: true };
+    gallery.appendChild(el);
+    return { d, el, img, ar: d.w / d.h, ch: chapterOf(d), rect: null, pos: 0, shown: true };
   });
   items.forEach((it) => watch(it.el));
 
@@ -122,40 +154,39 @@
   };
   $$('[data-count]').forEach((el) => { el.textContent = COUNTS[el.dataset.count]; });
 
-  // Book: justified rows that keep every photograph's shape, with a few full-width plates for rhythm.
+  // Book: one chapter after another. Each chapter's frames run down a single column at changing sizes,
+  // stepping from side to side, beside a panel that stays put (or, on a phone, under one that opens the chapter).
+  const WIDE = [0.83, 0.7, 0.57, 0.96, 0.74, 0.66, 1, 0.57, 0.83], TALL = [0.49, 0.49, 0.44, 0.44, 0.75, 0.57];
+  const WIDE_N = [1, 0.84, 1, 0.76, 0.92], TALL_N = [0.72, 0.62, 0.8, 0.66];
+  const SIDE = [1, 0, 1, 0, 0.5, 1, 0];
+  const GAPS = [0.31, 0.36, 0.17, 0.34, 0.26, 0.26, 0.29, 0.35, 0.31, 0.38, 0.44, 0.26, 0.23];
   function bookLayout(list, W) {
-    const narrow = W < 700;
-    const gap = narrow ? 8 : 14;
-    const target = narrow ? 170 : clamp(W * 0.25, 230, 380);
-    const rects = new Map(), caps = [];
-    const pending = [];
-    let y = 0, row = [], sum = 0;
-    const placeRow = (h) => {
-      let x = 0;
-      for (const it of row) { const w = it.ar * h; rects.set(it, { x, y, w, h }); x += w + gap; }
-      y += h + gap;
-      row = [];
-      sum = 0;
-    };
-    const placePlate = (it) => {
-      y += narrow ? 22 : 54;
-      let h = W / it.ar;
-      h = Math.min(h, innerHeight * 0.84, 1000);
-      rects.set(it, { x: 0, y, w: W, h, plate: true });
-      y += h + 12;
-      caps.push({ it, y });
-      y += (narrow ? 40 : 30) + (narrow ? 22 : 54);
-    };
-    for (const it of list) {
-      if (PLATES.has(it.d.n) && it.ar > 1.2) { pending.push(it); continue; }
-      row.push(it);
-      sum += it.ar;
-      const h = (W - gap * (row.length - 1)) / sum;
-      if (h <= target) { placeRow(h); while (pending.length) placePlate(pending.shift()); }
+    const narrow = matchMedia('(max-width: 900px)').matches;
+    const vh = innerHeight;
+    const gut = clamp(W * 0.044, 20, 76);
+    const colW = narrow ? W - gut * 2 : Math.min(W * 0.41, 640);
+    const colX = narrow ? gut : W * 0.75 - colW / 2;
+    const paneH = narrow ? Math.round(vh * 0.72) : vh;
+    const rects = new Map(), panels = [];
+    let y = 0;
+    for (const c of CHAPTERS) {
+      const mine = list.filter((it) => it.ch === c.key);
+      if (!mine.length) continue;
+      const top = y;
+      y += narrow ? paneH + vh * 0.07 : vh * 0.16;
+      let wide = 0, tall = 0;
+      mine.forEach((it, i) => {
+        const set = it.ar < 1 ? (narrow ? TALL_N : TALL) : (narrow ? WIDE_N : WIDE);
+        const w = Math.min(colW * set[(it.ar < 1 ? tall++ : wide++) % set.length], vh * 0.82 * it.ar);
+        const h = w / it.ar;
+        rects.set(it, { x: colX + (colW - w) * SIDE[i % SIDE.length], y, w, h });
+        y += h + (i < mine.length - 1 ? colW * GAPS[i % GAPS.length] * (narrow ? 0.6 : 1) : 0);
+      });
+      y += narrow ? vh * 0.1 : vh * 0.2;
+      if (!narrow) y = Math.max(y, top + vh);
+      panels.push({ c, y: top, h: narrow ? paneH : y - top, n: mine.length });
     }
-    if (row.length) placeRow(Math.min(target, (W - gap * (row.length - 1)) / sum));
-    while (pending.length) placePlate(pending.shift());
-    return { rects, caps, strips: [], height: Math.max(0, y - gap) };
+    return { rects, strips: [], panels, height: y };
   }
 
   // Contact sheet: every frame at one height, laid along strips of film with frame numbers.
@@ -177,7 +208,7 @@
       rects.set(it, { x, y: y + band, w, h: fh + label });
       x += w + gap;
     }
-    return { rects, caps: [], strips: list.length ? strips : [], height: list.length ? y + stripH : 0 };
+    return { rects, strips: list.length ? strips : [], panels: [], height: list.length ? y + stripH : 0 };
   }
 
   let pencil = null, pencilNotes = [], pencilTimer = 0;
@@ -222,13 +253,40 @@
     });
   }
 
+  let domOrder = '';
   function applyLayout(animate) {
+    clearPencil();
+    wrapEl.classList.toggle('bleed', mode === 'book');
     const W = gallery.clientWidth;
     const list = items.filter(match);
     const L = mode === 'book' ? bookLayout(list, W) : sheetLayout(list, W);
     const motion = animate && !reduce;
     gallery.classList.toggle('book', mode === 'book');
     gallery.classList.toggle('sheet', mode === 'sheet');
+
+    // Keep the document in the order the frames are read, so the keyboard and the viewer follow the page.
+    const seq = list.slice().sort((a, b) => { const p = L.rects.get(a), q = L.rects.get(b); return p.y - q.y || p.x - q.x; });
+    seq.forEach((it, i) => { it.pos = i; });
+    const order = mode + seq.map((it) => it.d.n).join();
+    if (order !== domOrder) {
+      domOrder = order;
+      let ch = '';
+      for (const it of seq) {
+        if (mode === 'book' && it.ch !== ch) { ch = it.ch; gallery.appendChild(CHAPTERS.find((c) => c.key === ch).el); }
+        gallery.appendChild(it.el);
+      }
+    }
+
+    for (const c of CHAPTERS) {
+      const p = L.panels.find((x) => x.c === c);
+      const was = c.el.hidden;
+      c.el.hidden = !p;
+      if (!p) continue;
+      c.el.style.top = r1(p.y) + 'px';
+      c.el.style.height = r1(p.h) + 'px';
+      c.count.textContent = p.n + (p.n === 1 ? ' photograph' : ' photographs');
+      if (motion && was) c.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 900, delay: 250, easing: 'ease-out', fill: 'backwards' });
+    }
 
     stripLayer.innerHTML = '';
     L.strips.forEach((s, i) => {
@@ -243,19 +301,6 @@
       e.textContent = 'AC \u25B8 ' + String(i + 1).padStart(2, '0');
       d.appendChild(e);
       stripLayer.appendChild(d);
-    });
-
-    capLayer.innerHTML = '';
-    L.caps.forEach((c) => {
-      const p = document.createElement('p');
-      p.className = 'pcap';
-      p.style.left = '0px';
-      p.style.top = r1(c.y) + 'px';
-      const b = document.createElement('b');
-      b.textContent = c.it.d.n;
-      p.append(b, document.createTextNode(c.it.d.alt + '.'));
-      capLayer.appendChild(p);
-      if (motion) p.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 700, fill: 'backwards' });
     });
 
     let k = 0;
@@ -297,7 +342,6 @@
       k++;
     }
     gallery.style.height = r1(L.height) + 'px';
-    clearPencil();
     if (mode === 'sheet') {
       if (motion) pencilTimer = setTimeout(() => drawPencil(true), 1250);
       else drawPencil(false);
@@ -476,7 +520,7 @@
     }
   }
   function lbOpen(el) {
-    group = items.filter((i) => i.shown).map((i) => i.el);
+    group = items.filter((i) => i.shown).sort((a, b) => a.pos - b.pos).map((i) => i.el);
     gi = Math.max(0, group.indexOf(el));
     lastFocus = document.activeElement;
     lb.hidden = false;
@@ -569,19 +613,22 @@
     if (body.dataset.tone !== tone) body.dataset.tone = tone;
 
     const gr = gallery.getBoundingClientRect();
-    if (gr.top > innerHeight * 0.55 || gr.bottom < innerHeight * 0.45) { frameCount.classList.add('off'); return; }
+    // In the book the counter sits on the chapter's photograph, so it shows only while that photograph is behind it.
+    const book = mode === 'book';
+    frameCount.classList.toggle('on-photo', book);
+    if (gr.top > innerHeight * 0.55 || gr.bottom < innerHeight * (book ? 1 : 0.45)) { frameCount.classList.add('off'); return; }
     const local = mid - gr.top;
-    let best = null, bd = Infinity, bi = 0, n = 0;
+    let best = null, bd = Infinity, n = 0;
     for (const it of items) {
       if (!it.shown || !it.rect) continue;
       const c = it.rect.y + it.rect.h / 2;
-      const dd = Math.abs(c - local) + Math.abs(it.rect.x + it.rect.w / 2 - gr.width / 2) * 0.05;
-      if (dd < bd) { bd = dd; best = it; bi = n; }
+      const dd = Math.abs(c - local) + (book ? 0 : Math.abs(it.rect.x + it.rect.w / 2 - gr.width / 2) * 0.05);
+      if (dd < bd) { bd = dd; best = it; }
       n++;
     }
     if (!best) { frameCount.classList.add('off'); return; }
     frameCount.classList.remove('off');
-    frameCount.innerHTML = 'frame <b>' + best.d.n + '</b> <span>&middot; ' + (bi + 1) + ' of ' + n + '</span>';
+    frameCount.innerHTML = 'frame <b>' + best.d.n + '</b> <span>&middot; ' + (best.pos + 1) + ' of ' + n + '</span>';
   }
   function requestFrame() { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
   addEventListener('scroll', requestFrame, { passive: true });
