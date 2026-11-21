@@ -95,18 +95,20 @@ p { margin: 0; }
 .nav-write:hover { color: var(--accent); }
 
 /* Cover */
-.cover { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-items: end; padding: calc(var(--nav) + 40px) var(--gut) clamp(48px, 9vh, 96px); background: var(--night); color: #efe8dc; overflow: hidden; isolation: isolate; }
-.cover-img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%; opacity: .78; transform: scale(1.04); transition: transform 2.4s var(--ease), opacity 1.6s var(--ease); }
+/* The cover is a film still: a 2.39:1 frame on black, with the title underneath like a title card. */
+.cover { position: relative; padding: var(--nav) 0 clamp(56px, 10vh, 120px); background: var(--night); color: #efe8dc; overflow: hidden; }
+.cover-frame { position: relative; margin: 0; aspect-ratio: 2.39 / 1; max-height: 74vh; width: 100%; overflow: hidden; background: #1b1916; }
+.cover-img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 83%; transform: scale(1.035); transition: transform 2.6s var(--ease); }
 .cover.ready .cover-img { transform: none; }
-.cover-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(14, 13, 12, .94) 0%, rgba(14, 13, 12, .62) 38%, rgba(14, 13, 12, .18) 72%, rgba(14, 13, 12, .4) 100%); }
-.cover-copy { max-width: 980px; }
-.cover .kicker { color: rgba(239, 232, 220, .72); }
-.cover h1 { max-width: 11ch; }
-.cover .lede { margin-top: 28px; color: rgba(239, 232, 220, .84); max-width: 44ch; }
-.cover-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px 28px; margin-top: 40px; }
+.cover-note { position: absolute; right: clamp(20px, 9vw, 160px); top: 12%; color: var(--ink); opacity: .82; line-height: 0; transform: rotate(-5deg); }
+.cover-caption { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 24px; flex-wrap: wrap; padding: 14px var(--gut) 0; color: rgba(239, 232, 220, .62); }
+.cover-caption p { margin: 0; }
+.cover .kicker { margin: 0; color: inherit; }
+.cover-copy { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 28px 5vw; align-items: end; padding: clamp(40px, 8vh, 96px) var(--gut) 0; }
+.cover h1 { max-width: 11ch; font-size: clamp(48px, 6vw, 100px); }
+.cover .lede { color: rgba(239, 232, 220, .84); max-width: 42ch; }
+.cover-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px 28px; margin-top: 32px; }
 .cover-actions .link { color: #efe8dc; }
-.cover-note { position: absolute; right: clamp(20px, 7vw, 120px); top: calc(var(--nav) + 9vh); color: #efe8dc; line-height: 0; transform: rotate(-6deg); }
-.cover-meta { position: absolute; right: var(--gut); bottom: clamp(48px, 9vh, 96px); color: rgba(239, 232, 220, .6); writing-mode: vertical-rl; transform: rotate(180deg); }
 
 /* I. Hello */
 .hello { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 7vw; align-items: center; padding: 18vh var(--gut) 16vh; }
@@ -317,8 +319,10 @@ p { margin: 0; }
   :root { --nav: 64px; }
   .nav-links a:not(.nav-build):not(.nav-write) { display: none; }
   .nav-links { gap: 18px; }
-  .cover-note { top: calc(var(--nav) + 5vh); right: 16px; }
-  .cover-meta { display: none; }
+  .cover-frame { aspect-ratio: 2 / 1; }
+  .cover-img { object-position: 50% 50%; }
+  .cover-note { top: 8%; right: 16px; }
+  .cover-copy { grid-template-columns: 1fr; }
   .hello, .questions, .send { grid-template-columns: 1fr; }
   .hello { padding: 12vh var(--gut) 10vh; gap: 56px; }
   .hello-photo { max-width: 340px; justify-self: start; }
@@ -362,6 +366,7 @@ p { margin: 0; }
   .foot-cols { grid-template-columns: 1fr; }
   .nav-links .nav-build { display: none; }
   .cover h1 { font-size: clamp(46px, 13vw, 64px); }
+  .cover-meta { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -374,7 +379,7 @@ p { margin: 0; }
 @media print {
   .nav, .bar, .grain, .skip, .cover-actions, .sheet-actions, .copied, .send, .day-note, .cover-note { display: none !important; }
   body, .build { background: #fff; }
-  .cover { min-height: 0; padding: 40px; }
+  .cover { padding: 0 0 40px; }
   .js [data-rise] { opacity: 1; transform: none; }
   .sheet { position: static; box-shadow: none; }
   .builder { grid-template-columns: 1fr; }
