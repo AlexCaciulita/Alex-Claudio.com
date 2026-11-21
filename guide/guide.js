@@ -17,26 +17,31 @@
     12: { name: '12 × 12 in leather album', sub: '40 pages, designed by me', short: 'a 12 × 12 album' }
   };
   const money = (n) => '$' + n.toLocaleString('en-US');
+  const priceLabel = (n) => (n > 0 ? money(n) : n < 0 ? '\u2212' + money(-n) : 'Included');
   const listJoin = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
 
-  const state = { hours: 8, session: false, album: '' };
+  const state = { hours: 8, session: false, album: '', second: true };
 
   const q = new URLSearchParams(location.search);
   const linked = P.collections[(q.get('c') || q.get('collection') || '').toLowerCase()];
-  if (linked) Object.assign(state, { hours: linked.hours, session: linked.session, album: linked.album });
+  if (linked) Object.assign(state, { hours: linked.hours, session: linked.session, album: linked.album, second: true });
   const linkedHours = Number(q.get('h'));
   if (Number.isInteger(linkedHours) && linkedHours >= P.baseHours && linkedHours <= P.maxHours) state.hours = linkedHours;
   if (q.has('s')) state.session = q.get('s') === '1';
   if (q.has('a')) state.album = P.albums[q.get('a')] ? q.get('a') : '';
+  if (q.get('p') === '0') state.second = false;
 
   const hoursPrice = (h) => P.base + (h - P.baseHours) * P.perHour;
-  // From eight hours a second photographer comes along at no extra cost, so Signature and Heirloom have one.
-  const hasSecond = () => state.hours >= P.secondFromHours;
+  // From eight hours a second photographer comes along, so Signature and Heirloom have one.
+  // The hour price already counts them; leaving them out takes P.secondPhotographer off.
+  const canHaveSecond = () => state.hours >= P.secondFromHours;
+  const hasSecond = () => canHaveSecond() && state.second;
 
   function items() {
     const rate = money(P.base) + ' for ' + WORDS[P.baseHours] + ' hours, then ' + money(P.perHour) + ' an hour';
     const list = [{ key: 'hours', name: 'Wedding day, ' + state.hours + ' hours', sub: rate, price: hoursPrice(state.hours) }];
     if (hasSecond()) list.push({ key: 'second', name: 'Second photographer', sub: 'Included from ' + P.secondFromHours + ' hours', price: 0 });
+    else if (canHaveSecond()) list.push({ key: 'second', name: 'Without a second photographer', sub: 'Just me, for all ' + WORDS[state.hours] + ' hours', price: -P.secondPhotographer });
     if (state.session) list.push({ key: 'session', name: 'Engagement session', sub: '60 minutes, before the wedding', price: P.session });
     if (state.album) list.push({ key: 'album', name: ALBUMS[state.album].name, sub: ALBUMS[state.album].sub, price: P.albums[state.album] });
     return list;
@@ -44,18 +49,18 @@
   const total = () => items().reduce((sum, it) => sum + it.price, 0);
 
   function matching() {
-    const c = Object.values(P.collections).find((x) => x.hours === state.hours && x.session === state.session && x.album === state.album);
+    const c = Object.values(P.collections).find((x) => x.hours === state.hours && x.session === state.session && x.album === state.album && hasSecond() === x.hours >= P.secondFromHours);
     return c ? c.name : '';
   }
 
   function words() {
-    const parts = [WORDS[state.hours] + ' hours of coverage' + (hasSecond() ? ' with a second photographer' : '')];
+    const parts = [WORDS[state.hours] + ' hours of coverage' + (hasSecond() ? ' with a second photographer' : canHaveSecond() ? ' without a second photographer' : '')];
     if (state.album) parts.push(ALBUMS[state.album].short);
     if (state.session) parts.push('an engagement session');
     return listJoin(parts);
   }
 
-  const query = () => '?h=' + state.hours + (state.session ? '&s=1' : '') + (state.album ? '&a=' + state.album : '');
+  const query = () => '?h=' + state.hours + (state.session ? '&s=1' : '') + (state.album ? '&a=' + state.album : '') + (canHaveSecond() && !state.second ? '&p=0' : '');
 
   /* ---------- Handwriting ---------- */
 
@@ -251,6 +256,14 @@
       i.checked = Number(i.value) === state.hours;
       i.parentElement.classList.toggle('on', i.checked);
     });
+    const second = $('#second');
+    second.checked = hasSecond();
+    second.disabled = !canHaveSecond();
+    second.parentElement.classList.toggle('on', hasSecond());
+    second.parentElement.classList.toggle('is-off', !canHaveSecond());
+    $('#secondMeta').textContent = canHaveSecond()
+      ? (state.second ? 'Included \u00b7 leave out for ' + money(P.secondPhotographer) + ' off' : 'Left out \u00b7 ' + money(P.secondPhotographer) + ' off')
+      : 'Comes with ' + WORDS[P.secondFromHours] + ' hours or more';
     const session = $('#session');
     session.checked = state.session;
     session.parentElement.classList.toggle('on', state.session);
@@ -276,7 +289,7 @@
       lead.className = 'lead';
       const price = document.createElement('span');
       price.className = 'l-price';
-      price.textContent = it.price ? money(it.price) : 'Included';
+      price.textContent = priceLabel(it.price);
       li.append(name, lead, price);
       linesEl.appendChild(li);
     }
@@ -341,6 +354,7 @@
     const t = e.target;
     if (t.name === 'hours') setHours(Number(t.value), true);
     else if (t.name === 'session') { state.session = t.checked; update(true); }
+    else if (t.name === 'second') { state.second = t.checked; update(true); }
     else if (t.name === 'album') { state.album = t.value; update(true); }
   });
   builder.addEventListener('submit', (e) => e.preventDefault());
@@ -349,6 +363,7 @@
     const c = P.collections[button.dataset.start];
     state.session = c.session;
     state.album = c.album;
+    state.second = true;
     moved = false;
     setHours(c.hours, true);
     $('#build').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
@@ -394,7 +409,7 @@
   });
 
   function message() {
-    const lines = items().map((it) => it.name + ': ' + (it.price ? money(it.price) : 'included'));
+    const lines = items().map((it) => it.name + ': ' + priceLabel(it.price).toLowerCase());
     lines.push('Estimated total: ' + money(total()));
     if (moved) lines.push('Coverage window: ' + fmtRange(start, start + state.hours * 60));
     const notes = $('#notes').value.trim();
