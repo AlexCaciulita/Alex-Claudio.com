@@ -12,7 +12,7 @@
   // Only plain addresses become mailto links, so nothing a visitor typed can add recipients or headers.
   const LINKABLE_EMAIL = /^[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
   const SHOWN_FIELDS = new Set(['names', 'name', 'email', 'phone', 'phone_number', 'event_date', 'location', 'hours', 'care', 'message', 'source', 'referral']);
-  const EXTRA_LABELS = { budget: 'Estimated budget', collection: 'Collection' };
+  const EXTRA_LABELS = { budget: 'Estimated budget', collection: 'Collection', package: 'Package from the guide' };
   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const NOT_COUNTED = 'ac-not-counted';
 
@@ -304,11 +304,11 @@
       return;
     }
     if (mine !== detailSeq) return;
-    drawDetail(data.inquiry, data.notes);
+    drawDetail(data.inquiry, data.notes, data.guide);
     if (!detail.open) detail.showModal();
   }
 
-  function drawDetail(inq, notes) {
+  function drawDetail(inq, notes, guide) {
     // A change that finishes after the sheet has closed refreshes the page behind it right away.
     const changed = () => { if (detail.open) detail.dataset.changed = '1'; else refreshCurrent(); };
     // Saves go out one at a time, in order, so an older answer can never overwrite a newer choice.
@@ -391,6 +391,38 @@
       if (!SHOWN_FIELDS.has(key) && value) fact(EXTRA_LABELS[key] || key.replace(/[_-]+/g, ' '), h('span', { class: 'pre' }, String(value)));
     }
     fact('Came in through', FORM_LABEL[inq.form_name] || inq.form_name);
+    if (guide) {
+      fact('Their guide link', h('span', { class: 'pre' }, `${location.origin}/guide/?for=${guide.code}`));
+      fact('Package sent', guide.sent_at ? fmtStamp(guide.sent_at) : 'Not yet');
+    }
+
+    // The couple's own link to the pricing guide. A package they send from it comes back to this inquiry.
+    // The first copy has to ask the website for the link, so the clipboard is handed a promise of the text:
+    // Safari only allows a copy that starts during the click itself.
+    const copyGuideLink = async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      const made = !guide;
+      const link = made
+        ? api(`/inquiries/${inq.id}/guide-link`, { method: 'POST' }).then((created) => { guide = created; return `${location.origin}/guide/?for=${created.code}`; })
+        : Promise.resolve(`${location.origin}/guide/?for=${guide.code}`);
+      try {
+        try {
+          if (made && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+            await navigator.clipboard.write([new ClipboardItem({ 'text/plain': link.then((url) => new Blob([url], { type: 'text/plain' })) })]);
+          } else {
+            await navigator.clipboard.writeText(await link);
+          }
+          say(`Guide link for ${coupleName(inq)} copied. Their package will come back to this inquiry.`);
+        } catch (error) {
+          window.prompt('Copy their guide link:', await link);
+        }
+        if (made) { changed(); openDetail(inq.id); }
+      } catch (error) {
+        fail(error);
+      }
+      button.disabled = false;
+    };
 
     const money = h('div', { class: 'money', 'aria-label': 'Money' });
     const drawMoney = () => {
@@ -481,6 +513,7 @@
           wrote, facts, money,
           h('div', { class: 'actions' },
             mailable ? h('a', { class: 'button primary', href: `mailto:${inq.email}?subject=${encodeURIComponent('Your wedding \u00b7 Alex Claudio Photography')}` }, 'Reply by email') : null,
+            h('button', { type: 'button', onclick: copyGuideLink }, 'Copy guide link'),
             h('button', { type: 'button', onclick: async () => { await settled(); detail.close(); openEditor(inq); } }, 'Edit details'),
             h('button', { class: 'danger', type: 'button', onclick: remove }, 'Delete'))),
         h('section', { class: 'detail-notes', 'aria-labelledby': 'notes-title' },

@@ -284,6 +284,7 @@ p { margin: 0; }
 .sign { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-top: 34px; line-height: 1.4; }
 .sign .mono { color: var(--fg3); }
 .form-error { margin-top: 14px; color: var(--accent); line-height: 1.4; min-height: 1.4em; }
+.sent-before { margin-top: 18px; color: var(--fg3); line-height: 1.5; }
 .letter-form.sent .lines, .letter-form.sent .sign { opacity: .22; pointer-events: none; }
 .thanks { margin-top: 18px; line-height: 0; color: var(--fg); }
 .thanks .pen { max-width: 100%; height: auto; }

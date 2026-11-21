@@ -2,7 +2,8 @@ const path = require('node:path');
 const { Readable } = require('node:stream');
 const express = require('express');
 const { CATEGORIES: GALLERY_CATEGORIES, GalleryError, getGallery, getPublicOrigin } = require('./server/gallery');
-const { SubmissionError, processSubmission } = require('./server/submissions');
+const { SubmissionError, processSubmission, sendPackageEmail } = require('./server/submissions');
+const { GUIDE_CODE, pricePackage, readChoice } = require('./server/guide');
 const { createAdminRouter } = require('./server/admin');
 const { createStore, safeMessage } = require('./server/admin/store');
 const { createRateLimit, isBot, readTime, readView } = require('./server/analytics');
@@ -204,6 +205,45 @@ function createApp(options = {}) {
     } catch (error) {
       if (error.name !== 'AbortError') console.error('CDN proxy failed:', error);
       if (!res.headersSent) res.status(502).json({ error: 'Download unavailable' });
+    }
+  });
+
+  // A couple's own link to the pricing guide is /guide/?for=<code>. The page asks whose link it is, for the
+  // greeting, then sends the package to that inquiry. The code is the only key, and nothing else is revealed.
+  const guideLimiter = createSubmissionLimiter();
+  const guideCode = (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const code = String(req.params.code || '');
+    if (store && GUIDE_CODE.test(code)) return code;
+    res.status(404).json({ error: 'This link isn’t valid.' });
+    return null;
+  };
+  app.get('/api/guide/:code', async (req, res) => {
+    const code = guideCode(req, res);
+    if (!code) return;
+    try {
+      const couple = await store.guideCouple(code);
+      if (!couple) return res.status(404).json({ error: 'This link isn’t valid.' });
+      res.json({ names: couple.names, sent: Boolean(couple.sent_at) });
+    } catch (error) {
+      console.error('Looking up a guide link failed:', safeMessage(error));
+      res.status(503).json({ error: 'Please try again in a minute.' });
+    }
+  });
+  app.post('/api/guide/:code', guideLimiter, express.json({ limit: '16kb' }), async (req, res) => {
+    const code = guideCode(req, res);
+    if (!code) return;
+    const { choice, error } = readChoice(req.body);
+    if (error) return res.status(400).json({ error });
+    const priced = pricePackage(choice);
+    try {
+      const saved = await store.saveGuidePackage(code, priced);
+      if (!saved) return res.status(404).json({ error: 'This link isn’t valid.' });
+      sendPackageEmail(saved, priced).catch((failure) => console.error('Package email failed:', failure));
+      res.json({ ok: true, total: priced.total, collection: priced.collection });
+    } catch (failure) {
+      console.error('Saving a guide package failed:', safeMessage(failure));
+      res.status(503).json({ error: 'Your package did not go through. Please try again, or write to contact@alex-claudio.com.' });
     }
   });
 

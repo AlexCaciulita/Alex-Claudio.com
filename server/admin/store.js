@@ -53,6 +53,13 @@ CREATE TABLE IF NOT EXISTS notes (
   body TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS notes_inquiry_idx ON notes (inquiry_id, created_at);
+CREATE TABLE IF NOT EXISTS guide_links (
+  code TEXT PRIMARY KEY,
+  inquiry_id INTEGER NOT NULL UNIQUE REFERENCES inquiries(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (${NOW}),
+  sent_at TEXT,
+  total_cents INTEGER
+);
 CREATE TABLE IF NOT EXISTS secrets (
   name TEXT PRIMARY KEY,
   value BLOB NOT NULL,
@@ -399,7 +406,48 @@ function createStore(env = process.env, sqlite) {
       const row = target.prepare(`SELECT ${INQUIRY_COLUMNS}, i.fields FROM inquiries i WHERE i.id = ?`).get(Number(id));
       if (!row) return null;
       const notes = target.prepare('SELECT id, created_at, body FROM notes WHERE inquiry_id = ? ORDER BY created_at DESC, id DESC').all(Number(id));
-      return { inquiry: mapInquiry(row, true), notes: notes.map(mapNote) };
+      const guide = target.prepare('SELECT code, sent_at FROM guide_links WHERE inquiry_id = ?').get(Number(id));
+      return { inquiry: mapInquiry(row, true), notes: notes.map(mapNote), guide: guide ? { code: guide.code, sent_at: guide.sent_at || null } : null };
+    }),
+
+    // The couple's own link to the pricing guide, made the first time it's asked for. The code is its only key.
+    guideLink: (inquiryId) => use((target) => {
+      if (!target.prepare('SELECT id FROM inquiries WHERE id = ?').get(Number(inquiryId))) return null;
+      target.prepare('INSERT OR IGNORE INTO guide_links (code, inquiry_id) VALUES (?, ?)').run(crypto.randomBytes(18).toString('base64url'), Number(inquiryId));
+      const row = target.prepare('SELECT code, sent_at FROM guide_links WHERE inquiry_id = ?').get(Number(inquiryId));
+      return { code: row.code, sent_at: row.sent_at || null };
+    }),
+
+    // Whose guide link this is: their names, for the greeting, and whether they've sent a package before.
+    guideCouple: (code) => use((target) => {
+      const row = target.prepare(`SELECT i.names, g.sent_at FROM guide_links g JOIN inquiries i ON i.id = g.inquiry_id
+        WHERE g.code = ?`).get(String(code));
+      return row ? { names: row.names, sent_at: row.sent_at || null } : null;
+    }),
+
+    // A package sent from a guide link lands on that inquiry: the coverage, the package itself and a note.
+    // The agreed price follows the package unless it was set by hand since the last one.
+    saveGuidePackage: (code, priced) => use((target) => {
+      const row = target.prepare(`SELECT i.id, i.names, i.email, i.price_cents, i.fields, g.total_cents
+        FROM guide_links g JOIN inquiries i ON i.id = g.inquiry_id WHERE g.code = ?`).get(String(code));
+      if (!row) return null;
+      let fields;
+      try { fields = JSON.parse(row.fields || '{}'); } catch (error) { fields = {}; }
+      fields.package = priced.summary;
+      const cents = Math.round(priced.total * 100);
+      const setPrice = row.price_cents === null || row.price_cents === row.total_cents;
+      target.exec('BEGIN');
+      try {
+        target.prepare(`UPDATE inquiries SET hours = ?, fields = ?${setPrice ? ', price_cents = ?' : ''}, updated_at = ${NOW} WHERE id = ?`)
+          .run(priced.hoursText, JSON.stringify(fields), ...(setPrice ? [cents] : []), row.id);
+        target.prepare(`UPDATE guide_links SET sent_at = ${NOW}, total_cents = ? WHERE code = ?`).run(cents, String(code));
+        target.prepare('INSERT INTO notes (inquiry_id, body) VALUES (?, ?)').run(row.id, `Sent a package from the pricing guide.\n${priced.summary}`);
+        target.exec('COMMIT');
+      } catch (error) {
+        target.exec('ROLLBACK');
+        throw error;
+      }
+      return { id: String(row.id), names: row.names, email: row.email, priceSet: setPrice };
     }),
 
     createInquiry: (fields) => use(async (target) => {

@@ -71,7 +71,10 @@ async function sendResendEmail(formName, data) {
     html: `<div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#1a1a1a;"><p style="margin:0 0 16px;">New <strong>${escapeHtml(formName)}</strong> submission from your website:</p><table style="border-collapse:collapse;">${rowsHtml}</table></div>`
   };
   if (data.email) body.reply_to = data.email;
+  return postToResend(apiKey, body);
+}
 
+async function postToResend(apiKey, body) {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -81,6 +84,27 @@ async function sendResendEmail(formName, data) {
     throw new Error(`Resend API ${response.status}: ${await response.text()}`);
   }
   return true;
+}
+
+// Tells the studio a couple sent a package from their guide link. The package is already saved on their
+// inquiry, so this is only the heads-up; without Resend set up there is simply no email.
+async function sendPackageEmail(couple, priced) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return false;
+  const to = process.env.CONTACT_TO_EMAIL || 'contact@alex-claudio.com';
+  const from = process.env.CONTACT_FROM_EMAIL || 'Alex Claudio Site <onboarding@resend.dev>';
+  const who = couple.names || couple.email || 'A couple';
+  const total = `$${priced.total.toLocaleString('en-US')}`;
+  const after = `It’s saved on their inquiry in the studio dashboard${couple.priceSet ? ', with the agreed price set to the total' : ''}.`;
+  const body = {
+    from,
+    to: [to],
+    subject: `Package from ${who}: ${total}`,
+    text: `${who} sent a package from the pricing guide.\n\n${priced.summary}\n\n${after}`,
+    html: `<div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#1a1a1a;"><p style="margin:0 0 16px;"><strong>${escapeHtml(who)}</strong> sent a package from the pricing guide.</p><p style="margin:0 0 16px;white-space:pre-wrap;">${escapeHtml(priced.summary)}</p><p style="margin:0;">${escapeHtml(after)}</p></div>`
+  };
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(couple.email || '')) body.reply_to = couple.email;
+  return postToResend(apiKey, body);
 }
 
 async function appendToSheet(formName, data) {
@@ -136,4 +160,4 @@ async function processSubmission(formName, data, { save = null } = {}) {
   }
 }
 
-module.exports = { SubmissionError, processSubmission, validateSubmission };
+module.exports = { SubmissionError, processSubmission, sendPackageEmail, validateSubmission };
