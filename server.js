@@ -14,7 +14,7 @@ const VISIT_LIMIT = 300;
 const VISIT_WINDOW_MS = 10 * 60 * 1000;
 const GALLERY_SLUG = /^\/gallery\/([a-z0-9-]{6,64})\/?$/;
 const PUBLIC_PAGES = new Set([
-  '/', '/portfolio/', '/links/', '/lead/', '/blog/', '/privacy/',
+  '/', '/portfolio/', '/links/', '/lead/', '/guide/', '/blog/', '/privacy/',
   '/blog/seattle-wedding-rain-plan/',
   '/blog/how-many-hours-wedding-photography/',
   '/blog/wedding-photography-timeline/',
