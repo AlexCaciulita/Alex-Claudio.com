@@ -22,11 +22,11 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/fraunces-normal-200-700-latin.woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts/the-day.css">
-<link rel="stylesheet" href="/guide/guide.css?v=1">
+<link rel="stylesheet" href="/guide/guide.css?v=2">
 <link rel="preload" as="image" href="/assets/responsive/portfolio-52-1500.webp" imagesrcset="/assets/responsive/portfolio-52-800.webp 800w, /assets/responsive/portfolio-52-1200.webp 1200w, /assets/responsive/portfolio-52-1500.webp 1500w" imagesizes="100vw">
 <script src="/assets/visits.js?v=1" defer></script>
 <script src="/guide/ink.js?v=1" defer></script>
-<script src="/guide/guide.js?v=1" defer></script>
+<script src="/guide/guide.js?v=2" defer></script>
 <!-- Every price on this page comes from here. The collection cards and hour labels below repeat them as text;
      tests/guide.test.mjs checks that the two agree. -->
 <script type="application/json" id="guide-prices">
@@ -36,6 +36,7 @@
   "perHour": 500,
   "maxHours": 12,
   "secondFromHours": 8,
+  "secondPhotographer": 1000,
   "session": 600,
   "albums": { "10": 700, "12": 900 },
   "collections": {
@@ -134,7 +135,7 @@
         <p class="col-what">From getting ready into the reception, with an album to keep.</p>
         <ul class="col-list">
           <li>Eight hours of coverage</li>
-          <li>Second photographer</li>
+          <li>Second photographer, or $1,000 less without</li>
           <li>10 &times; 10 in leather album, 30 pages</li>
           <li>Consultation and timeline planning</li>
           <li>Every photograph edited by me, in a private gallery</li>
@@ -149,7 +150,7 @@
         <p class="col-what">A longer day, an engagement session, and the larger album.</p>
         <ul class="col-list">
           <li>Ten hours of coverage</li>
-          <li>Second photographer</li>
+          <li>Second photographer, or $1,000 less without</li>
           <li>60-minute engagement session</li>
           <li>12 &times; 12 in leather album, 40 pages</li>
           <li>Consultation, timeline planning, editing and a private gallery</li>
@@ -171,7 +172,7 @@
       <form class="controls" id="builder" action="#send">
         <fieldset class="step">
           <legend class="step-head"><span class="step-no">01</span> Hours of coverage</legend>
-          <p class="step-help">$4,000 for six hours, then $500 for each extra hour, up to twelve hours in all. From eight hours, a second photographer comes with me at no extra cost.</p>
+          <p class="step-help">$4,000 for six hours, then $500 for each extra hour, up to twelve hours in all. From eight hours, a second photographer comes too.</p>
           <div class="hour-row">
             <label class="hour"><input type="radio" name="hours" value="6"><span class="hour-n">6</span><span class="hour-p">$4,000</span></label>
             <label class="hour"><input type="radio" name="hours" value="7"><span class="hour-n">7</span><span class="hour-p">$4,500</span></label>
@@ -194,7 +195,20 @@
         </fieldset>
 
         <fieldset class="step">
-          <legend class="step-head"><span class="step-no">02</span> Engagement session</legend>
+          <legend class="step-head"><span class="step-no">02</span> Second photographer</legend>
+          <label class="session second">
+            <input type="checkbox" name="second" id="second" checked>
+            <span class="opt-copy">
+              <span class="opt-title">A second photographer, from eight hours</span>
+              <span class="opt-text">While you get ready, each of you has a photographer. If you&rsquo;d rather it was just me, leave them out and the price drops by $1,000.</span>
+              <span class="opt-meta" id="secondMeta">Included &middot; leave out for $1,000 off</span>
+            </span>
+            <span class="toggle" aria-hidden="true"><i></i></span>
+          </label>
+        </fieldset>
+
+        <fieldset class="step">
+          <legend class="step-head"><span class="step-no">03</span> Engagement session</legend>
           <label class="session">
             <input type="checkbox" name="session" id="session">
             <img src="/assets/responsive/portfolio-62-400.webp" alt="" width="400" height="600" loading="lazy">
@@ -208,7 +222,7 @@
         </fieldset>
 
         <fieldset class="step">
-          <legend class="step-head"><span class="step-no">03</span> Album</legend>
+          <legend class="step-head"><span class="step-no">04</span> Album</legend>
           <p class="step-help">Leather-bound and designed by me. You approve the layout before it goes to print.</p>
           <div class="albums">
             <label class="album">
@@ -236,7 +250,7 @@
         </fieldset>
 
         <fieldset class="step">
-          <legend class="step-head"><span class="step-no">04</span> Anything else?</legend>
+          <legend class="step-head"><span class="step-no">05</span> Anything else?</legend>
           <p class="step-help" id="notesHelp">A rehearsal dinner, a second day, a wedding abroad? Tell me here and I&rsquo;ll price it in your proposal.</p>
           <textarea name="notes" id="notes" rows="3" maxlength="1500" aria-describedby="notesHelp" placeholder="Optional"></textarea>
         </fieldset>
@@ -293,7 +307,7 @@
     <div class="qa">
       <details>
         <summary>Will you photograph the wedding yourself?</summary>
-        <p>Yes, and I edit every photograph myself. From eight hours, a second photographer works with me, so each of you has a photographer while you get ready.</p>
+        <p>Yes, and I edit every photograph myself. From eight hours, a second photographer works with me, so each of you has a photographer while you get ready. If you&rsquo;d rather it was just me, leave them out and the price drops by $1,000.</p>
       </details>
       <details>
         <summary>How many hours do we need?</summary>

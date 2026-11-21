@@ -39,9 +39,18 @@ test('the pricing guide adds up: collections, hours and add-ons agree with the p
   assert.equal(prices.secondFromHours, 8);
   const cardList = (name) => page.match(new RegExp(`<h3>${name}</h3>[\\s\\S]*?<ul class="col-list">([\\s\\S]*?)</ul>`))[1];
   assert.doesNotMatch(cardList('Essential'), /Second photographer/);
-  assert.match(cardList('Signature'), /<li>Second photographer<\/li>/);
-  assert.match(cardList('Heirloom'), /<li>Second photographer<\/li>/);
+  assert.match(cardList('Signature'), /<li>Second photographer, or \$1,000 less without<\/li>/);
+  assert.match(cardList('Heirloom'), /<li>Second photographer, or \$1,000 less without<\/li>/);
   assert.match(script, /state\.hours >= P\.secondFromHours/);
+
+  // From eight hours the second photographer can be left out for $1,000 off.
+  assert.equal(prices.secondPhotographer, 1000);
+  const withoutSecond = (c) => packagePrice(c) - prices.secondPhotographer;
+  assert.equal(withoutSecond(prices.collections.signature), 4700);
+  assert.equal(withoutSecond(prices.collections.heirloom), 6500);
+  assert.match(script, /price: -P\.secondPhotographer/);
+  assert.match(script, /q\.get\('p'\) === '0'/);
+  assert.match(page, /<input type="checkbox" name="second" id="second" checked>/);
 });
 
 test('the pricing guide is a private link: not indexed and not in the sitemap', () => {
