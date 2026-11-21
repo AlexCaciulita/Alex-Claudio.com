@@ -23,6 +23,8 @@
   const state = { hours: 8, session: false, album: '', second: true };
 
   const q = new URLSearchParams(location.search);
+  // A link Alex copies from the studio dashboard carries ?for=<code>: the package then goes to that couple's inquiry.
+  const forCode = /^[A-Za-z0-9_-]{24}$/.test(q.get('for') || '') ? q.get('for') : '';
   const linked = P.collections[(q.get('c') || q.get('collection') || '').toLowerCase()];
   if (linked) Object.assign(state, { hours: linked.hours, session: linked.session, album: linked.album, second: true });
   const linkedHours = Number(q.get('h'));
@@ -60,7 +62,7 @@
     return listJoin(parts);
   }
 
-  const query = () => '?h=' + state.hours + (state.session ? '&s=1' : '') + (state.album ? '&a=' + state.album : '') + (canHaveSecond() && !state.second ? '&p=0' : '');
+  const query = () => (forCode ? '?for=' + forCode + '&' : '?') + 'h=' + state.hours + (state.session ? '&s=1' : '') + (state.album ? '&a=' + state.album : '') + (canHaveSecond() && !state.second ? '&p=0' : '');
 
   /* ---------- Handwriting ---------- */
 
@@ -386,7 +388,7 @@
   $('#sendPkg').addEventListener('click', (e) => {
     e.preventDefault();
     $('#send').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-    setTimeout(() => $('#fNames').focus({ preventScroll: true }), reduce ? 0 : 700);
+    setTimeout(() => (personal ? $('button[type="submit"]', form) : $('#fNames')).focus({ preventScroll: true }), reduce ? 0 : 700);
   });
 
   // On a phone the sheet sits below the choices, so a small bar keeps the total in view while choosing.
@@ -416,11 +418,45 @@
     return 'Package from the pricing guide\n' + lines.join('\n') + (notes ? '\n\nAnything else: ' + notes : '');
   }
 
+  // With a couple's own link, the letter only needs the package: their names, date and email are already
+  // on the inquiry they sent, and the package is added to it.
+  let personal = null;
+  function makePersonal(couple) {
+    personal = couple;
+    const names = String(couple.names || '').trim();
+    if (names) {
+      $('#kicker').textContent = 'Alex Claudio Photography · Pricing guide for ' + names;
+      $('#personalNames').textContent = names;
+      $('.lines .personal', form).hidden = false;
+    }
+    $$('.lines .guest', form).forEach((p) => { p.hidden = true; });
+    $('#sendBody').textContent = 'I’ll add it to the letter you already sent me and write back within a few hours.';
+    $('#sendLabel').textContent = 'Send my package';
+    $('#sentBefore').hidden = !couple.sent;
+  }
+  if (forCode) {
+    fetch('/api/guide/' + forCode, { headers: { Accept: 'application/json' } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((couple) => { if (couple) makePersonal(couple); })
+      .catch(() => { /* the ordinary letter still works */ });
+  }
+
+  async function sendPackage() {
+    return fetch('/api/guide/' + forCode, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        hours: state.hours, session: state.session, album: state.album, second: state.second,
+        notes: $('#notes').value.trim(), window: moved ? fmtRange(start, start + state.hours * 60) : ''
+      })
+    });
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = $('#formError');
     const bad = [];
-    ['fNames', 'fDate', 'fEmail'].forEach((id) => {
+    if (!personal) ['fNames', 'fDate', 'fEmail'].forEach((id) => {
       const el = $('#' + id);
       const v = el.value.trim();
       const ok = id === 'fEmail' ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) : v.length > 0;
@@ -442,15 +478,18 @@
     data.set('message', message());
     form.classList.add('sending');
     send.disabled = true;
-    err.textContent = 'Sending your letter…';
+    err.textContent = personal ? 'Sending your package\u2026' : 'Sending your letter\u2026';
     let ok = false;
     try {
-      const res = await fetch(form.dataset.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: data.toString() });
+      const res = personal
+        ? await sendPackage()
+        : await fetch(form.dataset.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: data.toString() });
       ok = res.ok;
       if (!ok) {
         const body = await res.json().catch(() => ({}));
         err.textContent = res.status === 429 ? 'Too many letters sent from here in a short time. Please try again in a few minutes, or write to contact@alex-claudio.com.'
-          : body.error ? body.error + '. You can also write to contact@alex-claudio.com.' : 'Your letter did not go through. Please try again, or write to contact@alex-claudio.com.';
+          : personal && res.status === 404 ? 'This link has stopped working. Please write to contact@alex-claudio.com.'
+            : body.error ? body.error.replace(/\.$/, '') + '. You can also write to contact@alex-claudio.com.' : 'Your letter did not go through. Please try again, or write to contact@alex-claudio.com.';
       }
     } catch (e2) {
       err.textContent = 'Your letter did not go through. Please check your connection and try again, or write to contact@alex-claudio.com.';
@@ -460,6 +499,7 @@
     if (!ok) return;
     err.textContent = '';
     form.classList.add('sent');
+    $('#sentBefore').hidden = true;
     const box = $('#thanks');
     box.textContent = '';
     if (!Ink) { box.textContent = "Thank you. I'll write back within a few hours."; return; }

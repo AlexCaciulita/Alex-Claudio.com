@@ -432,6 +432,15 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
     res.status(201).json({ note });
   });
 
+  // The couple's own link to the pricing guide. A package they send from it comes back to this inquiry.
+  api.post('/inquiries/:id/guide-link', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const link = await store.guideLink(id);
+    if (!link) return res.status(404).json({ error: 'Not found.' });
+    res.json({ code: link.code, path: `/guide/?for=${link.code}`, sent_at: link.sent_at });
+  });
+
   api.delete('/notes/:id', async (req, res) => {
     const id = idParam(req, res);
     if (!id) return;

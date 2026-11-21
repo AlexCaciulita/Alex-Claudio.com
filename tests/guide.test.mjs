@@ -82,6 +82,12 @@ test('the pricing guide letter posts what the inquiry endpoint expects, with the
   assert.match(script, /data\.set\('form-name', 'contact'\)/);
   assert.match(script, /data\.set\('message', message\(\)\)/);
   assert.match(script, /'Package from the pricing guide\\n'/);
+
+  // A couple's own link (?for=<code>) skips their details and sends only the package to their inquiry.
+  assert.equal((form.match(/<p class="guest">/g) || []).length, 2);
+  assert.match(form, /<p class="personal" hidden>We&rsquo;re <span id="personalNames"><\/span>\.<\/p>/);
+  assert.match(script, /fetch\('\/api\/guide\/' \+ forCode/);
+  assert.match(page, /<meta name="referrer" content="strict-origin-when-cross-origin">/);
 });
 
 test('every file the pricing guide loads from the site exists', () => {
