@@ -34,22 +34,21 @@ function readChoice(body) {
   }
   const notes = typeof b.notes === 'string' ? b.notes.trim().slice(0, 1500) : '';
   const window = typeof b.window === 'string' && /^[0-9a-z: ]{3,40}$/i.test(b.window.trim()) ? b.window.trim() : '';
-  return { choice: { hours, session: b.session === true, album, second: b.second !== false, notes, window } };
+  return { choice: { hours, session: b.session === true, album, second: b.second === true, notes, window } };
 }
 
 // The same lines and total the guide's package sheet shows.
 function pricePackage(choice) {
   const P = priceList();
   const lines = [{ name: `Wedding day, ${choice.hours} hours`, price: P.base + (choice.hours - P.baseHours) * P.perHour }];
-  const canHaveSecond = choice.hours >= P.secondFromHours;
-  const second = canHaveSecond && choice.second;
-  if (second) lines.push({ name: 'Second photographer', price: 0 });
-  else if (canHaveSecond) lines.push({ name: 'Without a second photographer', price: -P.secondPhotographer });
+  // A second photographer is an addition from eight hours; the collections are priced without one.
+  const second = choice.hours >= P.secondFromHours && choice.second;
+  if (second) lines.push({ name: 'Second photographer', price: P.secondPhotographer });
   if (choice.session) lines.push({ name: 'Engagement session', price: P.session });
   if (choice.album) lines.push({ name: ALBUMS[choice.album], price: P.albums[choice.album] });
   const total = lines.reduce((sum, line) => sum + line.price, 0);
   const match = Object.values(P.collections).find((c) => c.hours === choice.hours && c.session === choice.session
-    && c.album === choice.album && second === (c.hours >= P.secondFromHours));
+    && c.album === choice.album && second === Boolean(c.second));
   const collection = match ? match.name : '';
   const summary = [
     ...lines.map((line) => `${line.name}: ${line.price ? money(line.price) : 'included'}`),
