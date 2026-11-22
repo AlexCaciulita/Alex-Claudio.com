@@ -41,7 +41,7 @@ async function signIn(origin) {
 test('the server prices every package the way the guide page does', () => {
   // The page's own formula: hours, then the second photographer, engagement session and album.
   const pageTotal = ({ hours, session, album, second }) => P.base + (hours - P.baseHours) * P.perHour
-    - (hours >= P.secondFromHours && !second ? P.secondPhotographer : 0)
+    + (hours >= P.secondFromHours && second ? P.secondPhotographer : 0)
     + (session ? P.session : 0) + (album ? P.albums[album] : 0);
   for (let hours = P.baseHours; hours <= P.maxHours; hours += 1) {
     for (const session of [false, true]) {
@@ -57,13 +57,38 @@ test('the server prices every package the way the guide page does', () => {
   assert.equal(pricePackage(readChoice({ hours: 6 }).choice).collection, 'Essential');
   assert.equal(pricePackage(readChoice({ hours: 8, album: '10' }).choice).collection, 'Signature');
   assert.equal(pricePackage(readChoice({ hours: 10, session: true, album: '12' }).choice).collection, 'Heirloom');
-  assert.equal(pricePackage(readChoice({ hours: 8, album: '10', second: false }).choice).collection, '');
+  assert.equal(pricePackage(readChoice({ hours: 8, album: '10', second: true }).choice).collection, '');
+  assert.equal(pricePackage(readChoice({ hours: 8, album: '10', second: true }).choice).total, 6700);
+  assert.equal(pricePackage(readChoice({ hours: 10, session: true, album: '12', second: true }).choice).total, 8500);
+  assert.equal(pricePackage(readChoice({ hours: 7, second: true }).choice).total, 4500, 'no second photographer under eight hours');
 
   for (const bad of [{}, { hours: 5 }, { hours: 13 }, { hours: 8.5 }, { hours: 8, album: '16' }, { hours: 8, session: 'yes' }, [8]]) {
     assert.ok(readChoice(bad).error, JSON.stringify(bad));
   }
   assert.equal(readChoice({ hours: 8, window: '<script>' }).choice.window, '');
   assert.equal(readChoice({ hours: 8, window: '1 to 9 pm' }).choice.window, '1 to 9 pm');
+});
+
+test('more coverage or another extra always costs more, whatever the starting package', () => {
+  // Every package the guide can build, then every pair where one gives at least as much as the other.
+  const rank = { '': 0, ...Object.fromEntries(Object.keys(P.albums).map((size, index) => [size, index + 1])) };
+  const all = [];
+  for (let hours = P.baseHours; hours <= P.maxHours; hours += 1) {
+    for (const second of hours >= P.secondFromHours ? [false, true] : [false]) {
+      for (const session of [false, true]) {
+        for (const album of Object.keys(rank)) all.push({ hours, second, session, album, total: pricePackage(readChoice({ hours, second, session, album }).choice).total });
+      }
+    }
+  }
+  assert.equal(all.length, 72);
+  const overlaps = [];
+  for (const a of all) {
+    for (const b of all) {
+      const asMuch = b.hours >= a.hours && b.second >= a.second && b.session >= a.session && rank[b.album] >= rank[a.album];
+      if (a !== b && asMuch && b.total <= a.total) overlaps.push(`${JSON.stringify(b)} costs no more than ${JSON.stringify(a)}`);
+    }
+  }
+  assert.deepEqual(overlaps, []);
 });
 
 test('a couple’s guide link sends their package to the inquiry they already sent', async () => {
@@ -97,7 +122,7 @@ test('a couple’s guide link sends their package to the inquiry they already se
       const send = (body) => fetch(`${origin}/api/guide/${code}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });
-      const sent = await send({ hours: 8, album: '10', session: false, second: true, notes: 'Rehearsal dinner too', window: '1 to 9 pm', total: 1 });
+      const sent = await send({ hours: 8, album: '10', session: false, second: false, notes: 'Rehearsal dinner too', window: '1 to 9 pm', total: 1 });
       assert.equal(sent.status, 200);
       assert.deepEqual(await sent.json(), { ok: true, total: 5700, collection: 'Signature' });
 
@@ -106,17 +131,17 @@ test('a couple’s guide link sends their package to the inquiry they already se
       assert.equal(found.inquiry.message, 'Hi Alex!', 'their first letter is kept');
       assert.equal(found.inquiry.hours, 'eight hours');
       assert.equal(found.inquiry.price, 5700, 'the agreed price follows the package, not the browser');
-      assert.match(found.inquiry.fields.package, /^Wedding day, 8 hours: \$5,000\nSecond photographer: included\n10 × 10 in leather album: \$700\nEstimated total: \$5,700 \(the Signature collection\)\nCoverage window: 1 to 9 pm\n\nAnything else: Rehearsal dinner too$/);
+      assert.match(found.inquiry.fields.package, /^Wedding day, 8 hours: \$5,000\n10 × 10 in leather album: \$700\nEstimated total: \$5,700 \(the Signature collection\)\nCoverage window: 1 to 9 pm\n\nAnything else: Rehearsal dinner too$/);
       assert.match(found.notes[0].body, /^Sent a package from the pricing guide\.\n/);
       assert.ok(found.guide.sent_at);
       assert.deepEqual(await (await lookup(code)).json(), { names: 'Sam and Riley', sent: true });
 
       // A changed package replaces the last one, and the price follows it while Alex hasn't set one by hand.
-      assert.equal((await send({ hours: 10, session: true, album: '12', second: false })).status, 200);
+      assert.equal((await send({ hours: 10, session: true, album: '12', second: true })).status, 200);
       found = await store.getInquiry(id);
-      assert.equal(found.inquiry.price, 6500);
+      assert.equal(found.inquiry.price, 8500);
       assert.equal(found.inquiry.hours, 'ten hours');
-      assert.match(found.inquiry.fields.package, /Without a second photographer: −\$1,000/);
+      assert.match(found.inquiry.fields.package, /Second photographer: \$1,000/);
       assert.equal(found.notes.length, 2);
 
       await store.updateInquiry(id, { price: 6000 });

@@ -17,33 +17,32 @@
     12: { name: '12 × 12 in leather album', sub: '40 pages, designed by me', short: 'a 12 × 12 album' }
   };
   const money = (n) => '$' + n.toLocaleString('en-US');
-  const priceLabel = (n) => (n > 0 ? money(n) : n < 0 ? '\u2212' + money(-n) : 'Included');
+  const priceLabel = (n) => (n ? money(n) : 'Included');
   const listJoin = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
 
-  const state = { hours: 8, session: false, album: '', second: true };
+  const state = { hours: 8, session: false, album: '', second: false };
 
   const q = new URLSearchParams(location.search);
   // A link Alex copies from the studio dashboard carries ?for=<code>: the package then goes to that couple's inquiry.
   const forCode = /^[A-Za-z0-9_-]{24}$/.test(q.get('for') || '') ? q.get('for') : '';
   const linked = P.collections[(q.get('c') || q.get('collection') || '').toLowerCase()];
-  if (linked) Object.assign(state, { hours: linked.hours, session: linked.session, album: linked.album, second: true });
+  if (linked) Object.assign(state, { hours: linked.hours, session: linked.session, album: linked.album, second: Boolean(linked.second) });
   const linkedHours = Number(q.get('h'));
   if (Number.isInteger(linkedHours) && linkedHours >= P.baseHours && linkedHours <= P.maxHours) state.hours = linkedHours;
   if (q.has('s')) state.session = q.get('s') === '1';
   if (q.has('a')) state.album = P.albums[q.get('a')] ? q.get('a') : '';
-  if (q.get('p') === '0') state.second = false;
+  if (q.has('p')) state.second = q.get('p') === '1';
 
   const hoursPrice = (h) => P.base + (h - P.baseHours) * P.perHour;
-  // From eight hours a second photographer comes along, so Signature and Heirloom have one.
-  // The hour price already counts them; leaving them out takes P.secondPhotographer off.
+  // From eight hours a second photographer can be added for P.secondPhotographer. The collections are priced
+  // without one, so every extra hour or extra choice always costs more (tests/guide-links.test.mjs checks this).
   const canHaveSecond = () => state.hours >= P.secondFromHours;
   const hasSecond = () => canHaveSecond() && state.second;
 
   function items() {
     const rate = money(P.base) + ' for ' + WORDS[P.baseHours] + ' hours, then ' + money(P.perHour) + ' an hour';
     const list = [{ key: 'hours', name: 'Wedding day, ' + state.hours + ' hours', sub: rate, price: hoursPrice(state.hours) }];
-    if (hasSecond()) list.push({ key: 'second', name: 'Second photographer', sub: 'Included from ' + P.secondFromHours + ' hours', price: 0 });
-    else if (canHaveSecond()) list.push({ key: 'second', name: 'Without a second photographer', sub: 'Just me, for all ' + WORDS[state.hours] + ' hours', price: -P.secondPhotographer });
+    if (hasSecond()) list.push({ key: 'second', name: 'Second photographer', sub: 'With me for all ' + WORDS[state.hours] + ' hours', price: P.secondPhotographer });
     if (state.session) list.push({ key: 'session', name: 'Engagement session', sub: '60 minutes, before the wedding', price: P.session });
     if (state.album) list.push({ key: 'album', name: ALBUMS[state.album].name, sub: ALBUMS[state.album].sub, price: P.albums[state.album] });
     return list;
@@ -51,18 +50,18 @@
   const total = () => items().reduce((sum, it) => sum + it.price, 0);
 
   function matching() {
-    const c = Object.values(P.collections).find((x) => x.hours === state.hours && x.session === state.session && x.album === state.album && hasSecond() === x.hours >= P.secondFromHours);
+    const c = Object.values(P.collections).find((x) => x.hours === state.hours && x.session === state.session && x.album === state.album && hasSecond() === Boolean(x.second));
     return c ? c.name : '';
   }
 
   function words() {
-    const parts = [WORDS[state.hours] + ' hours of coverage' + (hasSecond() ? ' with a second photographer' : canHaveSecond() ? ' without a second photographer' : '')];
+    const parts = [WORDS[state.hours] + ' hours of coverage' + (hasSecond() ? ' with a second photographer' : '')];
     if (state.album) parts.push(ALBUMS[state.album].short);
     if (state.session) parts.push('an engagement session');
     return listJoin(parts);
   }
 
-  const query = () => (forCode ? '?for=' + forCode + '&' : '?') + 'h=' + state.hours + (state.session ? '&s=1' : '') + (state.album ? '&a=' + state.album : '') + (canHaveSecond() && !state.second ? '&p=0' : '');
+  const query = () => (forCode ? '?for=' + forCode + '&' : '?') + 'h=' + state.hours + (state.session ? '&s=1' : '') + (state.album ? '&a=' + state.album : '') + (hasSecond() ? '&p=1' : '');
 
   /* ---------- Handwriting ---------- */
 
@@ -264,8 +263,8 @@
     second.parentElement.classList.toggle('on', hasSecond());
     second.parentElement.classList.toggle('is-off', !canHaveSecond());
     $('#secondMeta').textContent = canHaveSecond()
-      ? (state.second ? 'Included \u00b7 leave out for ' + money(P.secondPhotographer) + ' off' : 'Left out \u00b7 ' + money(P.secondPhotographer) + ' off')
-      : 'Comes with ' + WORDS[P.secondFromHours] + ' hours or more';
+      ? (state.second ? 'Added \u00b7 ' + money(P.secondPhotographer) : money(P.secondPhotographer))
+      : 'From ' + WORDS[P.secondFromHours] + ' hours';
     const session = $('#session');
     session.checked = state.session;
     session.parentElement.classList.toggle('on', state.session);
@@ -365,7 +364,7 @@
     const c = P.collections[button.dataset.start];
     state.session = c.session;
     state.album = c.album;
-    state.second = true;
+    state.second = Boolean(c.second);
     moved = false;
     setHours(c.hours, true);
     $('#build').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });

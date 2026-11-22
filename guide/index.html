@@ -25,11 +25,11 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/fraunces-normal-200-700-latin.woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts/the-day.css">
-<link rel="stylesheet" href="/guide/guide.css?v=4">
+<link rel="stylesheet" href="/guide/guide.css?v=5">
 <link rel="preload" as="image" href="/assets/responsive/guide-hero-road-1600.webp" imagesrcset="/assets/responsive/guide-hero-road-800.webp 800w, /assets/responsive/guide-hero-road-1200.webp 1200w, /assets/responsive/guide-hero-road-1600.webp 1600w, /assets/responsive/guide-hero-road-2000.webp 2000w" imagesizes="100vw">
 <script src="/assets/visits.js?v=1" defer></script>
 <script src="/guide/ink.js?v=1" defer></script>
-<script src="/guide/guide.js?v=3" defer></script>
+<script src="/guide/guide.js?v=4" defer></script>
 <!-- Every price on this page comes from here. The collection cards and hour labels below repeat them as text;
      tests/guide.test.mjs checks that the two agree. -->
 <script type="application/json" id="guide-prices">
@@ -43,9 +43,9 @@
   "session": 600,
   "albums": { "10": 700, "12": 900 },
   "collections": {
-    "essential": { "name": "Essential", "hours": 6, "session": false, "album": "" },
-    "signature": { "name": "Signature", "hours": 8, "session": false, "album": "10" },
-    "heirloom": { "name": "Heirloom", "hours": 10, "session": true, "album": "12" }
+    "essential": { "name": "Essential", "hours": 6, "session": false, "album": "", "second": false },
+    "signature": { "name": "Signature", "hours": 8, "session": false, "album": "10", "second": false },
+    "heirloom": { "name": "Heirloom", "hours": 10, "session": true, "album": "12", "second": false }
   }
 }
 </script>
@@ -107,7 +107,7 @@
       <h2 data-rise>What every package <em>includes.</em></h2>
     </div>
     <ol class="always-list">
-      <li data-rise><span class="n">01</span><h3>Six to twelve hours of coverage</h3><p>You choose how many, and when they start and end. From eight hours, a second photographer comes too.</p></li>
+      <li data-rise><span class="n">01</span><h3>Six to twelve hours of coverage</h3><p>You choose how many, and when they start and end. From eight hours you can add a second photographer.</p></li>
       <li data-rise><span class="n">02</span><h3>A consultation and timeline planning</h3><p>Before the wedding we plan the day&rsquo;s timing together, with room for portraits and for your guests.</p></li>
       <li data-rise><span class="n">03</span><h3>Edited, high-resolution photographs</h3><p>I go through the whole day, keep the best frames, and edit every photograph I give you.</p></li>
       <li data-rise><span class="n">04</span><h3>A private online gallery</h3><p>Download everything, share it with your family, and print whatever you like for yourselves.</p></li>
@@ -143,10 +143,10 @@
         <p class="col-what">From getting ready into the reception, with an album to keep.</p>
         <ul class="col-list">
           <li>Eight hours of coverage</li>
-          <li>Second photographer, or $1,000 less without</li>
           <li>10 &times; 10 in leather album, 30 pages</li>
           <li>Consultation and timeline planning</li>
           <li>Every photograph edited by me, in a private gallery</li>
+          <li class="col-option">Add a second photographer for $1,000</li>
         </ul>
         <button class="btn btn-line" type="button" data-start="signature">Start from Signature <span class="arr" aria-hidden="true">&rarr;</span></button>
       </article>
@@ -158,10 +158,10 @@
         <p class="col-what">A longer day, an engagement session, and the larger album.</p>
         <ul class="col-list">
           <li>Ten hours of coverage</li>
-          <li>Second photographer, or $1,000 less without</li>
           <li>60-minute engagement session</li>
           <li>12 &times; 12 in leather album, 40 pages</li>
           <li>Consultation, timeline planning, editing and a private gallery</li>
+          <li class="col-option">Add a second photographer for $1,000</li>
         </ul>
         <button class="btn btn-line" type="button" data-start="heirloom">Start from Heirloom <span class="arr" aria-hidden="true">&rarr;</span></button>
       </article>
@@ -180,7 +180,7 @@
       <form class="controls" id="builder" action="#send">
         <fieldset class="step">
           <legend class="step-head"><span class="step-no">01</span> Hours of coverage</legend>
-          <p class="step-help">$4,000 for six hours, then $500 for each extra hour, up to twelve hours in all. From eight hours, a second photographer comes too.</p>
+          <p class="step-help">$4,000 for six hours, then $500 for each extra hour, up to twelve hours in all. From eight hours you can add a second photographer for $1,000.</p>
           <div class="hour-row">
             <label class="hour"><input type="radio" name="hours" value="6"><span class="hour-n">6</span><span class="hour-p">$4,000</span></label>
             <label class="hour"><input type="radio" name="hours" value="7"><span class="hour-n">7</span><span class="hour-p">$4,500</span></label>
@@ -205,11 +205,11 @@
         <fieldset class="step">
           <legend class="step-head"><span class="step-no">02</span> Second photographer</legend>
           <label class="session second">
-            <input type="checkbox" name="second" id="second" checked>
+            <input type="checkbox" name="second" id="second">
             <span class="opt-copy">
               <span class="opt-title">A second photographer, from eight hours</span>
-              <span class="opt-text">While you get ready, each of you has a photographer. If you&rsquo;d rather it was just me, leave them out and the price drops by $1,000.</span>
-              <span class="opt-meta" id="secondMeta">Included &middot; leave out for $1,000 off</span>
+              <span class="opt-text">While you get ready, each of you has a photographer, and the day is photographed from two places at once.</span>
+              <span class="opt-meta" id="secondMeta">$1,000</span>
             </span>
             <span class="toggle" aria-hidden="true"><i></i></span>
           </label>
@@ -268,7 +268,6 @@
         <p class="sheet-kicker mono" id="sheetTitle">Your package</p>
         <ul class="sheet-lines" id="sheetLines">
           <li class="line"><span class="l-name">Wedding day, 8 hours<small>$4,000 for six hours, then $500 an hour</small></span><span class="lead"></span><span class="l-price">$5,000</span></li>
-          <li class="line"><span class="l-name">Second photographer<small>Included from 8 hours</small></span><span class="lead"></span><span class="l-price">Included</span></li>
         </ul>
         <ul class="sheet-always mono" aria-label="Always included">
           <li>Consultation and timeline planning</li>
@@ -315,7 +314,7 @@
     <div class="qa">
       <details>
         <summary>Will you photograph the wedding yourself?</summary>
-        <p>Yes, and I edit every photograph myself. From eight hours, a second photographer works with me, so each of you has a photographer while you get ready. If you&rsquo;d rather it was just me, leave them out and the price drops by $1,000.</p>
+        <p>Yes, and I edit every photograph myself. From eight hours you can add a second photographer for $1,000, so each of you has a photographer while you get ready.</p>
       </details>
       <details>
         <summary>How many hours do we need?</summary>
@@ -358,7 +357,7 @@
         <p>Hello, Alex.</p>
         <p class="guest">We&rsquo;re <label class="sr" for="fNames">Your names</label><input id="fNames" name="names" required placeholder="your names" autocomplete="name">, and we&rsquo;re getting married on <label class="sr" for="fDate">Wedding date</label><input id="fDate" name="event_date" required placeholder="the date"> in <label class="sr" for="fPlace">Place</label><input id="fPlace" name="location" placeholder="the place">.</p>
         <p class="personal" hidden>We&rsquo;re <span id="personalNames"></span>.</p>
-        <p>We&rsquo;d like <span class="pkg-words" id="pkgWords">eight hours of coverage with a second photographer</span>, which comes to <span class="pkg-total" id="pkgTotal">$5,000</span>. <a class="change mono" href="#build">Change it</a></p>
+        <p>We&rsquo;d like <span class="pkg-words" id="pkgWords">eight hours of coverage</span>, which comes to <span class="pkg-total" id="pkgTotal">$5,000</span>. <a class="change mono" href="#build">Change it</a></p>
         <p class="guest">You can write back to us at <label class="sr" for="fEmail">Email</label><input id="fEmail" type="email" name="email" required placeholder="your email" autocomplete="email">.</p>
       </div>
       <div class="sign">
