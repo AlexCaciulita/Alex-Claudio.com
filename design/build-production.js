@@ -45,7 +45,7 @@ const ARTICLES = {
   },
   'seattle-wedding-sunset-times': {
     title: 'Seattle Wedding Sunset Times by Month | Alex Claudio',
-    description: 'Sunset times in Seattle for every month of 2027, when to step out for portraits, and how to work back from sunset to a ceremony time that keeps you in good light.',
+    description: 'Seattle sunset and golden hour times for your wedding date and venue, when to step out for portraits, and how to time the ceremony to keep good light.',
     image: '/assets/responsive/portfolio-62-1200.webp', published: '2026-11-16T12:00:00-08:00', modified: '2026-11-16T12:00:00-08:00',
     crumb: 'Sunset times for a Seattle wedding.'
   }
