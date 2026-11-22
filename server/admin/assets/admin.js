@@ -623,8 +623,22 @@
   const VERSUS = { today: 'yesterday by this time', '7d': 'the 7 days before', '30d': 'the 30 days before', '90d': 'the 90 days before', '12m': 'the year before' };
   const PAGE_NAMES = {
     '/': 'Home', '/portfolio/': 'Portfolio', '/blog/': 'Journal', '/privacy/': 'Privacy',
-    '/links/': 'Links (Instagram bio)', '/lead/': 'Wedding show sign-up', '/AlexClaudioVentures/': 'Alex Claudio Ventures'
+    '/links/': 'Links (Instagram bio)', '/lead/': 'Wedding show sign-up', '/guide/': 'Pricing guide', '/AlexClaudioVentures/': 'Alex Claudio Ventures'
   };
+  const ALBUM_NAMES = { none: 'No album', 10: '10 \u00d7 10 album', 12: '12 \u00d7 12 album' };
+  // One step a couple took in the pricing guide, as it reads in a visit's trail.
+  const guideStep = (step) => ({
+    builder: () => 'Opened the package builder',
+    letter: () => 'Reached the letter',
+    window: () => 'Moved the coverage window',
+    copy: () => 'Copied the package link',
+    start: () => `Started from ${step.detail}`,
+    hours: () => `Chose ${step.value} hours`,
+    session: () => (step.detail === 'on' ? 'Added the engagement session' : 'Took off the engagement session'),
+    album: () => (step.detail === 'none' ? 'Chose no album' : `Chose the ${ALBUM_NAMES[step.detail] || step.detail}`),
+    second: () => (step.detail === 'on' ? 'Added a second photographer' : 'Took off the second photographer'),
+    sent: () => `Sent a ${fmtMoney(step.value)} package ${step.detail === 'personal' ? 'from their guide link' : 'with the letter'}`
+  }[step.event] || (() => null))();
   const CHANNELS = {
     Search: ['Google', 'Bing', 'DuckDuckGo', 'Yahoo', 'Ecosia', 'Yandex', 'Baidu', 'Brave Search'],
     Social: ['Instagram', 'Facebook', 'Pinterest', 'X', 'LinkedIn', 'Reddit', 'TikTok', 'YouTube', 'Threads'],
@@ -754,6 +768,7 @@
           { label: 'Time', value: (row) => row.seconds, text: (row) => fmtDuration(row.seconds), title: 'Average time the page stayed open' }
         ]
       })),
+      panel('Pricing guide', 'What people did on /guide/', guidePanel(data.guide)),
       h('div', { class: 'panels' },
         panel('How they found the site', null,
           barTable({
@@ -973,6 +988,44 @@
         h('td', { class: 'num optional' }, when(gallery.last_view)))))));
   }
 
+  // How far people got in the pricing guide, what they picked, and what they sent.
+  function guidePanel(guide) {
+    if (!guide || !guide.visits) return h('p', { class: 'muted' }, 'Nobody opened the pricing guide in this period.');
+    const stage = (label, count, note) => h('div', { class: 'card' },
+      h('span', { class: 'card-label' }, label), h('strong', {}, fmtCount(count)), h('small', {}, note));
+    const ofOpened = (n) => `${share(n, guide.visits)} of visits`;
+    const visitsOf = (rows, detail) => (rows.find((row) => row.detail === detail) || { visits: 0 }).visits;
+    const choices = [
+      { name: 'Added the engagement session', visits: visitsOf(guide.session, 'on') },
+      ...['10', '12', 'none'].map((size) => ({ name: `Chose ${size === 'none' ? 'no album' : `the ${ALBUM_NAMES[size]}`}`, visits: visitsOf(guide.albums, size) })),
+      { name: 'Added a second photographer', visits: visitsOf(guide.second, 'on') },
+      { name: 'Copied the package link', visits: guide.copied }
+    ].filter((row) => row.visits);
+    const visitsMetric = [{ label: 'Visits', value: (row) => row.visits }];
+    return [
+      h('div', { class: 'cards funnel' },
+        stage('Opened the guide', guide.visits, `${plural(guide.views, 'view', 'views')}${guide.seconds ? `, ${fmtDuration(guide.seconds)} each` : ''}`),
+        stage('Opened the builder', guide.builder, ofOpened(guide.builder)),
+        stage('Picked something', guide.chose, ofOpened(guide.chose)),
+        stage('Reached the letter', guide.letter, ofOpened(guide.letter)),
+        stage('Sent a package', guide.sent.count, guide.sent.count
+          ? `${guide.sent.average ? `${fmtMoney(guide.sent.average)} on average, ` : ''}${guide.sent.personal} from guide links`
+          : ofOpened(guide.sent_visits))),
+      h('div', { class: 'guide-tables' },
+        h('div', {},
+          h('h3', { class: 'sub-head' }, 'Started from'),
+          barTable({ head: 'Collection', rows: guide.starts, empty: 'No collection buttons pressed yet.', label: (row) => row.detail, metrics: visitsMetric }),
+          h('h3', { class: 'sub-head' }, 'Hours picked'),
+          barTable({ head: 'Hours', rows: guide.hours, empty: 'Nobody changed the hours yet.', label: (row) => `${row.value} hours`, limit: 7, metrics: visitsMetric })),
+        h('div', {},
+          h('h3', { class: 'sub-head' }, 'Extras'),
+          barTable({ head: 'Choice', rows: choices, empty: 'No extras chosen yet.', label: (row) => row.name, metrics: visitsMetric }),
+          h('h3', { class: 'sub-head' }, 'Packages sent'),
+          barTable({ head: 'Package', rows: guide.packages, empty: 'No packages sent yet.', label: (row) => (row.detail === 'Custom' ? 'Their own package' : row.detail),
+            sub: (row) => `${row.value} hours`, metrics: [{ label: 'Sent', value: (row) => row.times }] })))
+    ];
+  }
+
   function recentVisits(visits) {
     if (!visits.length) return h('p', { class: 'muted' }, 'No visits in this period.');
     const actionText = (action) => {
@@ -988,7 +1041,16 @@
         if (last && last.kind === action.kind && last.detail === action.detail) last.count += 1;
         else actions.push({ ...action, count: 1 });
       }
-      const steps = [...visit.pages.map((page) => ({ at: page.at, page })), ...actions.map((action) => ({ at: action.at, action }))]
+      // Guide clicks in a row of the same kind (dragging the hours back and forth) read as the last one.
+      const guide = [];
+      for (const step of visit.guide || []) {
+        if (step.event === 'package') continue;
+        const last = guide[guide.length - 1];
+        if (last && last.event === step.event && ['hours', 'session', 'album', 'second'].includes(step.event)) guide[guide.length - 1] = step;
+        else guide.push(step);
+      }
+      const steps = [...visit.pages.map((page) => ({ at: page.at, page })), ...actions.map((action) => ({ at: action.at, action })),
+        ...guide.map((step) => ({ at: step.at, guide: step }))]
         .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
       return h('li', {},
         h('div', { class: 'visit-meta' },
@@ -998,7 +1060,9 @@
           h('span', {}, `${visit.device} \u00b7 ${visit.browser} on ${visit.os}`)),
         h('ol', { class: 'trail' }, steps.map((step) => (step.page
           ? h('li', {}, pageName(step.page.path), step.page.seconds ? h('small', {}, fmtDuration(step.page.seconds)) : null)
-          : h('li', { class: 'did' }, actionText(step.action))))));
+          : step.guide
+            ? h('li', { class: 'did guide-step' }, guideStep(step.guide))
+            : h('li', { class: 'did' }, actionText(step.action))))));
     }));
   }
 

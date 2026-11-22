@@ -20,6 +20,26 @@
   const priceLabel = (n) => (n ? money(n) : 'Included');
   const listJoin = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
 
+  // Clicks in the guide, for the studio's Analytics page. Each one rides on the visit counter's page view
+  // (assets/visits.js): no cookies, and nothing is sent when that view isn't counted, as in the studio's own browser.
+  const ONCE = new Set(['builder', 'letter', 'window', 'copy']);
+  const CHOICES = new Set(['start', 'hours', 'session', 'album', 'second', 'window', 'copy']);
+  const tracked = new Set();
+  let trackedCount = 0;
+  function track(event, detail = '', value = null) {
+    const page = window.acVisitPage;
+    if (!page || trackedCount >= 120 || (ONCE.has(event) && tracked.has(event))) return;
+    // Choosing anything in the builder means they reached it, even if they jumped straight past its top.
+    if (CHOICES.has(event) && !tracked.has('builder')) track('builder');
+    tracked.add(event);
+    trackedCount += 1;
+    const body = JSON.stringify({ kind: 'guide', page, event, detail, value });
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon('/api/visit', body)) return;
+    } catch (error) { /* fall back to fetch */ }
+    fetch('/api/visit', { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(() => {});
+  }
+
   const state = { hours: 8, session: false, album: '', second: false };
 
   const q = new URLSearchParams(location.search);
@@ -223,7 +243,7 @@
     if (!drag) return;
     const dm = ((e.clientX - drag.x) / drag.w) * SPAN;
     const next = clamp(Math.round((drag.s + dm) / 15) * 15, DAY0, DAY1 - state.hours * 60);
-    if (next !== start) { start = next; moved = true; renderDay(); }
+    if (next !== start) { start = next; moved = true; renderDay(); track('window'); }
   });
   const endDrag = () => { if (!drag) return; drag = null; win.classList.remove('dragging'); };
   win.addEventListener('pointerup', endDrag);
@@ -238,6 +258,7 @@
     e.preventDefault();
     moved = true;
     renderDay();
+    track('window');
   });
 
   /* ---------- The package sheet ---------- */
@@ -353,10 +374,10 @@
 
   builder.addEventListener('change', (e) => {
     const t = e.target;
-    if (t.name === 'hours') setHours(Number(t.value), true);
-    else if (t.name === 'session') { state.session = t.checked; update(true); }
-    else if (t.name === 'second') { state.second = t.checked; update(true); }
-    else if (t.name === 'album') { state.album = t.value; update(true); }
+    if (t.name === 'hours') { setHours(Number(t.value), true); track('hours', '', state.hours); }
+    else if (t.name === 'session') { state.session = t.checked; update(true); track('session', t.checked ? 'on' : 'off'); }
+    else if (t.name === 'second') { state.second = t.checked; update(true); track('second', t.checked ? 'on' : 'off'); }
+    else if (t.name === 'album') { state.album = t.value; update(true); track('album', t.value || 'none'); }
   });
   builder.addEventListener('submit', (e) => e.preventDefault());
 
@@ -367,6 +388,7 @@
     state.second = Boolean(c.second);
     moved = false;
     setHours(c.hours, true);
+    track('start', c.name);
     $('#build').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
     sheet.classList.remove('flash');
     void sheet.offsetWidth;
@@ -374,6 +396,7 @@
   }));
 
   $('#copyLink').addEventListener('click', async () => {
+    track('copy');
     const url = location.origin + '/guide/' + query() + '#build';
     const note = $('#copied');
     try {
@@ -499,6 +522,8 @@
     err.textContent = '';
     form.classList.add('sent');
     $('#sentBefore').hidden = true;
+    track('sent', personal ? 'personal' : 'letter', total());
+    track('package', matching() || 'Custom', state.hours);
     const box = $('#thanks');
     box.textContent = '';
     if (!Ink) { box.textContent = "Thank you. I'll write back within a few hours."; return; }
@@ -509,6 +534,9 @@
   });
 
   /* ---------- First paint ---------- */
+
+  watch($('#builder'), () => track('builder'), '0px 0px -35% 0px');
+  watch($('#sendForm'), () => track('letter'), '0px 0px -25% 0px');
 
   renderDay();
   update(false);
