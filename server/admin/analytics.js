@@ -5,6 +5,8 @@ const crypto = require('node:crypto');
 
 const VISIT_GAP_MS = 30 * 60 * 1000;
 const TIME_UPDATE_MS = 6 * 60 * 60 * 1000;
+const GUIDE_EVENTS_PER_VISIT = 300;
+const GUIDE_CHOICES = ['start', 'hours', 'session', 'album', 'second', 'window'];
 const KEEP_DAYS = 395;
 const RANGES = { today: 1, '7d': 7, '30d': 30, '90d': 90, '12m': 365 };
 const BREAKDOWNS = { countries: 'country', timezones: 'timezone', devices: 'device', browsers: 'browser', systems: 'os' };
@@ -50,6 +52,17 @@ CREATE TABLE IF NOT EXISTS actions (
 );
 CREATE INDEX IF NOT EXISTS actions_day_idx ON actions (day, kind);
 CREATE INDEX IF NOT EXISTS actions_visit_idx ON actions (visit_id);
+CREATE TABLE IF NOT EXISTS guide_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  visit_id INTEGER NOT NULL REFERENCES visits(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  at TEXT NOT NULL,
+  event TEXT NOT NULL,
+  detail TEXT NOT NULL DEFAULT '',
+  value INTEGER
+);
+CREATE INDEX IF NOT EXISTS guide_events_day_idx ON guide_events (day, event);
+CREATE INDEX IF NOT EXISTS guide_events_visit_idx ON guide_events (visit_id);
 CREATE TABLE IF NOT EXISTS visitor_keys (
   day TEXT PRIMARY KEY,
   value BLOB NOT NULL
@@ -129,12 +142,27 @@ function analyticsMethods({ use, timeZone }) {
       return open ? open.id : null;
     }),
 
+    // A click in the pricing guide, joined to the visit of the page view it came from. A page view that
+    // wasn't counted (a bot, the studio's own browser, a tab left open for hours) has no visit, so it's dropped.
+    recordGuideEvent: ({ page, event, detail, value }) => use((db) => {
+      const view = db.prepare("SELECT visit_id FROM views WHERE page_id = ? AND path = '/guide/' AND at >= ?")
+        .get(page, new Date(Date.now() - TIME_UPDATE_MS).toISOString());
+      if (!view) return false;
+      if (db.prepare('SELECT count(*) AS n FROM guide_events WHERE visit_id = ?').get(view.visit_id).n >= GUIDE_EVENTS_PER_VISIT) return false;
+      const { at, day } = moment();
+      db.prepare('INSERT INTO guide_events (visit_id, day, at, event, detail, value) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(view.visit_id, day, at, event, detail, value);
+      db.prepare('UPDATE visits SET last_at = max(last_at, ?) WHERE id = ?').run(at, view.visit_id);
+      return true;
+    }),
+
     // Visits older than 13 months go, and so does every visitor key but today's.
     pruneAnalytics: () => use((db) => {
       const today = localDay(timeZone);
       const cutoff = addDays(today, -KEEP_DAYS);
       const removed = db.prepare('DELETE FROM visits WHERE day < ?').run(cutoff).changes;
       db.prepare('DELETE FROM actions WHERE day < ?').run(cutoff);
+      db.prepare('DELETE FROM guide_events WHERE day < ?').run(cutoff);
       db.prepare('DELETE FROM visitor_keys WHERE day <> ?').run(today);
       return removed;
     }),
@@ -249,10 +277,38 @@ function summarize(db, rangeKey, timeZone) {
       FROM actions WHERE day BETWEEN ? AND ? AND kind IN ('photo', 'zip') AND detail <> ''
      GROUP BY detail`).all(...range)) Object.assign(gallery(row.slug), row);
 
+  // The pricing guide: how far people got, what they picked, and what they sent.
+  const guideViews = db.prepare(`SELECT count(DISTINCT visit_id) AS visits, count(*) AS views, avg(NULLIF(seconds, 0)) AS seconds
+      FROM views WHERE day BETWEEN ? AND ? AND path = '/guide/'`).get(...range);
+  const reached = (events) => db.prepare(`SELECT count(DISTINCT visit_id) AS n FROM guide_events
+      WHERE day BETWEEN ? AND ? AND event IN (${events.map(() => '?').join(', ')})`).get(...range, ...events).n;
+  const tally = (event) => db.prepare(`SELECT detail, value, count(DISTINCT visit_id) AS visits, count(*) AS times
+      FROM guide_events WHERE day BETWEEN ? AND ? AND event = ?
+      GROUP BY detail, value ORDER BY visits DESC, times DESC, detail, value`).all(...range, event);
+  const sentPackages = db.prepare(`SELECT count(*) AS count, count(*) FILTER (WHERE detail = 'personal') AS personal, avg(value) AS average
+      FROM guide_events WHERE day BETWEEN ? AND ? AND event = 'sent'`).get(...range);
+  const guide = {
+    visits: guideViews.visits,
+    views: guideViews.views,
+    seconds: guideViews.seconds === null ? null : Math.round(guideViews.seconds),
+    builder: reached(['builder']),
+    chose: reached(GUIDE_CHOICES),
+    letter: reached(['letter']),
+    sent_visits: reached(['sent']),
+    copied: reached(['copy']),
+    starts: tally('start'),
+    hours: tally('hours').sort((a, b) => a.value - b.value),
+    session: tally('session'),
+    albums: tally('album'),
+    second: tally('second'),
+    packages: tally('package'),
+    sent: { count: sentPackages.count, personal: sentPackages.personal, average: sentPackages.average === null ? null : Math.round(sentPackages.average) }
+  };
+
   // The latest visits, page by page.
   const recent = db.prepare(`SELECT id, started_at, landing, source, referrer, country, timezone, device, browser, os
       FROM visits WHERE day BETWEEN ? AND ? ORDER BY started_at DESC, id DESC LIMIT 30`).all(...range)
-    .map((row) => ({ ...row, pages: [], actions: [] }));
+    .map((row) => ({ ...row, pages: [], actions: [], guide: [] }));
   if (recent.length) {
     const byId = new Map(recent.map((visit) => [visit.id, visit]));
     const marks = recent.map(() => '?').join(', ');
@@ -261,6 +317,9 @@ function summarize(db, rangeKey, timeZone) {
     }
     for (const row of db.prepare(`SELECT visit_id, kind, detail, at FROM actions WHERE visit_id IN (${marks}) ORDER BY at, id`).all(...byId.keys())) {
       byId.get(row.visit_id).actions.push({ kind: row.kind, detail: row.detail, at: row.at });
+    }
+    for (const row of db.prepare(`SELECT visit_id, event, detail, value, at FROM guide_events WHERE visit_id IN (${marks}) ORDER BY at, id`).all(...byId.keys())) {
+      byId.get(row.visit_id).guide.push({ event: row.event, detail: row.detail, value: row.value, at: row.at });
     }
   }
 
@@ -278,6 +337,7 @@ function summarize(db, rangeKey, timeZone) {
     referrers,
     campaigns,
     ...breakdowns,
+    guide,
     galleries: [...galleries.values()].sort((a, b) => b.views - a.views || b.photos + b.zips - (a.photos + a.zips) || a.slug.localeCompare(b.slug)),
     recent: recent.map(({ id, ...visit }) => visit)
   };

@@ -1,6 +1,7 @@
 // Reading a page view: where the visitor came from, on what kind of device, and whether it was a person at all.
 // Only these summaries are kept. The full referring address, the user agent and the IP address are never stored.
 const { countryOfZone } = require('./timezones');
+const { priceList } = require('./guide');
 
 const SITE_HOSTS = new Set(['alex-claudio.com', 'www.alex-claudio.com']);
 const DEVICES = new Set(['Mobile', 'Tablet', 'Desktop']);
@@ -144,6 +145,46 @@ function readTime(body) {
   return { page: body.page, seconds: Math.min(seconds, 4 * 60 * 60) };
 }
 
+// What a click in the pricing guide may say. Anything else is dropped.
+let guideEvents = null;
+function guideEventRules() {
+  if (!guideEvents) {
+    const P = priceList();
+    const collections = Object.values(P.collections).map((c) => c.name);
+    const hours = [P.baseHours, P.maxHours];
+    guideEvents = {
+      builder: {}, letter: {}, window: {}, copy: {},
+      start: { details: collections },
+      hours: { value: hours },
+      session: { details: ['on', 'off'] },
+      album: { details: ['none', ...Object.keys(P.albums)] },
+      second: { details: ['on', 'off'] },
+      sent: { details: ['personal', 'letter'], value: [0, 100000] },
+      package: { details: [...collections, 'Custom'], value: hours }
+    };
+  }
+  return guideEvents;
+}
+
+// A click in the pricing guide, as the page sent it: which page view it belongs to, what happened and,
+// for a few kinds, one choice or number. Returns null for anything else.
+function readGuideEvent(body) {
+  if (!body || body.kind !== 'guide' || !PAGE_ID.test(String(body.page || ''))) return null;
+  const rules = guideEventRules();
+  if (!Object.prototype.hasOwnProperty.call(rules, body.event)) return null;
+  const rule = rules[body.event];
+  const detail = body.detail === undefined || body.detail === null ? '' : String(body.detail);
+  if (rule.details ? !rule.details.includes(detail) : detail !== '') return null;
+  let value = null;
+  if (rule.value) {
+    value = Number(body.value);
+    if (!Number.isInteger(value) || value < rule.value[0] || value > rule.value[1]) return null;
+  } else if (body.value !== undefined && body.value !== null) {
+    return null;
+  }
+  return { page: body.page, event: body.event, detail, value };
+}
+
 // At most `limit` requests per address in `windowMs`, so nobody can flood the counts.
 function createRateLimit(limit, windowMs) {
   const byIp = new Map();
@@ -157,4 +198,4 @@ function createRateLimit(limit, windowMs) {
   };
 }
 
-module.exports = { createRateLimit, describeAgent, isBot, readTime, readView, referrerHost, sourceOf };
+module.exports = { createRateLimit, describeAgent, isBot, readGuideEvent, readTime, readView, referrerHost, sourceOf };

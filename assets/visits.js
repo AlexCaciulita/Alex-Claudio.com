@@ -8,6 +8,8 @@
   if (navigator.webdriver) return;
 
   const page = Array.from(crypto.getRandomValues(new Uint8Array(12)), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  // The pricing guide reports its clicks against this page view (guide/guide.js).
+  window.acVisitPage = page;
   const params = new URLSearchParams(location.search);
   let path = location.pathname;
   const code = params.get('c') || '';

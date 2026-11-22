@@ -6,7 +6,7 @@ const { SubmissionError, processSubmission, sendPackageEmail } = require('./serv
 const { GUIDE_CODE, pricePackage, readChoice } = require('./server/guide');
 const { createAdminRouter } = require('./server/admin');
 const { createStore, safeMessage } = require('./server/admin/store');
-const { createRateLimit, isBot, readTime, readView } = require('./server/analytics');
+const { createRateLimit, isBot, readGuideEvent, readTime, readView } = require('./server/analytics');
 
 const ROOT = __dirname;
 const SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
@@ -152,6 +152,11 @@ function createApp(options = {}) {
       const time = readTime(body);
       if (time) {
         await store.recordTime(time);
+        return;
+      }
+      const guideEvent = readGuideEvent(body);
+      if (guideEvent) {
+        await store.recordGuideEvent(guideEvent);
         return;
       }
       const view = readView(body, userAgent);
