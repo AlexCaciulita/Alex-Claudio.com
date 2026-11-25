@@ -367,11 +367,13 @@ function createAdminRouter({ store = null, env = process.env, assistant = null, 
 
   router.get('/', (req, res) => {
     res.send(page('Studio · Alex Claudio', 'studio', '<div id="app"></div>\n<noscript><p class="noscript">The studio dashboard needs JavaScript.</p></noscript>',
-      `<meta name="csrf" content="${escapeHtml(req.studio.csrf)}">\n<script src="/admin/assets/admin.js" defer></script>`));
+      `<meta name="csrf" content="${escapeHtml(req.studio.csrf)}">\n<script src="/contract/contract-doc.js?v=1" defer></script>\n<script src="/contract/signature-pad.js?v=1" defer></script>\n<script src="/admin/assets/admin.js" defer></script>`));
   });
 
   const api = express.Router();
-  api.use(express.json({ limit: '64kb' }));
+  // Small JSON bodies everywhere, except a drawn signature, which is an image.
+  const smallJson = express.json({ limit: '64kb' });
+  api.use((req, res, next) => (req.path === '/signature' ? next() : smallJson(req, res, next)));
   api.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD' && !csrfOk(req)) return res.status(403).json({ error: 'Please reload the page and try again.' });
     next();
@@ -472,6 +474,15 @@ function createAdminRouter({ store = null, env = process.env, assistant = null, 
     const today = await store.today();
     const drafts = typeof store.draftCounts === 'function' ? await store.draftCounts() : {};
     for (const need of today.needs) if (need.kind === 'reply' && drafts[need.inquiry_id]) need.draft = true;
+    if (typeof store.contractsWaiting === 'function') {
+      for (const waiting of await store.contractsWaiting()) {
+        const days = Math.floor((Date.now() - Date.parse(waiting.sent_at)) / 86400000);
+        today.needs.push({
+          kind: 'contract', inquiry_id: waiting.inquiry_id, names: waiting.names,
+          text: `Contract sent ${days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`}, not signed yet${waiting.viewed ? ' (they opened it)' : ' (not opened)'}.`
+        });
+      }
+    }
     res.json(today);
   });
 
@@ -654,6 +665,75 @@ function createAdminRouter({ store = null, env = process.env, assistant = null, 
     if (!id) return;
     if (!(await store.deletePayment(id))) return res.status(404).json({ error: 'Not found.' });
     res.status(204).end();
+  });
+
+  // Contracts: made for a couple, filled in here, signed by you, then signed by the couple on their link.
+  api.get('/inquiries/:id/contracts', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    res.json({ contracts: await store.contractsFor(id) });
+  });
+
+  api.post('/inquiries/:id/contracts', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const contract = await store.createContract(id);
+    if (!contract) return res.status(404).json({ error: 'Not found.' });
+    res.status(201).json({ contract });
+  });
+
+  const contractAnswer = (res, result) => {
+    if (!result) return res.status(404).json({ error: 'Not found.' });
+    if (result.error) return res.status(409).json({ error: result.error, missing: result.missing });
+    return res.json({ contract: result });
+  };
+
+  api.get('/contracts/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const contract = await store.contract(id);
+    if (!contract) return res.status(404).json({ error: 'Not found.' });
+    const found = await store.getInquiry(contract.inquiry_id);
+    res.json({ contract, couple: found ? { id: found.inquiry.id, names: found.inquiry.names, email: found.inquiry.email } : null });
+  });
+
+  api.patch('/contracts/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const fields = (req.body || {}).fields;
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return res.status(400).json({ error: 'Invalid request.' });
+    contractAnswer(res, await store.saveContract(id, fields));
+  });
+
+  api.post('/contracts/:id/send', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    contractAnswer(res, await store.sendContract(id));
+  });
+
+  api.post('/contracts/:id/take-back', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    contractAnswer(res, await store.takeBackContract(id));
+  });
+
+  api.delete('/contracts/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const result = await store.deleteContract(id);
+    if (!result) return res.status(404).json({ error: 'Not found.' });
+    if (result.error) return res.status(409).json({ error: result.error });
+    res.status(204).end();
+  });
+
+  // Your own signature, drawn once and put on every contract you send.
+  api.get('/signature', async (req, res) => {
+    res.json({ signature: await store.photographerSignature() });
+  });
+  api.put('/signature', express.json({ limit: '512kb' }), async (req, res) => {
+    const result = await store.setPhotographerSignature((req.body || {}).signature);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json({ ok: true });
   });
 
   api.get('/calendar', async (req, res) => {
