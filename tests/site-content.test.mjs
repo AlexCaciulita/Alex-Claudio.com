@@ -37,7 +37,7 @@ test('marketing copy describes Alex as a solo photographer, not a team', () => {
 test('pages agree on price, coverage, reply time and editing', () => {
   assert.match(home, /Weddings start at\s*<\/p>\s*<p class="price-big">\$4,000<\/p>/);
   assert.match(home, /<li>The photographer you met, for every hour you book<\/li>/);
-  assert.match(home, /<li>Every photograph edited by me, in high resolution<\/li>/);
+  assert.match(home, /<li>All photographs carefully edited, in high resolution<\/li>/);
   assert.match(home, /I answer every inquiry myself, within a few hours\./);
   assert.match(script, /I'll reply personally within a few hours\./);
   assert.match(script, /email me directly at contact@alex-claudio\.com/);
