@@ -237,6 +237,11 @@ function openRouterProvider(apiKey, model, fetchImpl) {
       const choice = (data.choices || [])[0];
       if (!choice || !choice.message) throw new ProviderError(502, 'OpenRouter sent no answer.');
       const message = choice.message;
+      // Some models (ERNIE among them) send tool calls without ids, and OpenRouter refuses a history
+      // whose tool results have none, so each call gets one here.
+      for (const [index, call] of (message.tool_calls || []).entries()) {
+        if (!call.id || typeof call.id !== 'string') call.id = `call_${Date.now().toString(36)}_${index}`;
+      }
       const calls = (message.tool_calls || []).map((call) => {
         let input;
         try { input = JSON.parse(call.function.arguments || '{}'); } catch (error) { input = null; }

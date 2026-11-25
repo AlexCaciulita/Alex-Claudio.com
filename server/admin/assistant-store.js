@@ -68,8 +68,12 @@ function assistantMethods({ use, timeZone }) {
 
     triageConversation: (inquiryId, provider = 'anthropic') => use((db) => Number(db.prepare("INSERT INTO conversations (kind, inquiry_id, provider) VALUES ('triage', ?, ?) RETURNING id").get(Number(inquiryId), provider).id)),
 
+    // A message with fields besides role and content (OpenRouter's tool_calls and tool_call_id) is kept whole.
     history: (conversation) => use((db) => db.prepare('SELECT role, content FROM assistant_messages WHERE conversation = ? ORDER BY id')
-      .all(Number(conversation)).map((row) => ({ role: row.role, content: JSON.parse(row.content) }))),
+      .all(Number(conversation)).map((row) => {
+        const content = JSON.parse(row.content);
+        return content && typeof content === 'object' && !Array.isArray(content) && content.message ? content.message : { role: row.role, content };
+      })),
 
     userTurns: (conversation) => use((db) => db.prepare("SELECT count(*) AS n FROM assistant_turns WHERE conversation = ? AND who = 'you'").get(Number(conversation)).n),
 
@@ -78,7 +82,10 @@ function assistantMethods({ use, timeZone }) {
       db.exec('BEGIN');
       try {
         const message = db.prepare('INSERT INTO assistant_messages (conversation, role, content) VALUES (?, ?, ?)');
-        for (const m of messages) message.run(Number(conversation), m.role, JSON.stringify(m.content));
+        for (const m of messages) {
+          const whole = Object.keys(m).some((key) => key !== 'role' && key !== 'content');
+          message.run(Number(conversation), m.role, JSON.stringify(whole ? { message: m } : m.content));
+        }
         const turn = db.prepare('INSERT INTO assistant_turns (conversation, who, text, events) VALUES (?, ?, ?, ?)');
         for (const t of turns) turn.run(Number(conversation), t.who, String(t.text || ''), JSON.stringify(t.events || []));
         db.exec('COMMIT');

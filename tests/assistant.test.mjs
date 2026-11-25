@@ -232,7 +232,7 @@ test('with an OpenRouter key the assistant uses ERNIE through OpenRouter, with t
     () => choice({ tool_calls: [call('c1', 'find_couples', { query: 'Renee' })] }, 'tool_calls'),
     () => choice({ tool_calls: [
       call('c2', 'update_couple', { id, stage: 'planning', wedding_date: '2027-05-01' }),
-      call('c3', 'add_note', '{"id": '),
+      call('', 'add_note', '{"id": '),
       call('c4', 'propose_payment', { id, received_total: 1200, why: 'Retainer paid.' })
     ] }, 'tool_calls'),
     () => choice({ content: 'Renee & Alan are in Planning for May 1, 2027. The $1,200 retainer is waiting for your click.' }),
@@ -261,11 +261,15 @@ test('with an OpenRouter key the assistant uses ERNIE through OpenRouter, with t
     assert.ok(first.body.tools.every((tool) => tool.type === 'function' && tool.function.parameters.type === 'object'));
     assert.ok(!first.body.tools.some((tool) => /delete|send/.test(tool.function.name)));
     const results = third.body.messages.filter((m) => m.role === 'tool');
-    assert.match(results.find((m) => m.tool_call_id === 'c3').content, /^Error: The tool input was not valid JSON/);
+    assert.ok(results.every((m) => m.tool_call_id), 'a tool call sent without an id gets one');
+    assert.match(results[2].content, /^Error: The tool input was not valid JSON/);
+    assert.equal(third.body.messages.find((m) => m.tool_calls && m.tool_calls.length === 3).tool_calls[1].id, results[2].tool_call_id);
 
-    // The next message carries the earlier exchange in front of it, in OpenRouter's own shape.
+    // The next message carries the earlier exchange in front of it, in OpenRouter's own shape, tool ids included.
     await assistant.chat('What stage are they in?');
     const fourth = router.requests[3].body.messages;
+    assert.deepEqual(fourth.slice(0, third.body.messages.length), third.body.messages);
+    assert.ok(fourth.filter((m) => m.role === 'tool').every((m) => m.tool_call_id));
     assert.deepEqual(fourth.slice(1, third.body.messages.length + 1).map((m) => m.role), [...third.body.messages.slice(1).map((m) => m.role), 'assistant']);
     assert.equal(fourth.at(-1).role, 'user');
   });
