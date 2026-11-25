@@ -7,6 +7,7 @@ const { SubmissionError, processSubmission, sendPackageEmail } = require('./serv
 const { GUIDE_CODE, pricePackage, readChoice } = require('./server/guide');
 const { createAdminRouter } = require('./server/admin');
 const { createAssistant } = require('./server/admin/assistant');
+const { createPayments } = require('./server/payments');
 const { createStore, safeMessage } = require('./server/admin/store');
 const { createRateLimit, isBot, readGuideEvent, readTime, readView } = require('./server/analytics');
 
@@ -91,6 +92,7 @@ function safeDownloadName(key) {
 function createApp(options = {}) {
   const env = options.env || process.env;
   const store = Object.prototype.hasOwnProperty.call(options, 'store') ? options.store : createStore(env);
+  const payments = createPayments({ env, fetch: options.stripeFetch || fetch });
   const assistant = createAssistant({ store, env, client: options.anthropic || null });
   // A website letter is saved, and then the assistant does the first pass on it: the date, a clash check, a draft reply.
   const saveInquiry = store
@@ -290,13 +292,37 @@ function createApp(options = {}) {
     res.set('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
     res.sendFile(path.join(ROOT, 'contract', 'index.html'));
   });
+  // A couple back from paying: Stripe is asked whether the session was paid, so the page can say so at once.
+  const confirmCheckout = async (session) => {
+    if (!payments.enabled || session.payment_status !== 'paid' || !session.metadata || !session.metadata.payment_id) return;
+    await store.markPaidOnline(session.metadata.payment_id, { session: session.id, amountCents: session.amount_total });
+  };
+  const paymentsFor = async (token) => {
+    const found = await store.contractPayments(token);
+    if (!found) return null;
+    return {
+      can_pay: Boolean(payments.enabled),
+      methods: found.methods,
+      payments: found.payments.map(({ amount_cents: cents, ...rest }) => rest)
+    };
+  };
+
   app.get('/api/contract/:token', async (req, res) => {
     contractHeaders(res);
     if (!store) return res.status(404).json({ error: 'Not found.' });
     try {
+      if (req.query.session && payments.enabled) {
+        try {
+          const session = await payments.session(String(req.query.session));
+          const found = await store.contractPayments(req.params.token);
+          if (found && found.payments.some((p) => p.id === String((session.metadata || {}).payment_id))) await confirmCheckout(session);
+        } catch (error) {
+          console.error('Checking a card payment failed:', safeMessage(error));
+        }
+      }
       const contract = await store.contractForClient(req.params.token);
       if (!contract) return res.status(404).json({ error: 'This link isn\u2019t active. Ask Alex for a new one.' });
-      res.json({ contract });
+      res.json({ contract, payments: contract.status === 'signed' ? await paymentsFor(req.params.token) : null });
     } catch (error) {
       console.error('Opening a contract failed:', safeMessage(error));
       res.status(500).json({ error: 'The contract couldn\u2019t be opened. Please try again.' });
@@ -317,6 +343,50 @@ function createApp(options = {}) {
     } catch (error) {
       console.error('Signing a contract failed:', safeMessage(error));
       res.status(500).json({ error: 'The signature couldn\u2019t be saved. Please try again.' });
+    }
+  });
+
+  // Paying a scheduled payment by card: Stripe Checkout for that payment's amount, back to the contract page after.
+  app.post('/api/contract/:token/pay', createSubmissionLimiter(), express.json({ limit: '4kb' }), async (req, res) => {
+    contractHeaders(res);
+    if (!store || !payments.enabled) return res.status(404).json({ error: 'Card payments aren\u2019t set up.' });
+    try {
+      const found = await store.contractPayments(req.params.token);
+      if (!found) return res.status(404).json({ error: 'This link isn\u2019t active.' });
+      const payment = found.payments.find((p) => p.id === String((req.body || {}).payment_id || ''));
+      if (!payment) return res.status(404).json({ error: 'Unknown payment.' });
+      if (payment.paid) return res.status(409).json({ error: 'That one is paid already. Thank you!' });
+      const origin = (env.PUBLIC_ORIGIN || `https://${req.hostname}`).replace(/\/$/, '');
+      const page = `${origin}/contract/${req.params.token}`;
+      const when = found.event_date ? new Date(`${found.event_date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '';
+      const session = await payments.createCheckout({
+        amountCents: payment.amount_cents,
+        name: `${payment.label} \u00b7 Alex Claudio Photography`,
+        description: [found.names, when].filter(Boolean).join(', '),
+        email: found.email,
+        successUrl: `${page}?session={CHECKOUT_SESSION_ID}`,
+        cancelUrl: page,
+        metadata: { payment_id: payment.id, inquiry_id: found.inquiry_id },
+        idempotency: `pay-${payment.id}-${Math.floor(Date.now() / 600000)}`
+      });
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error('Starting a card payment failed:', safeMessage(error));
+      res.status(error.status || 500).json({ error: error.status ? error.message : 'Card payments aren\u2019t working right now. Please try again.' });
+    }
+  });
+
+  // Stripe tells the site about finished payments here, even if the couple closed the page after paying.
+  app.post('/api/stripe/webhook', express.raw({ type: () => true, limit: '256kb' }), async (req, res) => {
+    if (!store || !payments.enabled) return res.status(404).end();
+    const event = payments.verifyWebhook(req.body, req.get('stripe-signature'));
+    if (!event) return res.status(400).json({ error: 'Invalid signature.' });
+    try {
+      if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) await confirmCheckout(event.data.object);
+      res.json({ received: true });
+    } catch (error) {
+      console.error('A Stripe webhook failed:', safeMessage(error));
+      res.status(500).json({ error: 'Not processed.' });
     }
   });
 

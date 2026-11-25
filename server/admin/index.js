@@ -33,6 +33,8 @@ const SETTINGS = [
   ['CONTACT_TO_EMAIL', 'Inquiry email recipient'],
   ['GOOGLE_SHEET_ID', 'Google Sheet for inquiries'],
   ['R2_BUCKET_NAME', 'Client gallery storage'],
+  ['STRIPE_SECRET_KEY', 'Card payments (Stripe)'],
+  ['STRIPE_WEBHOOK_SECRET', 'Stripe payment confirmations (webhook)'],
   ['OPENROUTER_API_KEY', 'Studio assistant (OpenRouter)'],
   ['ANTHROPIC_API_KEY', 'Studio assistant (Claude, used when there is no OpenRouter key)']
 ];
