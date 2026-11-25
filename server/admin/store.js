@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { ANALYTICS_MIGRATION, analyticsMethods } = require('./analytics');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
+const { migrateAssistant, assistantMethods } = require('./assistant-store');
 const { migrateWork, workMethods, syncTasks, logActivity, describeChange, stageOf, parseTags } = require('./work');
 
 const STATUSES = ['new', 'replied', 'booked', 'not_booked'];
@@ -200,6 +201,7 @@ function createStore(env = process.env, sqlite) {
       handle.exec(MIGRATION);
       handle.exec(ANALYTICS_MIGRATION);
       migrateWork(handle);
+      migrateAssistant(handle);
     } catch (error) {
       handle.close();
       throw error;
@@ -469,7 +471,7 @@ function createStore(env = process.env, sqlite) {
         VALUES ('manual'${columns.map(() => ', ?').join('')})`).run(...values);
       const id = String(result.lastInsertRowid);
       syncTasks(target, id, todayIn(paths.timeZone));
-      logActivity(target, { inquiryId: id, actor, kind: 'inquiry', summary: `Added ${fields.names || fields.email || 'a couple'} by hand` });
+      logActivity(target, { inquiryId: id, actor, kind: 'inquiry', summary: `Added ${fields.names || fields.email || 'a couple'}${actor === 'you' ? ' by hand' : ''}` });
       return (await store.getInquiry(id)).inquiry;
     }),
 
@@ -510,7 +512,7 @@ function createStore(env = process.env, sqlite) {
       const row = target.prepare(`INSERT INTO notes (inquiry_id, body)
           SELECT id, ? FROM inquiries WHERE id = ?
           RETURNING id, created_at, body`).get(body, Number(inquiryId));
-      if (row) logActivity(target, { inquiryId, actor, kind: 'note', summary: `Note: ${body.length > 120 ? `${body.slice(0, 117)}...` : body}` });
+      if (row) logActivity(target, { inquiryId, actor, kind: 'note', summary: `Note: ${body.length > 120 ? `${body.slice(0, 117)}...` : body}`, after: { note: row.id } });
       return row ? mapNote(row) : null;
     }),
 
@@ -586,6 +588,7 @@ function createStore(env = process.env, sqlite) {
 
     ...analyticsMethods({ use, timeZone: paths.timeZone }),
     ...workMethods({ use, timeZone: paths.timeZone }),
+    ...assistantMethods({ use, timeZone: paths.timeZone }),
 
     close: async () => {
       if (timer) clearInterval(timer);

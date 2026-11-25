@@ -6,6 +6,7 @@ const { CATEGORIES: GALLERY_CATEGORIES, GalleryError, getGallery, getPublicOrigi
 const { SubmissionError, processSubmission, sendPackageEmail } = require('./server/submissions');
 const { GUIDE_CODE, pricePackage, readChoice } = require('./server/guide');
 const { createAdminRouter } = require('./server/admin');
+const { createAssistant } = require('./server/admin/assistant');
 const { createStore, safeMessage } = require('./server/admin/store');
 const { createRateLimit, isBot, readGuideEvent, readTime, readView } = require('./server/analytics');
 
@@ -89,8 +90,17 @@ function safeDownloadName(key) {
 function createApp(options = {}) {
   const env = options.env || process.env;
   const store = Object.prototype.hasOwnProperty.call(options, 'store') ? options.store : createStore(env);
+  const assistant = createAssistant({ store, env, client: options.anthropic || null });
+  // A website letter is saved, and then the assistant does the first pass on it: the date, a clash check, a draft reply.
   const saveInquiry = store
-    ? (formName, data) => store.insertInquiry(formName, data).catch((error) => { throw new Error(safeMessage(error)); })
+    ? (formName, data) => store.insertInquiry(formName, data)
+      .then((id) => {
+        if (assistant && assistant.enabled && formName === 'contact') {
+          assistant.triage(id).catch((error) => console.error('The assistant\u2019s first pass failed:', safeMessage(error)));
+        }
+        return id;
+      })
+      .catch((error) => { throw new Error(safeMessage(error)); })
     : null;
   // Inquiries and downloads are counted on the side; a failure here never touches the answer.
   const count = (kind, detail, req) => {
@@ -302,7 +312,7 @@ function createApp(options = {}) {
   });
 
   // The private studio dashboard: sign-in, inquiries, calendar and older records.
-  app.use('/admin', createAdminRouter({ store, env }));
+  app.use('/admin', createAdminRouter({ store, env, assistant }));
 
   app.use(express.static(ROOT, {
     dotfiles: 'ignore',

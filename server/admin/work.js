@@ -188,7 +188,8 @@ const mapActivity = (row) => ({
   names: row.names || null,
   actor: row.actor,
   kind: row.kind,
-  summary: row.summary
+  summary: row.summary,
+  undone: Boolean(row.undone_at)
 });
 
 function workMethods({ use, timeZone }) {
