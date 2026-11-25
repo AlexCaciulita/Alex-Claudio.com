@@ -309,6 +309,7 @@
       return;
     }
     if (mine !== detailSeq) return;
+    detail.dataset.inquiry = data.inquiry.id;
     drawDetail(data.inquiry, data.notes, data.guide, data);
     if (!detail.open) detail.showModal();
   }
@@ -446,7 +447,7 @@
 
     // Tags: short labels for where the work stands, saved as a whole list each time.
     const tagWrap = h('div', { class: 'tag-editor' });
-    const tagInput = h('input', { type: 'text', maxlength: 40, list: 'tag-suggestions', placeholder: 'Add a tag…', 'aria-label': 'Add a tag' });
+    const tagInput = h('input', { type: 'text', maxlength: 40, list: 'tag-suggestions', placeholder: 'Add a tag\u2026', 'aria-label': 'Add a tag' });
     const saveTags = (tags) => { inq.tags = tags; drawTags(); save('tags', tags, 'Tags saved.'); };
     const drawTags = () => {
       clear(tagWrap).append(
@@ -566,6 +567,13 @@
             h('label', { for: 'd-status' }, 'Stage', statusSelect),
             h('label', { for: 'd-date' }, 'Wedding date', dateInput)),
           wrote,
+          (extra.drafts || []).length ? h('div', { class: 'drafts' }, extra.drafts.map((draft) => draftCard(draft, inq.email, async () => {
+            try {
+              await api(`/drafts/${draft.id}`, { method: 'DELETE' });
+              changed();
+              openDetail(inq.id);
+            } catch (error) { fail(error); }
+          }))) : null,
           h('div', { class: 'tags-block' }, h('span', { class: 'mini-label' }, 'Tags'), tagWrap),
           facts, money,
           h('div', { class: 'actions' },
@@ -695,7 +703,7 @@
   };
   const ACTOR_LABEL = { you: 'You', website: 'Website', assistant: 'Assistant' };
   const dateBlock = (iso) => {
-    if (!iso) return h('div', { class: 'date-block is-empty' }, h('span', {}, 'No'), h('strong', {}, '—'), h('span', {}, 'date'));
+    if (!iso) return h('div', { class: 'date-block is-empty' }, h('span', {}, 'No'), h('strong', {}, '\u2014'), h('span', {}, 'date'));
     const d = localDate(iso);
     return h('div', { class: 'date-block' },
       h('span', {}, d.toLocaleDateString('en-US', { month: 'short' })),
@@ -710,7 +718,7 @@
       h('p', { class: 'eyebrow' }, now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })),
       h('h1', {}, 'Today'));
     const strip = h('div', { class: 'strip-wrap' });
-    const needs = h('div', {}, h('p', { class: 'muted' }, 'Loading…'));
+    const needs = h('div', {}, h('p', { class: 'muted' }, 'Loading\u2026'));
     const tasks = h('div');
     const activity = h('div');
     root.append(
@@ -741,7 +749,7 @@
       clear(head).append(
         h('p', { class: 'eyebrow' }, now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })),
         h('h1', {}, next ? ['Next up: ', coupleLink(next.id, next.names)] : 'Nothing booked ahead yet'),
-        next ? h('p', { class: 'next-line' }, [countdown(next.days), fmtDay(next.wedding_date, true), next.location].filter(Boolean).join(' · ')) : null);
+        next ? h('p', { class: 'next-line' }, [countdown(next.days), fmtDay(next.wedding_date, true), next.location].filter(Boolean).join(' \u00b7 ')) : null);
       drawStrip(data.upcoming);
       drawNeeds(data.needs);
       drawTasks(tasks, data.tasks, load, true);
@@ -771,7 +779,8 @@
         return;
       }
       needs.append(h('ul', { class: 'needs' }, items.map((item) => h('li', { class: `need need-${item.kind}` },
-        h('div', {}, coupleLink(item.inquiry_id, item.names), h('p', {}, item.text)),
+        h('div', {}, coupleLink(item.inquiry_id, item.names), h('p', {}, item.text),
+          item.draft ? h('p', { class: 'draft-ready' }, 'The assistant left a draft reply. Open the couple to read it.') : null),
         item.action ? h('button', {
           type: 'button',
           onclick: async (event) => {
@@ -791,7 +800,7 @@
 
   // A small form for a new task, for one couple or for the studio.
   function taskForm(inquiryId, done) {
-    const title = h('input', { type: 'text', maxlength: 200, placeholder: inquiryId ? 'A task for this wedding…' : 'Add a task…', 'aria-label': 'New task' });
+    const title = h('input', { type: 'text', maxlength: 200, placeholder: inquiryId ? 'A task for this wedding\u2026' : 'Add a task\u2026', 'aria-label': 'New task' });
     const due = h('input', { type: 'date', min: '2000-01-01', max: '2100-12-31', 'aria-label': 'Due date' });
     const button = h('button', { type: 'submit' }, 'Add');
     return h('form', {
@@ -846,11 +855,11 @@
         box,
         h('div', { class: 'task-text' },
           h('span', {}, task.title),
-          h('small', {}, dueLabel(task), withNames && task.inquiry_id ? [' · ', coupleLink(task.inquiry_id, task.names)] : null)),
+          h('small', {}, dueLabel(task), withNames && task.inquiry_id ? [' \u00b7 ', coupleLink(task.inquiry_id, task.names)] : null)),
         h('button', {
           class: 'link', type: 'button', 'aria-label': `Remove the task ${task.title}`,
           onclick: async () => {
-            if (!window.confirm(`Remove “${task.title}”?`)) return;
+            if (!window.confirm(`Remove \u201c${task.title}\u201d?`)) return;
             try { await api(`/tasks/${task.id}`, { method: 'DELETE' }); reload(); } catch (error) { fail(error); }
           }
         }, 'Remove'));
@@ -863,11 +872,14 @@
       wrap.append(h('p', { class: 'empty-note' }, 'Changes show up here as they happen.'));
       return;
     }
-    wrap.append(h('ul', { class: 'activity' }, items.map((item) => h('li', {},
+    wrap.append(h('ul', { class: 'activity' }, items.map((item) => h('li', { class: item.undone ? 'is-undone' : null },
       h('span', { class: `actor actor-${item.actor}` }, ACTOR_LABEL[item.actor] || item.actor),
       h('div', {},
         h('p', {}, item.summary),
-        h('small', {}, fmtAgo(item.at), withNames && item.inquiry_id && item.names ? [' · ', coupleLink(item.inquiry_id, item.names)] : null))))));
+        h('small', {}, fmtAgo(item.at), withNames && item.inquiry_id && item.names ? [' \u00b7 ', coupleLink(item.inquiry_id, item.names)] : null,
+          item.undone ? ' \u00b7 undone' : null,
+          item.actor === 'assistant' && !item.undone && item.kind !== 'draft'
+            ? [' \u00b7 ', h('button', { class: 'link', type: 'button', onclick: (e) => undoChange(item.id, e.currentTarget) }, 'Undo')] : null))))));
   }
 
   /* ---------- Board ---------- */
@@ -876,8 +888,8 @@
   const boardState = { q: '' };
 
   function renderBoard(root, live) {
-    const board = h('div', { class: 'board' }, h('p', { class: 'muted' }, 'Loading…'));
-    const search = h('input', { type: 'search', placeholder: 'Find a couple or a place…', 'aria-label': 'Filter the board', value: boardState.q });
+    const board = h('div', { class: 'board' }, h('p', { class: 'muted' }, 'Loading\u2026'));
+    const search = h('input', { type: 'search', placeholder: 'Find a couple or a place\u2026', 'aria-label': 'Filter the board', value: boardState.q });
     let cards = [];
     search.addEventListener('input', () => { boardState.q = search.value.trim().toLowerCase(); draw(); });
     root.append(
@@ -940,7 +952,7 @@
               dateBlock(c.wedding_date),
               h('span', { class: 'board-text' },
                 h('strong', {}, c.names),
-                c.location ? h('small', {}, c.location) : !c.wedding_date && c.event_date ? h('small', {}, `“${c.event_date}”`) : null,
+                c.location ? h('small', {}, c.location) : !c.wedding_date && c.event_date ? h('small', {}, `\u201c${c.event_date}\u201d`) : null,
                 c.days !== null && c.days !== undefined ? h('small', { class: 'board-count' }, countdown(c.days)) : null,
                 c.tags && c.tags.length ? h('span', { class: 'tag-row' }, c.tags.map((tag) => h('span', { class: 'tag' }, tag))) : null))))
             : h('li', { class: 'column-empty' }, 'Nothing here')));
@@ -969,7 +981,7 @@
         const { url } = await api('/calendar-feed', { method: renew ? 'POST' : 'GET' });
         const webcal = url.replace(/^https:/, 'webcal:');
         clear(box).append(
-          h('p', {}, 'Subscribe once and booked weddings and task due dates show up in your phone’s calendar, updated about every hour. Keep this address private: anyone with it can see the weddings.'),
+          h('p', {}, 'Subscribe once and booked weddings and task due dates show up in your phone\u2019s calendar, updated about every hour. Keep this address private: anyone with it can see the weddings.'),
           h('div', { class: 'actions' },
             h('a', { class: 'button primary', href: webcal }, 'Add to this device'),
             h('button', {
@@ -983,6 +995,196 @@
       } catch (error) { fail(error); }
     };
     return h('div', {}, h('button', { class: 'quiet', type: 'button', onclick: () => (box.hidden ? open(false) : (box.hidden = true)) }, 'Phone calendar'), box);
+  }
+
+  /* ---------- Assistant ---------- */
+
+  const undoChange = async (activityId, button) => {
+    button.disabled = true;
+    try {
+      await api(`/activity/${activityId}/undo`, { method: 'POST' });
+      button.textContent = 'Undone';
+      say('Undone.');
+      refreshCurrent();
+      if (detail.open && detail.dataset.inquiry) openDetail(detail.dataset.inquiry);
+    } catch (error) {
+      fail(error);
+      button.disabled = false;
+    }
+  };
+
+  const mailtoFor = (email, subject, body) => (email && LINKABLE_EMAIL.test(email)
+    ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    : null);
+
+  function draftCard(draft, email, onDiscard) {
+    const href = mailtoFor(email, draft.subject, draft.body);
+    return h('div', { class: 'draft-card' },
+      h('p', { class: 'mini-label' }, 'Draft reply'),
+      h('strong', {}, draft.subject),
+      h('p', { class: 'pre' }, draft.body),
+      h('div', { class: 'actions' },
+        href ? h('a', { class: 'button primary', href }, 'Open in email') : null,
+        h('button', {
+          type: 'button',
+          onclick: async () => {
+            try { await navigator.clipboard.writeText(`${draft.body}`); say('Draft copied.'); } catch (error) { window.prompt('Copy the draft:', draft.body); }
+          }
+        }, 'Copy'),
+        onDiscard ? h('button', { class: 'quiet', type: 'button', onclick: onDiscard }, 'Discard') : null));
+  }
+
+  function eventView(event) {
+    if (event.type === 'change') {
+      const undo = event.activity_id ? h('button', { class: 'link', type: 'button', onclick: (e) => undoChange(event.activity_id, e.currentTarget) }, 'Undo') : null;
+      return h('li', { class: 'ev ev-change' },
+        h('span', { class: 'ev-mark', 'aria-hidden': 'true' }, '\u2713'),
+        h('span', {}, event.names && event.inquiry_id ? [coupleLink(event.inquiry_id, event.names), ': '] : null, event.text),
+        undo);
+    }
+    if (event.type === 'proposal') {
+      const parts = [];
+      if ('price' in event.changes) parts.push(`agreed ${fmtMoney(event.was.price)} \u2192 ${fmtMoney(event.changes.price)}`);
+      if ('paid' in event.changes) parts.push(`received ${fmtMoney(event.was.paid)} \u2192 ${fmtMoney(event.changes.paid)}`);
+      const apply = h('button', {
+        class: 'primary', type: 'button',
+        onclick: async (e) => {
+          const button = e.currentTarget;
+          button.disabled = true;
+          try {
+            await api(`/inquiries/${event.inquiry_id}`, { method: 'PATCH', body: event.changes });
+            button.textContent = 'Applied';
+            say(`Money updated for ${event.names}.`);
+            refreshCurrent();
+          } catch (error) { fail(error); button.disabled = false; }
+        }
+      }, 'Apply');
+      return h('li', { class: 'ev ev-proposal' },
+        h('p', { class: 'mini-label' }, 'Waiting for your click'),
+        h('p', {}, coupleLink(event.inquiry_id, event.names), `: ${parts.join(', ')}`),
+        event.why ? h('p', { class: 'muted small' }, event.why) : null,
+        h('div', { class: 'actions' }, apply));
+    }
+    if (event.type === 'draft') {
+      return h('li', { class: 'ev ev-draft' }, draftCard(event.draft, event.email, null));
+    }
+    return null;
+  }
+
+  function buildAssistant() {
+    const log = h('ol', { class: 'chat-log', 'aria-live': 'polite' });
+    const input = h('textarea', { rows: 2, maxlength: 4000, placeholder: 'Ask, or tell me what to change\u2026', 'aria-label': 'Message to the assistant' });
+    const send = h('button', { class: 'primary', type: 'submit' }, 'Send');
+    const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let listening = null;
+    const mic = Speech ? h('button', {
+      class: 'quiet mic', type: 'button', 'aria-label': 'Speak instead of typing', 'aria-pressed': 'false',
+      onclick: () => {
+        if (listening) { listening.stop(); return; }
+        const recognition = new Speech();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        const start = input.value;
+        recognition.onresult = (e) => {
+          const said = Array.from(e.results).map((r) => r[0].transcript).join(' ');
+          input.value = `${start}${start && !/\s$/.test(start) ? ' ' : ''}${said}`;
+        };
+        recognition.onend = () => { listening = null; mic.setAttribute('aria-pressed', 'false'); };
+        recognition.onerror = () => say('I couldn\u2019t hear that. Check the microphone permission.', 'error');
+        listening = recognition;
+        mic.setAttribute('aria-pressed', 'true');
+        recognition.start();
+      }
+    }, 'Speak') : null;
+    const form = h('form', { class: 'chat-form' }, input, h('div', { class: 'chat-buttons' }, mic, send));
+    const panel = h('aside', { class: 'assistant', 'aria-label': 'Studio assistant', hidden: true },
+      h('div', { class: 'assistant-head' },
+        h('div', {}, h('p', { class: 'eyebrow' }, 'Claude'), h('h2', {}, 'Assistant')),
+        h('button', { class: 'quiet', type: 'button', onclick: fresh }, 'New conversation'),
+        h('button', { class: 'close', type: 'button', 'aria-label': 'Close the assistant', onclick: () => toggle(false) }, '\u00d7')),
+      log, form);
+    const opener = h('button', { class: 'assistant-open primary', type: 'button', 'aria-expanded': 'false', onclick: () => toggle() }, 'Ask the assistant');
+    let loaded = false;
+    let enabled = true;
+
+    const bubble = (who, text, events = []) => {
+      const item = h('li', { class: `msg msg-${who}` },
+        who === 'website' ? h('p', { class: 'mini-label' }, 'New inquiry, first pass') : null,
+        text ? h('p', { class: 'pre' }, text) : null,
+        events.length ? h('ul', { class: 'events' }, events.map(eventView)) : null);
+      log.append(item);
+      log.scrollTop = log.scrollHeight;
+      return item;
+    };
+    const intro = () => bubble('assistant', 'Ask me about couples, dates, tasks and money, or tell me what to change. For example: \u201cMove Jessica & Kyle to Editing and add a note that they want the sparkler exit\u201d, or \u201cIs June 12 free?\u201d. I can\u2019t delete anything or send email, and money changes wait for your click.');
+
+    async function load() {
+      clear(log);
+      try {
+        const data = await api('/assistant');
+        enabled = data.enabled;
+        if (!enabled) {
+          log.append(h('li', { class: 'msg msg-assistant' },
+            h('p', {}, 'The assistant isn\u2019t turned on yet. Add an ANTHROPIC_API_KEY variable to the website service on Railway (create the key in the Claude Console), and it starts working after the site redeploys.')));
+          input.disabled = true;
+          send.disabled = true;
+          return;
+        }
+        if (!data.turns.length) intro();
+        for (const turn of data.turns) bubble(turn.who === 'website' ? 'website' : turn.who === 'you' ? 'you' : 'assistant', turn.who === 'website' ? '' : turn.text, turn.events);
+        loaded = true;
+      } catch (error) {
+        log.append(h('li', { class: 'msg msg-assistant' }, h('p', { class: 'error-text' }, error.message)));
+      }
+    }
+
+    async function fresh() {
+      try {
+        await api('/assistant/new', { method: 'POST' });
+        clear(log);
+        intro();
+      } catch (error) { fail(error); }
+    }
+
+    function toggle(open = panel.hidden) {
+      panel.hidden = !open;
+      opener.hidden = open;
+      opener.setAttribute('aria-expanded', String(open));
+      document.body.classList.toggle('with-assistant', open);
+      if (open) {
+        if (!loaded) load();
+        input.focus();
+      }
+    }
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); form.requestSubmit(); }
+    });
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = input.value.trim();
+      if (!message || !enabled) return;
+      if (listening) listening.stop();
+      input.value = '';
+      bubble('you', message);
+      const waiting = bubble('assistant', 'Working on it\u2026');
+      waiting.classList.add('is-waiting');
+      send.disabled = true;
+      try {
+        const { reply, events } = await api('/assistant', { method: 'POST', body: { message } });
+        waiting.remove();
+        bubble('assistant', reply, events);
+        if (events.length) refreshCurrent();
+      } catch (error) {
+        waiting.remove();
+        bubble('assistant', error.message);
+        if (!error.silent) input.value = input.value || message;
+      }
+      send.disabled = false;
+      input.focus();
+    });
+
+    return { panel, opener, toggle };
   }
 
   /* ---------- Analytics ---------- */
@@ -1701,6 +1903,9 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && !detail.open && !editor.open) refreshCurrent();
   });
+  const assistantUi = buildAssistant();
+  app.append(assistantUi.panel, assistantUi.opener);
+
   window.addEventListener('hashchange', route);
   route();
 })();

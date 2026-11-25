@@ -5,7 +5,7 @@ const path = require('node:path');
 const express = require('express');
 const { STATUSES, TEXT_LIMITS, safeMessage } = require('./store');
 const { RANGES } = require('./analytics');
-const { STAGES, fromStage, cleanTags, TAG_LIMIT, TASK_TITLE_LENGTH } = require('./work');
+const { cleanFields, cleanTask } = require('./fields');
 const { calendarFeed } = require('./ical');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 
@@ -20,10 +20,6 @@ const MIN_PASSWORD_LENGTH = 12;
 const FAILED_LOGIN_DELAY_MS = 400;
 const ID = /^\d{1,18}$/;
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
-const EDITABLE = {
-  names: 'text', email: 'text', phone: 'text', event_date: 'text', wedding_date: 'date', location: 'text',
-  hours: 'text', care: 'text', message: 'text', source: 'text', status: 'status', stage: 'stage', tags: 'tags', price: 'money', paid: 'money'
-};
 const SETTINGS = [
   ['ADMIN_PASSWORD', 'Studio sign-in password'],
   ['RAILWAY_VOLUME_MOUNT_PATH', 'Railway volume (where the dashboard keeps its file)'],
@@ -32,7 +28,8 @@ const SETTINGS = [
   ['RESEND_API_KEY', 'Inquiry emails (Resend)'],
   ['CONTACT_TO_EMAIL', 'Inquiry email recipient'],
   ['GOOGLE_SHEET_ID', 'Google Sheet for inquiries'],
-  ['R2_BUCKET_NAME', 'Client gallery storage']
+  ['R2_BUCKET_NAME', 'Client gallery storage'],
+  ['ANTHROPIC_API_KEY', 'Studio assistant (Claude)']
 ];
 const SHOW_VALUE = new Set(['CONTACT_TO_EMAIL', 'RAILWAY_VOLUME_MOUNT_PATH', 'STUDIO_DB_PATH', 'DATABASE_PATH']);
 
@@ -155,64 +152,6 @@ function volumeFiles(root) {
   return files;
 }
 
-function cleanFields(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request.' };
-  const fields = {};
-  for (const [key, kind] of Object.entries(EDITABLE)) {
-    if (!has(body, key)) continue;
-    const value = body[key];
-    if (kind === 'text') {
-      if (value !== null && typeof value !== 'string') return { error: `${key} must be text.` };
-      fields[key] = String(value || '').trim().slice(0, TEXT_LIMITS[key]);
-    } else if (kind === 'date') {
-      if (value === null || value === '') fields[key] = null;
-      else if (isValidIsoDate(value)) fields[key] = value;
-      else return { error: 'Use a real calendar date for the wedding.' };
-    } else if (kind === 'status') {
-      if (!STATUSES.includes(value)) return { error: 'Unknown status.' };
-      fields[key] = value;
-    } else if (kind === 'stage') {
-      if (!STAGES.includes(value)) return { error: 'Unknown stage.' };
-      Object.assign(fields, fromStage(value));
-    } else if (kind === 'tags') {
-      if (!Array.isArray(value) || value.length > TAG_LIMIT * 2 || value.some((tag) => typeof tag !== 'string')) return { error: 'Tags must be a list of words.' };
-      fields.tags = JSON.stringify(cleanTags(value));
-    } else if (kind === 'money') {
-      if (value === null || value === '') fields[key] = null;
-      else {
-        const amount = Number(value);
-        if (!Number.isFinite(amount) || amount < 0 || amount > 10000000) return { error: 'Amounts must be between 0 and 10,000,000.' };
-        fields[key] = Math.round(amount * 100) / 100;
-      }
-    }
-  }
-  // A status other than booked has no progress; a stage, when given, already set both.
-  if (fields.status && fields.status !== 'booked' && !has(fields, 'progress')) fields.progress = null;
-  return { fields };
-}
-
-// A task as sent from the dashboard: a title, an optional due date, and for a change, done or not.
-function cleanTask(body, creating) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request.' };
-  const task = {};
-  if (has(body, 'title') || creating) {
-    const title = typeof body.title === 'string' ? body.title.replace(/\s+/g, ' ').trim().slice(0, TASK_TITLE_LENGTH) : '';
-    if (!title) return { error: 'Give the task a name.' };
-    task.title = title;
-  }
-  if (has(body, 'due_date')) {
-    if (body.due_date === null || body.due_date === '') task.due_date = null;
-    else if (isValidIsoDate(body.due_date)) task.due_date = body.due_date;
-    else return { error: 'Use a real calendar date.' };
-  }
-  if (has(body, 'done')) task.done = Boolean(body.done);
-  if (creating && has(body, 'inquiry_id') && body.inquiry_id !== null) {
-    if (!ID.test(String(body.inquiry_id))) return { error: 'Unknown couple.' };
-    task.inquiry_id = String(body.inquiry_id);
-  }
-  return { task };
-}
-
 const page = (title, bodyClass, body, head = '') => `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -246,7 +185,7 @@ function loginPage(message, disabled) {
 </main>`);
 }
 
-function createAdminRouter({ store = null, env = process.env } = {}) {
+function createAdminRouter({ store = null, env = process.env, assistant = null } = {}) {
   const router = express.Router();
   const limiter = createLoginLimiter();
   const sessions = createSessions();
@@ -450,7 +389,7 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
     if (!id) return;
     const found = await store.getInquiry(id);
     if (!found) return res.status(404).json({ error: 'Not found.' });
-    res.json(found);
+    res.json({ ...found, drafts: typeof store.drafts === 'function' ? await store.drafts(id) : [] });
   });
 
   api.patch('/inquiries/:id', async (req, res) => {
@@ -497,7 +436,57 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
   });
 
   api.get('/today', async (req, res) => {
-    res.json(await store.today());
+    const today = await store.today();
+    const drafts = typeof store.draftCounts === 'function' ? await store.draftCounts() : {};
+    for (const need of today.needs) if (need.kind === 'reply' && drafts[need.inquiry_id]) need.draft = true;
+    res.json(today);
+  });
+
+  // Puts back one change from the activity list (the assistant's, or your own).
+  api.post('/activity/:id/undo', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const result = await store.undoActivity(id);
+    if (result.error) return res.status(result.status || 409).json({ error: result.error });
+    res.json({ ok: true });
+  });
+
+  api.delete('/drafts/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    if (!(await store.discardDraft(id))) return res.status(404).json({ error: 'Not found.' });
+    res.status(204).end();
+  });
+
+  // The studio assistant. Without ANTHROPIC_API_KEY it says how to turn it on.
+  const assistantReady = (res) => {
+    if (assistant && assistant.enabled) return true;
+    res.status(503).json({ error: 'The assistant isn\u2019t set up yet. Add an ANTHROPIC_API_KEY variable to the website service on Railway.', code: 'no-assistant' });
+    return false;
+  };
+  api.get('/assistant', async (req, res) => {
+    if (!assistant || !assistant.enabled) return res.json({ enabled: false, turns: [] });
+    res.json({ enabled: true, ...(await assistant.transcript()) });
+  });
+  api.post('/assistant', async (req, res) => {
+    if (!assistantReady(res)) return;
+    const message = typeof (req.body || {}).message === 'string' ? req.body.message.trim() : '';
+    if (!message) return res.status(400).json({ error: 'Write something first.' });
+    if (message.length > 4000) return res.status(400).json({ error: 'That\u2019s too long. Keep it under 4,000 characters.' });
+    try {
+      res.json(await assistant.chat(message));
+    } catch (error) {
+      console.error('Studio assistant failed:', safeMessage(error));
+      const status = error && error.status;
+      res.status(502).json({ error: status === 401 ? 'The ANTHROPIC_API_KEY on Railway was refused. Check it in the Claude Console.'
+        : status === 429 ? 'Claude is busy or the account hit its limit. Try again in a minute.'
+          : 'The assistant couldn\u2019t answer just now. Try again.' });
+    }
+  });
+  api.post('/assistant/new', async (req, res) => {
+    if (!assistantReady(res)) return;
+    await assistant.newConversation();
+    res.json({ ok: true });
   });
 
   api.get('/board', async (req, res) => {

@@ -461,3 +461,42 @@ button.link.couple-link { font: inherit; letter-spacing: 0; color: inherit; }
   .column { scroll-snap-align: start; }
   .nav { gap: 2px; }
 }
+
+/* Assistant */
+.assistant-open { position: fixed; right: 22px; bottom: 22px; z-index: 30; min-height: 46px; padding: 10px 20px; box-shadow: 0 8px 24px rgba(23, 20, 18, .18); }
+.assistant {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(440px, 100vw); background: var(--paper); border-left: 1px solid var(--rule); box-shadow: -12px 0 40px rgba(23, 20, 18, .12);
+}
+@media (min-width: 1200px) { body.with-assistant .view { margin-right: 440px; } }
+.assistant-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--rule); }
+.assistant-head > div { margin-right: auto; }
+.assistant-head .eyebrow { margin: 0; }
+.chat-log { list-style: none; margin: 0; padding: 18px; overflow-y: auto; display: grid; align-content: start; gap: 12px; }
+.msg { max-width: 92%; padding: 11px 14px; border-radius: 12px; background: var(--bg); font-size: 15.5px; }
+.msg p { margin: 0; }
+.msg p + p, .msg .events { margin-top: 8px; }
+.msg-you { justify-self: end; background: var(--ink); color: var(--bg); }
+.msg-website { border: 1px dashed var(--rule); background: transparent; }
+.msg.is-waiting p { color: var(--ink3); font-style: italic; }
+.events { list-style: none; padding: 0; display: grid; gap: 8px; }
+.ev { font-size: 14.5px; }
+.ev-change { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; }
+.ev-mark { color: var(--green); }
+.ev-proposal { padding: 10px 12px; border: 1px solid var(--amber); border-radius: 9px; background: var(--amber-soft); }
+.ev-proposal p { margin: 0 0 6px; }
+.ev-proposal .actions { margin-top: 4px; }
+.draft-card { padding: 12px 14px; border: 1px solid var(--rule); border-radius: 9px; background: var(--paper); }
+.draft-card strong { display: block; margin: 2px 0 6px; font-weight: 500; }
+.draft-card .pre { max-height: 260px; overflow-y: auto; margin: 0 0 10px; font-size: 14.5px; }
+.drafts { display: grid; gap: 10px; margin: 14px 0 0; }
+.draft-ready { margin-top: 4px !important; font: 11.5px var(--mono); color: var(--blue-deep); }
+.chat-form { display: grid; gap: 8px; padding: 12px 18px 18px; border-top: 1px solid var(--rule); }
+.chat-form textarea { min-height: 64px; max-height: 200px; }
+.chat-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+.mic[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.activity li.is-undone p { text-decoration: line-through; color: var(--ink3); }
+@media (max-width: 720px) {
+  .assistant-open { right: 14px; bottom: 14px; }
+  .assistant { width: 100vw; border-left: 0; }
+}
