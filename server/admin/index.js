@@ -5,7 +5,9 @@ const path = require('node:path');
 const express = require('express');
 const { STATUSES, TEXT_LIMITS, safeMessage } = require('./store');
 const { RANGES } = require('./analytics');
-const { cleanFields, cleanTask } = require('./fields');
+const { cleanFields, cleanTask, cleanTimelineItem, cleanPayment, TIME } = require('./fields');
+const { GALLERY_SLUG } = require('./project');
+const { getGallery: loadGallery } = require('../gallery');
 const { calendarFeed } = require('./ical');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 
@@ -19,7 +21,9 @@ const DEVICE_MAX_MS = 180 * 24 * 60 * 60 * 1000;
 const MIN_PASSWORD_LENGTH = 12;
 const FAILED_LOGIN_DELAY_MS = 400;
 const ID = /^\d{1,18}$/;
-const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+// Gallery photos (a couple's cover) come from the photo storage's public address, so it may show images too.
+const cspFor = (photoOrigin) => `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:${photoOrigin ? ` ${photoOrigin}` : ''}; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`;
+const GALLERY_CACHE_MS = 5 * 60 * 1000;
 const SETTINGS = [
   ['ADMIN_PASSWORD', 'Studio sign-in password'],
   ['RAILWAY_VOLUME_MOUNT_PATH', 'Railway volume (where the dashboard keeps its file)'],
@@ -186,7 +190,35 @@ function loginPage(message, disabled) {
 </main>`);
 }
 
-function createAdminRouter({ store = null, env = process.env, assistant = null } = {}) {
+function createAdminRouter({ store = null, env = process.env, assistant = null, getGallery = loadGallery } = {}) {
+  const photoOrigin = (() => {
+    const value = String(env.R2_PUBLIC_DOMAIN || '').trim().replace(/\/$/, '');
+    if (!value) return '';
+    try { return new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`).origin; } catch (error) { return ''; }
+  })();
+  const CSP = cspFor(photoOrigin);
+  // What a linked gallery holds, for the couple's page. Looked up at most every five minutes per gallery.
+  const galleryCache = new Map();
+  const gallerySummary = async (slug) => {
+    const cached = galleryCache.get(slug);
+    if (cached && Date.now() - cached.at < GALLERY_CACHE_MS) return cached.value;
+    let value;
+    try {
+      const gallery = await getGallery(slug);
+      const counts = {};
+      for (const category of ['engagement', 'session', 'wedding']) if (gallery[category] && gallery[category].length) counts[category] = gallery[category].length;
+      const firstPhoto = ['wedding', 'engagement', 'session'].map((c) => (gallery[c] || [])[0]).find(Boolean);
+      value = {
+        slug, url: `/gallery/${slug}`, found: true, name: gallery.name, date: gallery.date, counts,
+        hero: gallery.hero || (firstPhoto ? firstPhoto.url : null), hero_position: gallery.heroPosition || null
+      };
+    } catch (error) {
+      value = { slug, url: `/gallery/${slug}`, found: false, reason: error && error.status === 404 ? 'No photos under that name yet.' : 'The photo storage couldn\u2019t be reached.' };
+      if (!(error && error.status === 404)) { galleryCache.delete(slug); return value; }
+    }
+    galleryCache.set(slug, { at: Date.now(), value });
+    return value;
+  };
   const router = express.Router();
   const limiter = createLoginLimiter();
   const sessions = createSessions();
@@ -525,6 +557,103 @@ function createAdminRouter({ store = null, env = process.env, assistant = null }
   });
   api.post('/calendar-feed', async (req, res) => {
     res.json({ url: feedAddress(req, await store.feedKey(true)) });
+  });
+
+  // One couple's page: the day's timeline, the payment schedule, the gallery and the light on the day.
+  const withGallery = async (project) => ({ ...project, gallery: project.gallery_slug ? await gallerySummary(project.gallery_slug) : null });
+
+  api.get('/inquiries/:id/project', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const project = await store.project(id);
+    if (!project) return res.status(404).json({ error: 'Not found.' });
+    res.json(await withGallery(project));
+  });
+
+  api.put('/inquiries/:id/gallery', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    let slug = (req.body || {}).slug;
+    slug = typeof slug === 'string' ? slug.trim().toLowerCase().replace(/^.*\/gallery\//, '').replace(/[/?#].*$/, '') : null;
+    if (slug && !GALLERY_SLUG.test(slug)) return res.status(400).json({ error: 'Use the gallery\u2019s name from its link, like renee-alan.' });
+    galleryCache.delete(slug);
+    const project = await store.setGallery(id, slug || null);
+    if (!project) return res.status(404).json({ error: 'Not found.' });
+    res.json(await withGallery(project));
+  });
+
+  api.post('/inquiries/:id/timeline', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const { item, error } = cleanTimelineItem(req.body, true);
+    if (error) return res.status(400).json({ error });
+    const created = await store.addTimelineItem(id, item);
+    if (!created) return res.status(404).json({ error: 'Not found.' });
+    res.status(201).json({ item: created });
+  });
+
+  api.post('/inquiries/:id/timeline/start', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const ceremony = String((req.body || {}).ceremony || '');
+    if (!TIME.test(ceremony)) return res.status(400).json({ error: 'Give the ceremony time, like 16:00.' });
+    const project = await store.startTimeline(id, ceremony);
+    if (!project) return res.status(404).json({ error: 'Not found.' });
+    if (project.exists) return res.status(409).json({ error: 'This timeline already has lines. Remove them first to start over.' });
+    res.json(await withGallery(project));
+  });
+
+  api.patch('/timeline/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const { item, error } = cleanTimelineItem(req.body, false);
+    if (error) return res.status(400).json({ error });
+    const updated = await store.updateTimelineItem(id, item);
+    if (!updated || !updated.id) return res.status(404).json({ error: 'Not found.' });
+    res.json({ item: updated });
+  });
+
+  api.delete('/timeline/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    if (!(await store.deleteTimelineItem(id))) return res.status(404).json({ error: 'Not found.' });
+    res.status(204).end();
+  });
+
+  api.post('/inquiries/:id/payments', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const { payment, error } = cleanPayment(req.body, true);
+    if (error) return res.status(400).json({ error });
+    const created = await store.addPayment(id, payment);
+    if (!created) return res.status(404).json({ error: 'Not found.' });
+    res.status(201).json({ payment: created });
+  });
+
+  api.post('/inquiries/:id/payments/start', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const project = await store.startSchedule(id);
+    if (!project) return res.status(404).json({ error: 'Not found.' });
+    if (project.error) return res.status(409).json({ error: project.error });
+    res.json(await withGallery(project));
+  });
+
+  api.patch('/payments/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const { payment, error } = cleanPayment(req.body, false);
+    if (error) return res.status(400).json({ error });
+    const updated = await store.updatePayment(id, payment);
+    if (!updated) return res.status(404).json({ error: 'Not found.' });
+    res.json({ payment: updated });
+  });
+
+  api.delete('/payments/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    if (!(await store.deletePayment(id))) return res.status(404).json({ error: 'Not found.' });
+    res.status(204).end();
   });
 
   api.get('/calendar', async (req, res) => {

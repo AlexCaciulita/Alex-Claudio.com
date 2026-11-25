@@ -3,7 +3,8 @@
 // anything or send email, and money changes wait for Alex's click. Every change it makes is recorded in
 // the activity list with its old value, so it can be undone.
 const Anthropic = require('@anthropic-ai/sdk');
-const { cleanFields, cleanTask } = require('./fields');
+const { cleanFields, cleanTask, cleanTimelineItem, TIME } = require('./fields');
+const { GALLERY_SLUG } = require('./project');
 const { STAGES, STAGE_LABELS } = require('./work');
 const { isValidIsoDate } = require('./dates');
 const { safeMessage } = require('./store');
@@ -146,6 +147,42 @@ const TOOLS = [
     name: 'draft_reply',
     description: 'Save a reply email to a couple as a draft. Alex reviews and sends it; nothing is sent.',
     input_schema: { type: 'object', properties: { id: string('The couple’s id.'), subject: string('Subject line.'), body: string('The email text.') }, required: ['id', 'subject', 'body'], additionalProperties: false }
+  },
+  {
+    name: 'add_timeline_items',
+    description: 'Add moments to a couple\u2019s wedding-day timeline (time as HH:MM, 24-hour).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: string('The couple\u2019s id.'),
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { time: string('HH:MM, 24-hour, or empty.'), title: string('What happens.'), place: string('Where, if known.') },
+            required: ['title'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['id', 'items'],
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'start_timeline',
+    description: 'Fill an empty timeline with a typical wedding day around the ceremony time, including sunset portraits when sunset falls during the evening.',
+    input_schema: { type: 'object', properties: { id: string('The couple\u2019s id.'), ceremony: string('Ceremony time, HH:MM 24-hour.') }, required: ['id', 'ceremony'], additionalProperties: false }
+  },
+  {
+    name: 'link_gallery',
+    description: 'Link a couple to their client gallery by its name in the link alex-claudio.com/gallery/<name>, e.g. renee-alan.',
+    input_schema: { type: 'object', properties: { id: string('The couple\u2019s id.'), gallery: string('The gallery name.') }, required: ['id', 'gallery'], additionalProperties: false }
+  },
+  {
+    name: 'propose_payment_received',
+    description: 'Suggest marking one scheduled payment (from get_couple\u2019s payments) as paid. Nothing changes until Alex clicks Apply.',
+    input_schema: { type: 'object', properties: { id: string('The couple\u2019s id.'), payment_id: string('The payment id.'), why: string('One short line.') }, required: ['id', 'payment_id', 'why'], additionalProperties: false }
   },
   {
     name: 'get_guide_link',
@@ -297,7 +334,8 @@ function createAssistant({ store, env = process.env, client = null, fetch: fetch
 
     get_couple: async ({ id }) => {
       const found = await couple(id);
-      return { ...found, drafts: await store.drafts(id), activity: found.activity.slice(0, 10) };
+      const project = typeof store.project === 'function' ? await store.project(id) : null;
+      return { ...found, drafts: await store.drafts(id), activity: found.activity.slice(0, 10), day: project && { timeline: project.timeline, light: project.light }, payments: project && project.payments, gallery: project && project.gallery_slug };
     },
 
     check_date: async ({ date }) => {
@@ -392,6 +430,49 @@ function createAssistant({ store, env = process.env, client = null, fetch: fetch
       const draft = await store.addDraft(id, String(subject).trim(), String(body).trim(), 'assistant');
       events.push({ type: 'draft', inquiry_id: id, names: inquiry.names, email: inquiry.email, draft });
       return { ok: true, draft_id: draft.id, note: 'Saved as a draft on the couple. Nothing was sent.' };
+    },
+
+    add_timeline_items: async ({ id, items }, events) => {
+      const { inquiry } = await couple(id);
+      if (!Array.isArray(items) || !items.length || items.length > 30) throw new ToolError('Give between 1 and 30 moments.');
+      const added = [];
+      for (const raw of items) {
+        const { item, error } = cleanTimelineItem({ ...raw, time: raw && raw.time ? raw.time : null }, true);
+        if (error) throw new ToolError(`${error} (${raw && raw.title})`);
+        added.push(await store.addTimelineItem(id, item, 'assistant'));
+      }
+      const change = await latest(id);
+      events.push({ type: 'change', activity_id: added.length === 1 && change ? change.id : null, inquiry_id: id, names: inquiry.names, text: `Added ${added.length} moment${added.length === 1 ? '' : 's'} to the day\u2019s timeline` });
+      return { ok: true, added };
+    },
+
+    start_timeline: async ({ id, ceremony }, events) => {
+      const { inquiry } = await couple(id);
+      if (!TIME.test(String(ceremony || ''))) throw new ToolError('Give the ceremony time as HH:MM, 24-hour.');
+      const result = await store.startTimeline(id, ceremony, 'assistant');
+      if (result.exists) throw new ToolError('This timeline already has moments. Add to it instead.');
+      events.push({ type: 'change', activity_id: null, inquiry_id: id, names: inquiry.names, text: `Started the day\u2019s timeline around a ${ceremony} ceremony` });
+      return { ok: true, timeline: result.timeline, light: result.light };
+    },
+
+    link_gallery: async ({ id, gallery }, events) => {
+      const { inquiry } = await couple(id);
+      const slug = String(gallery || '').trim().toLowerCase().replace(/^.*\/gallery\//, '').replace(/[/?#].*$/, '');
+      if (!GALLERY_SLUG.test(slug)) throw new ToolError('Use the gallery name from its link, like renee-alan.');
+      await store.setGallery(id, slug, 'assistant');
+      const change = await latest(id);
+      if (change) events.push({ type: 'change', activity_id: change.id, inquiry_id: id, names: inquiry.names, text: change.summary });
+      return { ok: true, gallery: `${origin}/gallery/${slug}` };
+    },
+
+    propose_payment_received: async ({ id, payment_id: paymentId, why }, events) => {
+      const { inquiry } = await couple(id);
+      const project = await store.project(id);
+      const payment = project.payments.find((p) => p.id === String(paymentId));
+      if (!payment) throw new ToolError('That payment isn\u2019t on this couple\u2019s schedule.');
+      if (payment.paid) throw new ToolError('That payment is already marked paid.');
+      events.push({ type: 'proposal', inquiry_id: id, names: inquiry.names, payment: { id: payment.id, label: payment.label, amount: payment.amount }, why: String(why || '').slice(0, 200) });
+      return { ok: true, note: 'Shown to Alex with an Apply button. Nothing has changed yet.' };
     },
 
     get_guide_link: async ({ id }) => {

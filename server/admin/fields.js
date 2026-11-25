@@ -68,4 +68,46 @@ function cleanTask(body, creating) {
   return { task };
 }
 
-module.exports = { cleanFields, cleanTask, EDITABLE, ID };
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+const shortText = (value, max) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '');
+
+// One line of the day's timeline.
+function cleanTimelineItem(body, creating) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request.' };
+  const item = {};
+  if (has(body, 'title') || creating) {
+    item.title = shortText(body.title, 200);
+    if (!item.title) return { error: 'Say what happens.' };
+  }
+  if (has(body, 'time')) {
+    if (body.time === null || body.time === '') item.time = null;
+    else if (TIME.test(String(body.time))) item.time = String(body.time);
+    else return { error: 'Use a time like 16:30.' };
+  }
+  for (const key of ['place', 'note']) if (has(body, key)) item[key] = shortText(body[key], key === 'note' ? 1000 : 200);
+  return { item };
+}
+
+// One payment in a schedule.
+function cleanPayment(body, creating) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request.' };
+  const payment = {};
+  if (has(body, 'label') || creating) {
+    payment.label = shortText(body.label, 100);
+    if (!payment.label) return { error: 'Name the payment, like \u201cBalance\u201d.' };
+  }
+  if (has(body, 'amount') || creating) {
+    const amount = Number(body.amount);
+    if (body.amount === null || body.amount === '' || !Number.isFinite(amount) || amount < 0 || amount > 10000000) return { error: 'Amounts must be between 0 and 10,000,000.' };
+    payment.amount = Math.round(amount * 100) / 100;
+  }
+  if (has(body, 'due_date')) {
+    if (body.due_date === null || body.due_date === '') payment.due_date = null;
+    else if (isValidIsoDate(body.due_date)) payment.due_date = body.due_date;
+    else return { error: 'Use a real calendar date.' };
+  }
+  if (has(body, 'paid')) payment.paid = Boolean(body.paid);
+  return { payment };
+}
+
+module.exports = { cleanFields, cleanTask, cleanTimelineItem, cleanPayment, EDITABLE, ID, TIME };

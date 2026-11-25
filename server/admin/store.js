@@ -8,6 +8,7 @@ const path = require('node:path');
 const { ANALYTICS_MIGRATION, analyticsMethods } = require('./analytics');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 const { migrateAssistant, assistantMethods } = require('./assistant-store');
+const { migrateProject, projectMethods } = require('./project');
 const { migrateWork, workMethods, syncTasks, logActivity, describeChange, stageOf, parseTags } = require('./work');
 
 const STATUSES = ['new', 'replied', 'booked', 'not_booked'];
@@ -21,7 +22,7 @@ const BACKUPS_KEPT = 30;
 const BACKUP_FILE = /^studio-\d{4}-\d{2}-\d{2}\.sqlite$/;
 const EARLIER = 'earlier-dashboard';
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
-const INQUIRY_COLUMNS = 'i.id, i.created_at, i.updated_at, i.form_name, i.names, i.email, i.phone, i.event_date, i.wedding_date, i.location, i.hours, i.care, i.message, i.source, i.status, i.progress, i.tags, i.price_cents, i.paid_cents';
+const INQUIRY_COLUMNS = 'i.id, i.created_at, i.updated_at, i.form_name, i.names, i.email, i.phone, i.event_date, i.wedding_date, i.location, i.hours, i.care, i.message, i.source, i.status, i.progress, i.tags, i.gallery_slug, i.price_cents, i.paid_cents';
 const COLUMN_FOR = { price: 'price_cents', paid: 'paid_cents' };
 const WRITABLE = new Set(['names', 'email', 'phone', 'event_date', 'wedding_date', 'location', 'hours', 'care', 'message', 'source', 'status', 'progress', 'tags', 'price', 'paid']);
 
@@ -201,6 +202,7 @@ function createStore(env = process.env, sqlite) {
       handle.exec(MIGRATION);
       handle.exec(ANALYTICS_MIGRATION);
       migrateWork(handle);
+      migrateProject(handle);
       migrateAssistant(handle);
     } catch (error) {
       handle.close();
@@ -589,6 +591,7 @@ function createStore(env = process.env, sqlite) {
     ...analyticsMethods({ use, timeZone: paths.timeZone }),
     ...workMethods({ use, timeZone: paths.timeZone }),
     ...assistantMethods({ use, timeZone: paths.timeZone }),
+    ...projectMethods({ use, timeZone: paths.timeZone }),
 
     close: async () => {
       if (timer) clearInterval(timer);

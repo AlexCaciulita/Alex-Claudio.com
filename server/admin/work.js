@@ -288,12 +288,23 @@ function workMethods({ use, timeZone }) {
       }
       for (const row of db.prepare(`SELECT id, names, email, wedding_date, price_cents, paid_cents FROM inquiries
           WHERE status = 'booked' AND price_cents > COALESCE(paid_cents, 0) AND wedding_date <= ? AND wedding_date >= ?
+            AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.inquiry_id = inquiries.id)
           ORDER BY wedding_date`).all(addDays(day, BALANCE_DAYS), addDays(day, -PAST_WEDDING_DAYS))) {
         const owed = row.price_cents - (row.paid_cents || 0);
         const days = daysBetween(day, row.wedding_date);
         needs.push({
           kind: 'balance', inquiry_id: String(row.id), names: nameOf(row),
           text: `${fmtDollars(owed)} still open. ${days > 0 ? `Wedding in ${days} day${days === 1 ? '' : 's'}.` : days === 0 ? 'Wedding today.' : `Wedding was ${fmtDate(row.wedding_date)}.`}`
+        });
+      }
+
+      // Couples with a payment schedule: each payment overdue or due within a week.
+      for (const row of db.prepare(`SELECT p.label, p.amount_cents, p.due_date, i.id, i.names, i.email FROM payments p JOIN inquiries i ON i.id = p.inquiry_id
+          WHERE p.paid_at IS NULL AND p.due_date <= ? AND i.status = 'booked' ORDER BY p.due_date LIMIT 20`).all(addDays(day, 7))) {
+        const days = daysBetween(day, row.due_date);
+        needs.push({
+          kind: 'balance', inquiry_id: String(row.id), names: nameOf(row),
+          text: `${row.label}, ${fmtDollars(row.amount_cents)}, ${days < 0 ? `was due ${fmtDate(row.due_date)}` : days === 0 ? 'due today' : `due ${fmtDate(row.due_date)}`}.`
         });
       }
 
