@@ -1,5 +1,6 @@
 const path = require('node:path');
 const { Readable } = require('node:stream');
+const { pipeline } = require('node:stream/promises');
 const express = require('express');
 const { CATEGORIES: GALLERY_CATEGORIES, GalleryError, getGallery, getPublicOrigin } = require('./server/gallery');
 const { SubmissionError, processSubmission, sendPackageEmail } = require('./server/submissions');
@@ -206,9 +207,11 @@ function createApp(options = {}) {
         count(download.kind, download.slug, req);
       }
       if (req.method === 'HEAD' || !upstream.body) return res.end();
-      Readable.fromWeb(upstream.body).pipe(res);
+      // pipeline, not pipe: when the visitor leaves mid-download the stream errors, and an unhandled stream
+      // error takes the whole site down.
+      await pipeline(Readable.fromWeb(upstream.body), res);
     } catch (error) {
-      if (error.name !== 'AbortError') console.error('CDN proxy failed:', error);
+      if (!controller.signal.aborted) console.error('CDN proxy failed:', error);
       if (!res.headersSent) res.status(502).json({ error: 'Download unavailable' });
     }
   });

@@ -297,3 +297,37 @@ test('gallery downloads are counted once each: whole photos and zips, never part
     assert.deepEqual(store.calls.actions.map(({ kind, detail }) => [kind, detail]), [['photo', 'renee-alan'], ['zip', 'renee-alan']]);
   });
 });
+
+test('a visitor leaving mid-download does not take the site down', async (t) => {
+  const upstream = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Length': String(64 * 1024 * 1024) });
+    const chunk = Buffer.alloc(64 * 1024);
+    const timer = setInterval(() => res.write(chunk), 5);
+    res.on('close', () => clearInterval(timer));
+  }).listen(0, '127.0.0.1');
+  await new Promise((resolve) => upstream.once('listening', resolve));
+  const saved = process.env.R2_PUBLIC_DOMAIN;
+  process.env.R2_PUBLIC_DOMAIN = `http://127.0.0.1:${upstream.address().port}`;
+  t.after(() => {
+    if (saved === undefined) delete process.env.R2_PUBLIC_DOMAIN; else process.env.R2_PUBLIC_DOMAIN = saved;
+    upstream.closeAllConnections();
+    upstream.close();
+  });
+
+  const crashes = [];
+  const onCrash = (error) => crashes.push(error);
+  process.on('uncaughtException', onCrash);
+  t.after(() => process.off('uncaughtException', onCrash));
+
+  await withSite({ env: {}, store: countingStore() }, async (origin) => {
+    const leaving = new AbortController();
+    const response = await fetch(`${origin}/cdn/renee-alan/renee-alan-wedding.zip`, { signal: leaving.signal, headers: { 'User-Agent': MAC } });
+    const reader = response.body.getReader();
+    await reader.read();
+    leaving.abort();
+    await settle();
+    await settle();
+    assert.deepEqual(crashes, []);
+    assert.equal((await fetch(`${origin}/`)).status, 200);
+  });
+});
