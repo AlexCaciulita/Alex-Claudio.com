@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS drafts (
 `;
 
 // Columns the assistant may put back when a change is undone.
-const UNDOABLE = new Set(['names', 'email', 'phone', 'event_date', 'wedding_date', 'location', 'hours', 'care', 'message', 'source', 'status', 'progress', 'tags', 'price_cents', 'paid_cents']);
+const UNDOABLE = new Set(['gallery_slug', 'names', 'email', 'phone', 'event_date', 'wedding_date', 'location', 'hours', 'care', 'message', 'source', 'status', 'progress', 'tags', 'price_cents', 'paid_cents']);
 const quote = (name) => `"${String(name).replace(/"/g, '""')}"`;
 
 function migrateAssistant(db) {
@@ -174,6 +174,10 @@ function assistantMethods({ use, timeZone }) {
       }
       if (row.kind === 'note' && after && after.note) {
         db.prepare('DELETE FROM notes WHERE id = ?').run(after.note);
+        return done();
+      }
+      if (row.kind === 'timeline' && after && after.timeline) {
+        db.prepare('DELETE FROM timeline_items WHERE id = ?').run(after.timeline);
         return done();
       }
       if (row.kind === 'draft' && after && after.draft) {

@@ -152,8 +152,20 @@
 
   function route() {
     const wanted = location.hash.replace(/^#/, '');
-    const key = views[wanted] ? wanted : 'today';
     const token = ++state.token;
+    // A couple's own page: #couple/12.
+    const couple = /^couple\/(\d{1,18})$/.exec(wanted);
+    if (couple) {
+      for (const link of Object.values(navLinks)) link.removeAttribute('aria-current');
+      navLinks.board.setAttribute('aria-current', 'page');
+      state.refresh = null;
+      clear(main);
+      if (detail.open) detail.close();
+      renderCouple(main, () => token === state.token, couple[1]);
+      window.scrollTo(0, 0);
+      return;
+    }
+    const key = views[wanted] ? wanted : 'today';
     for (const [name, link] of Object.entries(navLinks)) {
       if (name === key) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
@@ -577,6 +589,7 @@
           h('div', { class: 'tags-block' }, h('span', { class: 'mini-label' }, 'Tags'), tagWrap),
           facts, money,
           h('div', { class: 'actions' },
+            h('a', { class: 'button', href: `#couple/${inq.id}`, onclick: () => detail.close() }, 'Open their page'),
             mailable ? h('a', { class: 'button primary', href: `mailto:${inq.email}?subject=${encodeURIComponent('Your wedding \u00b7 Alex Claudio Photography')}` }, 'Reply by email') : null,
             h('button', { type: 'button', onclick: copyGuideLink }, 'Copy guide link'),
             h('button', { type: 'button', onclick: async () => { await settled(); detail.close(); openEditor(inq); } }, 'Edit details'),
@@ -763,7 +776,7 @@
         return;
       }
       strip.append(h('ol', { class: 'strip' }, upcoming.map((w, index) => h('li', {},
-        h('button', { class: index === 0 ? 'strip-card is-next' : 'strip-card', type: 'button', onclick: () => openDetail(w.id) },
+        h('a', { class: index === 0 ? 'strip-card is-next' : 'strip-card', href: `#couple/${w.id}` },
           h('small', { class: 'strip-count' }, countdown(w.days)),
           h('strong', { class: 'strip-date' }, localDate(w.wedding_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })),
           h('small', {}, localDate(w.wedding_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric' })),
@@ -896,7 +909,7 @@
       h('div', { class: 'view-head' },
         h('div', {}, h('p', { class: 'eyebrow' }, 'Every couple, by stage'), h('h1', {}, 'Board')),
         h('button', { class: 'primary', type: 'button', onclick: () => openEditor(null) }, '+ Add an inquiry')),
-      h('div', { class: 'toolbar' }, search, h('p', { class: 'muted small board-hint' }, 'Open a card to change its stage, or drag it to another column.')),
+      h('div', { class: 'toolbar' }, search, h('p', { class: 'muted small board-hint' }, 'Open a card for the couple\u2019s page, or drag it to another stage.')),
       board);
 
     async function load() {
@@ -945,7 +958,7 @@
               h('button', {
                 class: 'board-card', type: 'button', draggable: 'true',
                 'aria-label': [c.names, c.wedding_date ? fmtDay(c.wedding_date) : 'no date', c.location, STAGE_LABEL[c.stage]].filter(Boolean).join(', '),
-                onclick: () => openDetail(c.id),
+                onclick: () => { location.hash = `couple/${c.id}`; },
                 ondragstart: (event) => { event.dataTransfer.setData('text/plain', c.id); event.dataTransfer.effectAllowed = 'move'; event.currentTarget.classList.add('dragging'); },
                 ondragend: (event) => event.currentTarget.classList.remove('dragging')
               },
@@ -1041,6 +1054,26 @@
         h('span', { class: 'ev-mark', 'aria-hidden': 'true' }, '\u2713'),
         h('span', {}, event.names && event.inquiry_id ? [coupleLink(event.inquiry_id, event.names), ': '] : null, event.text),
         undo);
+    }
+    if (event.type === 'proposal' && event.payment) {
+      const apply = h('button', {
+        class: 'primary', type: 'button',
+        onclick: async (e) => {
+          const button = e.currentTarget;
+          button.disabled = true;
+          try {
+            await api(`/payments/${event.payment.id}`, { method: 'PATCH', body: { paid: true } });
+            button.textContent = 'Applied';
+            say(`${event.payment.label} marked paid for ${event.names}.`);
+            refreshCurrent();
+          } catch (error) { fail(error); button.disabled = false; }
+        }
+      }, 'Apply');
+      return h('li', { class: 'ev ev-proposal' },
+        h('p', { class: 'mini-label' }, 'Waiting for your click'),
+        h('p', {}, coupleLink(event.inquiry_id, event.names), `: mark ${event.payment.label} (${fmtMoney(event.payment.amount)}) paid`),
+        event.why ? h('p', { class: 'muted small' }, event.why) : null,
+        h('div', { class: 'actions' }, apply));
     }
     if (event.type === 'proposal') {
       const parts = [];
@@ -1185,6 +1218,300 @@
     });
 
     return { panel, opener, toggle };
+  }
+
+  /* ---------- One couple's page ---------- */
+
+  const fmtClock = (time) => {
+    if (!time) return '';
+    const [hh, mm] = time.split(':').map(Number);
+    return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
+  };
+  const CATEGORY_NAMES = { wedding: 'wedding', engagement: 'engagement', session: 'session' };
+
+  function renderCouple(root, live, id) {
+    const hero = h('section', { class: 'couple-hero' }, h('p', { class: 'muted' }, 'Loading\u2026'));
+    const timeline = h('section', { class: 'panel', 'aria-labelledby': 'tl-title' });
+    const payments = h('section', { class: 'panel', 'aria-labelledby': 'pay-title' });
+    const gallery = h('section', { class: 'panel', 'aria-labelledby': 'gal-title' });
+    root.append(
+      h('a', { class: 'back-link', href: '#board' }, '\u2190 Board'),
+      hero,
+      h('div', { class: 'couple-grid' }, timeline, h('div', {}, payments, gallery)));
+
+    let inq = null;
+    let project = null;
+
+    async function load() {
+      try {
+        const [one, proj] = await Promise.all([api(`/inquiries/${encodeURIComponent(id)}`), api(`/inquiries/${encodeURIComponent(id)}/project`)]);
+        if (!live()) return;
+        inq = one.inquiry;
+        project = proj;
+        document.title = `${coupleName(inq)} \u00b7 Studio \u00b7 Alex Claudio`;
+        drawHero();
+        drawTimeline();
+        drawPayments();
+        drawGallery();
+      } catch (error) {
+        if (live()) append(clear(hero), [problem(error, 'Couples appear here once the website has a volume to save to.')]);
+      }
+    }
+    const reloadProject = async () => {
+      try {
+        const [one, proj] = await Promise.all([api(`/inquiries/${encodeURIComponent(id)}`), api(`/inquiries/${encodeURIComponent(id)}/project`)]);
+        if (!live()) return;
+        inq = one.inquiry;
+        project = proj;
+        drawHero();
+        drawTimeline();
+        drawPayments();
+        drawGallery();
+      } catch (error) { fail(error); }
+    };
+
+    function drawHero() {
+      const cover = project.gallery && project.gallery.found && project.gallery.hero;
+      const days = inq.wedding_date ? daysFromToday(inq.wedding_date) : null;
+      const img = cover ? h('img', { class: 'couple-cover', src: cover, alt: '' }) : null;
+      if (img && project.gallery.hero_position) img.style.objectPosition = project.gallery.hero_position;
+      append(clear(hero), [
+        img,
+        h('div', { class: 'couple-hero-text' },
+          h('p', { class: 'eyebrow' }, stageBadge(inq.stage)),
+          h('h1', {}, coupleName(inq)),
+          h('p', { class: 'couple-line' }, [
+            inq.wedding_date ? fmtDay(inq.wedding_date, true) : inq.event_date ? `They wrote \u201c${inq.event_date}\u201d` : 'No date yet',
+            days !== null ? countdown(days) : '',
+            inq.location
+          ].filter(Boolean).join(' \u00b7 ')),
+          inq.tags && inq.tags.length ? h('p', { class: 'tag-row' }, inq.tags.map((tag) => h('span', { class: 'tag' }, tag))) : null,
+          h('div', { class: 'actions' },
+            h('button', { class: 'primary', type: 'button', onclick: () => openDetail(inq.id) }, 'Details, notes and tasks'),
+            inq.email && LINKABLE_EMAIL.test(inq.email) ? h('a', { class: 'button', href: `mailto:${inq.email}` }, 'Email them') : null))]);
+      hero.classList.toggle('has-cover', Boolean(img));
+    }
+
+    /* The day's timeline */
+    function drawTimeline() {
+      const light = project.light;
+      const items = project.timeline;
+      const lightLine = light
+        ? h('p', { class: 'light-line' }, `Sunset ${fmtClock(light.sunset)} \u00b7 golden hour from about ${fmtClock(light.golden_hour)} (Seattle)`)
+        : h('p', { class: 'muted small' }, 'Set the wedding date to see sunset and golden hour.');
+      const copy = items.length ? h('button', {
+        class: 'quiet', type: 'button',
+        onclick: async () => {
+          const text = [`${coupleName(inq)}${inq.wedding_date ? ` \u00b7 ${fmtDay(inq.wedding_date, true)}` : ''}`, '',
+            ...items.map((item) => `${item.time ? fmtClock(item.time).padEnd(9) : '         '}${item.title}${item.place ? ` (${item.place})` : ''}${item.note ? ` \u2013 ${item.note}` : ''}`)].join('\n');
+          try { await navigator.clipboard.writeText(text); say('Timeline copied as text.'); } catch (error) { window.prompt('Copy the timeline:', text); }
+        }
+      }, 'Copy as text') : null;
+
+      const rows = items.map((item) => {
+        const time = h('input', { type: 'time', value: item.time || '', 'aria-label': 'Time' });
+        const title = h('input', { type: 'text', value: item.title, maxlength: 200, 'aria-label': 'What happens' });
+        const place = h('input', { type: 'text', value: item.place, maxlength: 200, placeholder: 'Where', 'aria-label': 'Where' });
+        const save = async (field, value) => {
+          if ((item[field] || '') === value) return;
+          try {
+            const { item: saved } = await api(`/timeline/${item.id}`, { method: 'PATCH', body: { [field]: value } });
+            Object.assign(item, saved);
+            if (field === 'time') { project.timeline.sort((a, b) => ((a.time || '99') < (b.time || '99') ? -1 : 1)); drawTimeline(); }
+          } catch (error) { fail(error); }
+        };
+        time.addEventListener('change', () => save('time', time.value));
+        title.addEventListener('change', () => { if (title.value.trim()) save('title', title.value.trim()); else title.value = item.title; });
+        place.addEventListener('change', () => save('place', place.value.trim()));
+        return h('li', { class: item.title.toLowerCase().includes('sunset') ? 'is-sunset' : null }, time, title, place,
+          h('button', {
+            class: 'tag-x', type: 'button', 'aria-label': `Remove ${item.title}`,
+            onclick: async () => {
+              try {
+                await api(`/timeline/${item.id}`, { method: 'DELETE' });
+                project.timeline = project.timeline.filter((other) => other.id !== item.id);
+                drawTimeline();
+              } catch (error) { fail(error); }
+            }
+          }, '\u00d7'));
+      });
+
+      const newTime = h('input', { type: 'time', 'aria-label': 'Time of the new line' });
+      const newTitle = h('input', { type: 'text', maxlength: 200, placeholder: 'Add a moment\u2026', 'aria-label': 'What happens' });
+      const addForm = h('form', {
+        class: 'timeline-add',
+        onsubmit: async (event) => {
+          event.preventDefault();
+          if (!newTitle.value.trim()) { newTitle.focus(); return; }
+          try {
+            const { item } = await api(`/inquiries/${inq.id}/timeline`, { method: 'POST', body: { time: newTime.value || null, title: newTitle.value } });
+            project.timeline.push(item);
+            project.timeline.sort((a, b) => ((a.time || '99') < (b.time || '99') ? -1 : 1));
+            drawTimeline();
+          } catch (error) { fail(error); }
+        }
+      }, newTime, newTitle, h('button', { type: 'submit' }, 'Add'));
+
+      let starter = null;
+      if (!items.length) {
+        const ceremony = h('input', { type: 'time', value: '16:00', 'aria-label': 'Ceremony time' });
+        starter = h('form', {
+          class: 'timeline-start',
+          onsubmit: async (event) => {
+            event.preventDefault();
+            if (!ceremony.value) { ceremony.focus(); return; }
+            try {
+              project = { ...project, ...(await api(`/inquiries/${inq.id}/timeline/start`, { method: 'POST', body: { ceremony: ceremony.value } })) };
+              drawTimeline();
+              say('Started from a typical day. Change any line.');
+            } catch (error) { fail(error); }
+          }
+        }, h('label', {}, 'Ceremony at', ceremony), h('button', { class: 'primary', type: 'submit' }, 'Start from a typical day'));
+      }
+
+      append(clear(timeline), [
+        h('div', { class: 'panel-head' }, h('h2', { id: 'tl-title' }, 'The day'), copy),
+        lightLine,
+        starter,
+        items.length ? h('ol', { class: 'timeline' }, rows) : h('p', { class: 'muted small' }, 'Or add the moments one by one.'),
+        addForm]);
+    }
+
+    /* Payments */
+    function drawPayments() {
+      const price = inq.price;
+      const paid = inq.paid || 0;
+      const left = price === null || price === undefined ? null : Math.max(0, price - paid);
+      const list = project.payments;
+      const rows = list.map((payment) => {
+        const box = h('input', {
+          type: 'checkbox', 'aria-label': `${payment.label} paid`,
+          onchange: async () => {
+            box.disabled = true;
+            try {
+              await api(`/payments/${payment.id}`, { method: 'PATCH', body: { paid: box.checked } });
+              say(box.checked ? `${payment.label} marked paid.` : `${payment.label} marked not paid.`);
+              reloadProject();
+            } catch (error) { fail(error); box.checked = !box.checked; box.disabled = false; }
+          }
+        });
+        box.checked = payment.paid;
+        const status = payment.paid ? `Paid ${fmtReceived(payment.paid_at)}`
+          : !payment.due_date ? 'No due date'
+            : payment.overdue ? `Overdue since ${fmtDay(payment.due_date)}` : `Due ${fmtDay(payment.due_date)}`;
+        return h('li', { class: [payment.paid ? 'is-paid' : '', payment.overdue ? 'is-overdue' : ''].filter(Boolean).join(' ') || null },
+          box,
+          h('div', { class: 'task-text' }, h('span', {}, `${payment.label} \u00b7 ${fmtMoney(payment.amount)}`), h('small', {}, status)),
+          h('button', {
+            class: 'link', type: 'button', 'aria-label': `Remove ${payment.label}`,
+            onclick: async () => {
+              if (!window.confirm(`Remove \u201c${payment.label}\u201d from the schedule?`)) return;
+              try { await api(`/payments/${payment.id}`, { method: 'DELETE' }); reloadProject(); } catch (error) { fail(error); }
+            }
+          }, 'Remove'));
+      });
+
+      const label = h('input', { type: 'text', maxlength: 100, placeholder: 'e.g. Album', 'aria-label': 'Payment name' });
+      const amount = h('input', { type: 'text', inputmode: 'decimal', placeholder: '$', 'aria-label': 'Amount' });
+      const due = h('input', { type: 'date', min: '2000-01-01', max: '2100-12-31', 'aria-label': 'Due date' });
+      const addForm = h('form', {
+        class: 'payment-add',
+        onsubmit: async (event) => {
+          event.preventDefault();
+          const raw = amount.value.replace(/[$,\s]/g, '');
+          if (!label.value.trim()) { label.focus(); return; }
+          if (!/^\d{1,8}(\.\d{1,2})?$/.test(raw)) { amount.focus(); say('Amounts are plain numbers, like 1200.', 'error'); return; }
+          try {
+            await api(`/inquiries/${inq.id}/payments`, { method: 'POST', body: { label: label.value, amount: Number(raw), due_date: due.value || null } });
+            reloadProject();
+          } catch (error) { fail(error); }
+        }
+      }, label, amount, due, h('button', { type: 'submit' }, 'Add'));
+
+      const gap = project.schedule.unscheduled;
+      append(clear(payments), [
+        h('h2', { id: 'pay-title' }, 'Payments'),
+        h('div', { class: 'money' },
+          h('div', {}, h('span', {}, 'Agreed'), h('strong', {}, fmtMoney(price))),
+          h('div', {}, h('span', {}, 'Received'), h('strong', {}, fmtMoney(inq.paid))),
+          h('div', {}, h('span', {}, 'Left'), h('strong', {}, fmtMoney(left)))),
+        !list.length
+          ? h('div', { class: 'schedule-start' },
+            h('button', {
+              class: 'primary', type: 'button', disabled: !price,
+              onclick: async () => {
+                try { await api(`/inquiries/${inq.id}/payments/start`, { method: 'POST' }); say('Payment schedule made.'); reloadProject(); } catch (error) { fail(error); }
+              }
+            }, 'Make the usual schedule'),
+            h('p', { class: 'muted small' }, price
+              ? `${fmtMoney(Math.round(price * 30) / 100)} retainer (30%) now, the balance two weeks before the wedding. Every line can be changed.`
+              : 'Set the agreed price in Details first.'))
+          : h('ul', { class: 'tasks payments' }, rows),
+        list.length && gap ? h('p', { class: 'schedule-gap' }, gap > 0
+          ? `The schedule adds up to ${fmtMoney(project.schedule.total)}, ${fmtMoney(gap)} less than the agreed price.`
+          : `The schedule adds up to ${fmtMoney(project.schedule.total)}, ${fmtMoney(-gap)} more than the agreed price.`) : null,
+        h('p', { class: 'mini-label add-label' }, 'Add a payment'),
+        addForm]);
+    }
+
+    /* Gallery */
+    function drawGallery() {
+      const g = project.gallery;
+      const unlink = h('button', {
+        class: 'link', type: 'button',
+        onclick: async () => {
+          try { project = { ...project, ...(await api(`/inquiries/${inq.id}/gallery`, { method: 'PUT', body: { slug: null } })) }; drawGallery(); drawHero(); } catch (error) { fail(error); }
+        }
+      }, 'Unlink');
+      let body;
+      if (!g) {
+        const slug = h('input', { type: 'text', placeholder: 'renee-alan', 'aria-label': 'Gallery name', autocomplete: 'off' });
+        body = [
+          h('p', { class: 'muted small' }, 'Link the gallery once it\u2019s uploaded: the name at the end of alex-claudio.com/gallery/\u2026, or paste the whole link. Its cover becomes this page\u2019s photo.'),
+          h('form', {
+            class: 'gallery-link',
+            onsubmit: async (event) => {
+              event.preventDefault();
+              if (!slug.value.trim()) { slug.focus(); return; }
+              try {
+                project = { ...project, ...(await api(`/inquiries/${inq.id}/gallery`, { method: 'PUT', body: { slug: slug.value } })) };
+                drawGallery();
+                drawHero();
+                say(project.gallery && project.gallery.found ? 'Gallery linked.' : 'Linked. No photos found under that name yet.');
+              } catch (error) { fail(error); }
+            }
+          }, slug, h('button', { type: 'submit' }, 'Link'))
+        ];
+      } else if (!g.found) {
+        body = [h('p', {}, h('a', { href: g.url, target: '_blank', rel: 'noopener' }, `/gallery/${g.slug}`)), h('p', { class: 'error-text' }, g.reason), unlink];
+      } else {
+        const counts = Object.entries(g.counts).map(([category, n]) => `${n.toLocaleString('en-US')} ${CATEGORY_NAMES[category] || category}`).join(' \u00b7 ');
+        body = [
+          h('p', {}, h('strong', {}, g.name || g.slug), g.date ? ` \u00b7 ${g.date}` : ''),
+          h('p', { class: 'muted small' }, `${counts} photos`),
+          h('div', { class: 'actions' },
+            h('a', { class: 'button', href: g.url, target: '_blank', rel: 'noopener' }, 'Open the gallery'),
+            h('button', {
+              type: 'button',
+              onclick: async () => {
+                const url = `${location.origin}${g.url}`;
+                try { await navigator.clipboard.writeText(url); say('Gallery link copied.'); } catch (error) { window.prompt('Copy the gallery link:', url); }
+              }
+            }, 'Copy link'),
+            inq.stage === 'editing' ? h('button', {
+              class: 'primary', type: 'button',
+              onclick: async () => {
+                try { await api(`/inquiries/${inq.id}`, { method: 'PATCH', body: { stage: 'delivered' } }); say('Marked delivered. The gallery task is done.'); reloadProject(); } catch (error) { fail(error); }
+              }
+            }, 'Mark delivered') : null),
+          unlink
+        ];
+      }
+      append(clear(gallery), [h('h2', { id: 'gal-title' }, 'Gallery'), ...body]);
+    }
+
+    state.refresh = reloadProject;
+    load();
   }
 
   /* ---------- Analytics ---------- */
