@@ -5,6 +5,8 @@ const path = require('node:path');
 const express = require('express');
 const { STATUSES, TEXT_LIMITS, safeMessage } = require('./store');
 const { RANGES } = require('./analytics');
+const { STAGES, fromStage, cleanTags, TAG_LIMIT, TASK_TITLE_LENGTH } = require('./work');
+const { calendarFeed } = require('./ical');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 
 const ASSETS = path.join(__dirname, 'assets');
@@ -20,7 +22,7 @@ const ID = /^\d{1,18}$/;
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 const EDITABLE = {
   names: 'text', email: 'text', phone: 'text', event_date: 'text', wedding_date: 'date', location: 'text',
-  hours: 'text', care: 'text', message: 'text', source: 'text', status: 'status', price: 'money', paid: 'money'
+  hours: 'text', care: 'text', message: 'text', source: 'text', status: 'status', stage: 'stage', tags: 'tags', price: 'money', paid: 'money'
 };
 const SETTINGS = [
   ['ADMIN_PASSWORD', 'Studio sign-in password'],
@@ -169,6 +171,12 @@ function cleanFields(body) {
     } else if (kind === 'status') {
       if (!STATUSES.includes(value)) return { error: 'Unknown status.' };
       fields[key] = value;
+    } else if (kind === 'stage') {
+      if (!STAGES.includes(value)) return { error: 'Unknown stage.' };
+      Object.assign(fields, fromStage(value));
+    } else if (kind === 'tags') {
+      if (!Array.isArray(value) || value.length > TAG_LIMIT * 2 || value.some((tag) => typeof tag !== 'string')) return { error: 'Tags must be a list of words.' };
+      fields.tags = JSON.stringify(cleanTags(value));
     } else if (kind === 'money') {
       if (value === null || value === '') fields[key] = null;
       else {
@@ -178,7 +186,31 @@ function cleanFields(body) {
       }
     }
   }
+  // A status other than booked has no progress; a stage, when given, already set both.
+  if (fields.status && fields.status !== 'booked' && !has(fields, 'progress')) fields.progress = null;
   return { fields };
+}
+
+// A task as sent from the dashboard: a title, an optional due date, and for a change, done or not.
+function cleanTask(body, creating) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request.' };
+  const task = {};
+  if (has(body, 'title') || creating) {
+    const title = typeof body.title === 'string' ? body.title.replace(/\s+/g, ' ').trim().slice(0, TASK_TITLE_LENGTH) : '';
+    if (!title) return { error: 'Give the task a name.' };
+    task.title = title;
+  }
+  if (has(body, 'due_date')) {
+    if (body.due_date === null || body.due_date === '') task.due_date = null;
+    else if (isValidIsoDate(body.due_date)) task.due_date = body.due_date;
+    else return { error: 'Use a real calendar date.' };
+  }
+  if (has(body, 'done')) task.done = Boolean(body.done);
+  if (creating && has(body, 'inquiry_id') && body.inquiry_id !== null) {
+    if (!ID.test(String(body.inquiry_id))) return { error: 'Unknown couple.' };
+    task.inquiry_id = String(body.inquiry_id);
+  }
+  return { task };
 }
 
 const page = (title, bodyClass, body, head = '') => `<!DOCTYPE html>
@@ -296,6 +328,22 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
 
   const currentSession = (req) => sessions.get(readCookies(req.headers.cookie)[cookieName(req)]);
 
+  // The calendar feed for phones. Calendar apps can't sign in, so the private key in the address is the
+  // only thing that opens it; making a new address in the dashboard stops the old one.
+  router.get('/feed/:key/weddings.ics', async (req, res) => {
+    if (!store) return res.status(404).type('text').send('Not found');
+    let key;
+    try { key = await store.feedKey(); } catch (error) { return res.status(503).type('text').send('Unavailable'); }
+    const sent = Buffer.from(String(req.params.key || ''));
+    const wanted = Buffer.from(key);
+    if (sent.length !== wanted.length || !crypto.timingSafeEqual(sent, wanted)) {
+      await sleep(FAILED_LOGIN_DELAY_MS);
+      return res.status(404).type('text').send('Not found');
+    }
+    const origin = `https://${req.hostname}`;
+    res.type('text/calendar; charset=utf-8').send(calendarFeed(await store.feedEntries(), origin));
+  });
+
   router.get('/login', (req, res) => {
     if (currentSession(req)) return res.redirect(303, '/admin');
     const password = passwordState(env);
@@ -410,7 +458,7 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
     if (!id) return;
     const { fields, error } = cleanFields(req.body);
     if (error) return res.status(400).json({ error });
-    const inquiry = await store.updateInquiry(id, fields);
+    const inquiry = await store.updateInquiry(id, fields, 'you');
     if (!inquiry) return res.status(404).json({ error: 'Not found.' });
     res.json({ inquiry });
   });
@@ -446,6 +494,47 @@ function createAdminRouter({ store = null, env = process.env } = {}) {
     if (!id) return;
     if (!(await store.deleteNote(id))) return res.status(404).json({ error: 'Not found.' });
     res.status(204).end();
+  });
+
+  api.get('/today', async (req, res) => {
+    res.json(await store.today());
+  });
+
+  api.get('/board', async (req, res) => {
+    res.json({ cards: await store.board() });
+  });
+
+  api.post('/tasks', async (req, res) => {
+    const { task, error } = cleanTask(req.body, true);
+    if (error) return res.status(400).json({ error });
+    const created = await store.addTask(task);
+    if (!created) return res.status(404).json({ error: 'Not found.' });
+    res.status(201).json({ task: created });
+  });
+
+  api.patch('/tasks/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const { task, error } = cleanTask(req.body, false);
+    if (error) return res.status(400).json({ error });
+    const updated = await store.updateTask(id, task);
+    if (!updated) return res.status(404).json({ error: 'Not found.' });
+    res.json({ task: updated });
+  });
+
+  api.delete('/tasks/:id', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    if (!(await store.deleteTask(id))) return res.status(404).json({ error: 'Not found.' });
+    res.status(204).end();
+  });
+
+  const feedAddress = (req, key) => `https://${req.hostname}/admin/feed/${key}/weddings.ics`;
+  api.get('/calendar-feed', async (req, res) => {
+    res.json({ url: feedAddress(req, await store.feedKey()) });
+  });
+  api.post('/calendar-feed', async (req, res) => {
+    res.json({ url: feedAddress(req, await store.feedKey(true)) });
   });
 
   api.get('/calendar', async (req, res) => {

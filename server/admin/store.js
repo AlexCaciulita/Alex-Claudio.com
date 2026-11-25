@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { ANALYTICS_MIGRATION, analyticsMethods } = require('./analytics');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
+const { migrateWork, workMethods, syncTasks, logActivity, describeChange, stageOf, parseTags } = require('./work');
 
 const STATUSES = ['new', 'replied', 'booked', 'not_booked'];
 const TEXT_LIMITS = { names: 300, email: 300, phone: 100, event_date: 200, location: 300, hours: 300, care: 1000, message: 5000, source: 300 };
@@ -19,9 +20,9 @@ const BACKUPS_KEPT = 30;
 const BACKUP_FILE = /^studio-\d{4}-\d{2}-\d{2}\.sqlite$/;
 const EARLIER = 'earlier-dashboard';
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
-const INQUIRY_COLUMNS = 'i.id, i.created_at, i.updated_at, i.form_name, i.names, i.email, i.phone, i.event_date, i.wedding_date, i.location, i.hours, i.care, i.message, i.source, i.status, i.price_cents, i.paid_cents';
+const INQUIRY_COLUMNS = 'i.id, i.created_at, i.updated_at, i.form_name, i.names, i.email, i.phone, i.event_date, i.wedding_date, i.location, i.hours, i.care, i.message, i.source, i.status, i.progress, i.tags, i.price_cents, i.paid_cents';
 const COLUMN_FOR = { price: 'price_cents', paid: 'paid_cents' };
-const WRITABLE = new Set(['names', 'email', 'phone', 'event_date', 'wedding_date', 'location', 'hours', 'care', 'message', 'source', 'status', 'price', 'paid']);
+const WRITABLE = new Set(['names', 'email', 'phone', 'event_date', 'wedding_date', 'location', 'hours', 'care', 'message', 'source', 'status', 'progress', 'tags', 'price', 'paid']);
 
 const MIGRATION = `
 CREATE TABLE IF NOT EXISTS inquiries (
@@ -100,8 +101,8 @@ function cell(value) {
 
 function mapInquiry(row, withFields = false) {
   if (!row) return null;
-  const { price_cents: price, paid_cents: paid, fields, note_count: notes, ...rest } = row;
-  const inquiry = { ...rest, id: String(row.id), price: toDollars(price), paid: toDollars(paid) };
+  const { price_cents: price, paid_cents: paid, fields, note_count: notes, tags, ...rest } = row;
+  const inquiry = { ...rest, id: String(row.id), stage: stageOf(row.status, row.progress), tags: parseTags(tags), price: toDollars(price), paid: toDollars(paid) };
   if (notes !== undefined) inquiry.note_count = Number(notes);
   if (withFields) {
     try { inquiry.fields = JSON.parse(fields || '{}'); } catch (error) { inquiry.fields = {}; }
@@ -198,6 +199,7 @@ function createStore(env = process.env, sqlite) {
       handle.exec('PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
       handle.exec(MIGRATION);
       handle.exec(ANALYTICS_MIGRATION);
+      migrateWork(handle);
     } catch (error) {
       handle.close();
       throw error;
@@ -312,6 +314,7 @@ function createStore(env = process.env, sqlite) {
           console.error('Copying from the earlier dashboard failed:', safeMessage(error));
         }
         try { backupToday(); } catch (error) { console.error('The daily backup failed:', safeMessage(error)); }
+        store.syncAllTasks().catch((error) => console.error('Making wedding tasks failed:', safeMessage(error)));
         store.pruneAnalytics().catch((error) => console.error('Clearing old visits failed:', safeMessage(error)));
         if (!timer) {
           timer = setInterval(() => {
@@ -378,7 +381,12 @@ function createStore(env = process.env, sqlite) {
         text(data.location, TEXT_LIMITS.location), text(data.hours, TEXT_LIMITS.hours), text(data.care, TEXT_LIMITS.care),
         text(data.message, TEXT_LIMITS.message), text(data.source || data.referral, TEXT_LIMITS.source), JSON.stringify(fields)
       );
-      return String(result.lastInsertRowid);
+      const id = String(result.lastInsertRowid);
+      logActivity(target, {
+        inquiryId: id, actor: 'website', kind: 'inquiry',
+        summary: formName === 'wedding-show-lead' ? `${names || 'A couple'} signed up at a wedding show` : `New inquiry from ${names || text(data.email, TEXT_LIMITS.email) || 'a couple'}`
+      });
+      return id;
     }),
 
     listInquiries: ({ q = '', status = '' } = {}) => use((target) => {
@@ -402,12 +410,15 @@ function createStore(env = process.env, sqlite) {
          LIMIT 500`).all(...params).map((row) => mapInquiry(row));
     }),
 
-    getInquiry: (id) => use((target) => {
+    getInquiry: (id) => use(async (target) => {
       const row = target.prepare(`SELECT ${INQUIRY_COLUMNS}, i.fields FROM inquiries i WHERE i.id = ?`).get(Number(id));
       if (!row) return null;
       const notes = target.prepare('SELECT id, created_at, body FROM notes WHERE inquiry_id = ? ORDER BY created_at DESC, id DESC').all(Number(id));
       const guide = target.prepare('SELECT code, sent_at FROM guide_links WHERE inquiry_id = ?').get(Number(id));
-      return { inquiry: mapInquiry(row, true), notes: notes.map(mapNote), guide: guide ? { code: guide.code, sent_at: guide.sent_at || null } : null };
+      return {
+        inquiry: mapInquiry(row, true), notes: notes.map(mapNote), guide: guide ? { code: guide.code, sent_at: guide.sent_at || null } : null,
+        tasks: await store.tasksFor(id), activity: await store.activityFor(id)
+      };
     }),
 
     // The couple's own link to the pricing guide, made the first time it's asked for. The code is its only key.
@@ -442,6 +453,7 @@ function createStore(env = process.env, sqlite) {
           .run(priced.hoursText, JSON.stringify(fields), ...(setPrice ? [cents] : []), row.id);
         target.prepare(`UPDATE guide_links SET sent_at = ${NOW}, total_cents = ? WHERE code = ?`).run(cents, String(code));
         target.prepare('INSERT INTO notes (inquiry_id, body) VALUES (?, ?)').run(row.id, `Sent a package from the pricing guide.\n${priced.summary}`);
+        logActivity(target, { inquiryId: row.id, actor: 'website', kind: 'guide', summary: `${row.names || 'The couple'} sent a ${fmtDollars(cents)} package from the pricing guide` });
         target.exec('COMMIT');
       } catch (error) {
         target.exec('ROLLBACK');
@@ -450,32 +462,55 @@ function createStore(env = process.env, sqlite) {
       return { id: String(row.id), names: row.names, email: row.email, priceSet: setPrice };
     }),
 
-    createInquiry: (fields) => use(async (target) => {
+    createInquiry: (fields, actor = 'you') => use(async (target) => {
       const columns = Object.keys(fields).filter((key) => WRITABLE.has(key));
       const values = columns.map((key) => (COLUMN_FOR[key] ? toCents(fields[key]) : fields[key]));
       const result = target.prepare(`INSERT INTO inquiries (form_name${columns.map((key) => `, ${quoteIdent(COLUMN_FOR[key] || key)}`).join('')})
         VALUES ('manual'${columns.map(() => ', ?').join('')})`).run(...values);
-      return (await store.getInquiry(String(result.lastInsertRowid))).inquiry;
+      const id = String(result.lastInsertRowid);
+      syncTasks(target, id, todayIn(paths.timeZone));
+      logActivity(target, { inquiryId: id, actor, kind: 'inquiry', summary: `Added ${fields.names || fields.email || 'a couple'} by hand` });
+      return (await store.getInquiry(id)).inquiry;
     }),
 
-    updateInquiry: (id, fields) => use(async (target) => {
+    // Saves the changes, keeps the wedding's tasks in step, and records what changed and what it was before.
+    updateInquiry: (id, fields, actor = 'you') => use(async (target) => {
       const columns = Object.keys(fields).filter((key) => WRITABLE.has(key));
       if (columns.length) {
-        const sets = columns.map((key) => `${quoteIdent(COLUMN_FOR[key] || key)} = ?`);
+        const dbColumns = columns.map((key) => COLUMN_FOR[key] || key);
+        const before = target.prepare(`SELECT ${dbColumns.map(quoteIdent).join(', ')}, status, progress, tags FROM inquiries WHERE id = ?`).get(Number(id));
+        if (!before) return null;
         const values = columns.map((key) => (COLUMN_FOR[key] ? toCents(fields[key]) : fields[key]));
-        const result = target.prepare(`UPDATE inquiries SET ${sets.join(', ')}, updated_at = ${NOW} WHERE id = ?`).run(...values, Number(id));
-        if (!result.changes) return null;
+        const changed = {};
+        const was = {};
+        dbColumns.forEach((column, index) => {
+          if (before[column] !== values[index]) { changed[column] = values[index]; was[column] = before[column]; }
+        });
+        if (Object.keys(changed).length) {
+          const sets = Object.keys(changed).map((column) => `${quoteIdent(column)} = ?`);
+          target.prepare(`UPDATE inquiries SET ${sets.join(', ')}, updated_at = ${NOW} WHERE id = ?`).run(...Object.values(changed), Number(id));
+          syncTasks(target, id, todayIn(paths.timeZone));
+          const summary = describeChange(before, changed);
+          if (summary) logActivity(target, { inquiryId: id, actor, kind: 'change', summary, before: was, after: changed });
+        }
       }
       const found = await store.getInquiry(id);
       return found && found.inquiry;
     }),
 
-    deleteInquiry: (id) => use((target) => target.prepare('DELETE FROM inquiries WHERE id = ?').run(Number(id)).changes > 0),
+    deleteInquiry: (id, actor = 'you') => use((target) => {
+      const row = target.prepare('SELECT names, email FROM inquiries WHERE id = ?').get(Number(id));
+      if (!row) return false;
+      target.prepare('DELETE FROM inquiries WHERE id = ?').run(Number(id));
+      logActivity(target, { actor, kind: 'delete', summary: `Deleted the inquiry from ${row.names || row.email || 'a couple'}` });
+      return true;
+    }),
 
-    addNote: (inquiryId, body) => use((target) => {
+    addNote: (inquiryId, body, actor = 'you') => use((target) => {
       const row = target.prepare(`INSERT INTO notes (inquiry_id, body)
           SELECT id, ? FROM inquiries WHERE id = ?
           RETURNING id, created_at, body`).get(body, Number(inquiryId));
+      if (row) logActivity(target, { inquiryId, actor, kind: 'note', summary: `Note: ${body.length > 120 ? `${body.slice(0, 117)}...` : body}` });
       return row ? mapNote(row) : null;
     }),
 
@@ -500,10 +535,10 @@ function createStore(env = process.env, sqlite) {
       };
     }),
 
-    calendar: (from, to) => use((target) => target.prepare(`SELECT id, names, email, wedding_date, status, location, hours
+    calendar: (from, to) => use((target) => target.prepare(`SELECT id, names, email, wedding_date, status, progress, location, hours
          FROM inquiries
         WHERE wedding_date BETWEEN ? AND ? AND status <> 'not_booked'
-        ORDER BY wedding_date, names`).all(from, to).map((row) => ({ ...row, id: String(row.id) }))),
+        ORDER BY wedding_date, names`).all(from, to).map((row) => ({ ...row, id: String(row.id), stage: stageOf(row.status, row.progress) }))),
 
     legacyTables: async () => {
       const old = openEarlier();
@@ -550,6 +585,7 @@ function createStore(env = process.env, sqlite) {
     backupToday: () => use(() => backupToday()),
 
     ...analyticsMethods({ use, timeZone: paths.timeZone }),
+    ...workMethods({ use, timeZone: paths.timeZone }),
 
     close: async () => {
       if (timer) clearInterval(timer);

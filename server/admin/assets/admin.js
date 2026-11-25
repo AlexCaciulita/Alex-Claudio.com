@@ -5,7 +5,10 @@
   const CSRF = (document.querySelector('meta[name="csrf"]') || {}).content || '';
   const app = document.getElementById('app');
   const STATUSES = [['new', 'New'], ['replied', 'Replied'], ['booked', 'Booked'], ['not_booked', 'Not booked']];
-  const STATUS_LABEL = Object.fromEntries(STATUSES);
+  // The whole job, from the first letter to the delivered gallery.
+  const STAGE_OPTIONS = [['new', 'New'], ['replied', 'Replied'], ['booked', 'Booked'], ['planning', 'Planning'], ['editing', 'Editing'], ['delivered', 'Delivered'], ['not_booked', 'Not booked']];
+  const STAGE_LABEL = Object.fromEntries(STAGE_OPTIONS);
+  const TAG_SUGGESTIONS = ['Questionnaire sent', 'Timeline ready', 'Engagement session', 'Photos to edit', 'Album to make', 'Album sent', 'Second photographer', 'Referral'];
   const FORM_LABEL = { contact: 'Website letter', 'wedding-show-lead': 'Wedding show sign-up', manual: 'Added by hand', 'earlier-dashboard': 'From the earlier dashboard' };
   const LIMITS = { names: 300, email: 300, phone: 100, event_date: 200, location: 300, hours: 300, care: 1000, message: 5000, source: 300 };
   const TEXT_FIELDS = Object.keys(LIMITS);
@@ -60,7 +63,7 @@
     return dialed.replace(/\D/g, '').length >= 7 ? `tel:${dialed}` : null;
   };
   const coupleName = (inq) => inq.names || inq.email || 'No name';
-  const statusBadge = (status) => h('span', { class: `badge s-${status}` }, STATUS_LABEL[status] || status);
+  const stageBadge = (stage) => h('span', { class: `badge s-${['planning', 'editing', 'delivered'].includes(stage) ? 'booked' : stage} st-${stage}` }, STAGE_LABEL[stage] || stage);
 
   /* ---------- Talking to the website ---------- */
 
@@ -119,6 +122,8 @@
   /* ---------- Page frame ---------- */
 
   const views = {
+    today: { label: 'Today', render: renderToday },
+    board: { label: 'Board', render: renderBoard },
     inquiries: { label: 'Inquiries', render: renderInquiries },
     analytics: { label: 'Analytics', render: renderAnalytics },
     calendar: { label: 'Calendar', render: renderCalendar },
@@ -134,7 +139,7 @@
 
   app.append(
     h('header', { class: 'top' },
-      h('a', { class: 'brand', href: '#inquiries' },
+      h('a', { class: 'brand', href: '#today' },
         h('img', { src: '/favicon.svg', alt: '', width: 32, height: 32 }),
         h('span', {}, 'Alex Claudio'),
         h('small', {}, 'Studio')),
@@ -147,7 +152,7 @@
 
   function route() {
     const wanted = location.hash.replace(/^#/, '');
-    const key = views[wanted] ? wanted : 'inquiries';
+    const key = views[wanted] ? wanted : 'today';
     const token = ++state.token;
     for (const [name, link] of Object.entries(navLinks)) {
       if (name === key) link.setAttribute('aria-current', 'page');
@@ -275,7 +280,7 @@
       cell('c-wedding', inq.wedding_date ? fmtDay(inq.wedding_date) : inq.event_date),
       cell('c-place', inq.location),
       cell('c-hours', inq.hours),
-      h('td', { class: 'c-status' }, statusBadge(inq.status)));
+      h('td', { class: 'c-status' }, stageBadge(inq.stage || inq.status)));
     });
     wrap.append(h('table', { class: 'list' },
       h('thead', {}, h('tr', {}, ['Received', 'Couple', 'Wedding', 'Place', 'Coverage', 'Status'].map((title) => h('th', { scope: 'col' }, title)))),
@@ -304,17 +309,17 @@
       return;
     }
     if (mine !== detailSeq) return;
-    drawDetail(data.inquiry, data.notes, data.guide);
+    drawDetail(data.inquiry, data.notes, data.guide, data);
     if (!detail.open) detail.showModal();
   }
 
-  function drawDetail(inq, notes, guide) {
+  function drawDetail(inq, notes, guide, extra = {}) {
     // A change that finishes after the sheet has closed refreshes the page behind it right away.
     const changed = () => { if (detail.open) detail.dataset.changed = '1'; else refreshCurrent(); };
     // Saves go out one at a time, in order, so an older answer can never overwrite a newer choice.
     // A control is set back to the saved value only once nothing more is waiting for it.
     let queue = Promise.resolve();
-    const pending = { status: 0, wedding_date: 0 };
+    const pending = { stage: 0, wedding_date: 0, tags: 0 };
     const save = (field, value, message) => {
       pending[field] += 1;
       queue = queue.then(async () => {
@@ -324,6 +329,7 @@
           changed();
           drawMoney();
           drawWrote();
+          loadWork();
           say(message);
         } catch (error) {
           fail(error);
@@ -335,9 +341,9 @@
       return queue;
     };
 
-    const statusSelect = h('select', { id: 'd-status' }, STATUSES.map(([value, label]) => h('option', { value }, label)));
-    statusSelect.value = inq.status;
-    statusSelect.addEventListener('change', () => save('status', statusSelect.value, `Marked ${STATUS_LABEL[statusSelect.value].toLowerCase()}.`));
+    const statusSelect = h('select', { id: 'd-status' }, STAGE_OPTIONS.map(([value, label]) => h('option', { value }, label)));
+    statusSelect.value = inq.stage || inq.status;
+    statusSelect.addEventListener('change', () => save('stage', statusSelect.value, `Moved to ${STAGE_LABEL[statusSelect.value]}.`));
 
     // Chrome and Edge report a new date after every digit typed (0002, 0020, 0202, 2028), so the date
     // is saved only once it is complete and within range, after a pause or when the field is left.
@@ -357,8 +363,12 @@
     dateInput.addEventListener('change', saveDateSoon);
     dateInput.addEventListener('blur', saveDate);
     const showSaved = (field) => {
-      if (field === 'status') {
-        statusSelect.value = inq.status;
+      if (field === 'stage') {
+        statusSelect.value = inq.stage || inq.status;
+        return;
+      }
+      if (field === 'tags') {
+        drawTags();
         return;
       }
       requestedDate = inq.wedding_date || null;
@@ -434,6 +444,51 @@
     };
     drawMoney();
 
+    // Tags: short labels for where the work stands, saved as a whole list each time.
+    const tagWrap = h('div', { class: 'tag-editor' });
+    const tagInput = h('input', { type: 'text', maxlength: 40, list: 'tag-suggestions', placeholder: 'Add a tag…', 'aria-label': 'Add a tag' });
+    const saveTags = (tags) => { inq.tags = tags; drawTags(); save('tags', tags, 'Tags saved.'); };
+    const drawTags = () => {
+      clear(tagWrap).append(
+        ...(inq.tags || []).map((tag) => h('span', { class: 'tag' }, tag,
+          h('button', { class: 'tag-x', type: 'button', 'aria-label': `Remove the tag ${tag}`, onclick: () => saveTags(inq.tags.filter((t) => t !== tag)) }, '\u00d7'))),
+        tagInput,
+        h('datalist', { id: 'tag-suggestions' }, TAG_SUGGESTIONS.filter((t) => !(inq.tags || []).includes(t)).map((t) => h('option', { value: t }))));
+    };
+    const addTag = () => {
+      const tag = tagInput.value.replace(/\s+/g, ' ').trim();
+      if (!tag) return;
+      tagInput.value = '';
+      if (!(inq.tags || []).some((t) => t.toLowerCase() === tag.toLowerCase())) saveTags([...(inq.tags || []), tag]);
+      tagInput.focus();
+    };
+    tagInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      addTag();
+    });
+    // Picking a suggestion from the list adds it straight away.
+    tagInput.addEventListener('input', (event) => {
+      if ((!event.inputType || event.inputType === 'insertReplacementText') && TAG_SUGGESTIONS.includes(tagInput.value)) addTag();
+    });
+    drawTags();
+
+    // Tasks for this wedding and what changed on it.
+    const taskList = h('div');
+    const history = h('div');
+    const drawWork = (tasks, activity) => {
+      drawTasks(taskList, tasks || [], loadWork, false);
+      drawActivity(history, activity || [], false);
+    };
+    async function loadWork() {
+      try {
+        const data = await api(`/inquiries/${encodeURIComponent(inq.id)}`);
+        drawWork(data.tasks, data.activity);
+        changed();
+      } catch (error) { fail(error); }
+    }
+    drawWork(extra.tasks, extra.activity);
+
     const remove = async () => {
       await settled();
       if (!window.confirm(`Delete the inquiry from ${coupleName(inq)}? Its notes go too. This can\u2019t be undone.`)) return;
@@ -508,9 +563,11 @@
       h('div', { class: 'sheet-body' },
         h('section', {},
           h('div', { class: 'quick' },
-            h('label', { for: 'd-status' }, 'Status', statusSelect),
+            h('label', { for: 'd-status' }, 'Stage', statusSelect),
             h('label', { for: 'd-date' }, 'Wedding date', dateInput)),
-          wrote, facts, money,
+          wrote,
+          h('div', { class: 'tags-block' }, h('span', { class: 'mini-label' }, 'Tags'), tagWrap),
+          facts, money,
           h('div', { class: 'actions' },
             mailable ? h('a', { class: 'button primary', href: `mailto:${inq.email}?subject=${encodeURIComponent('Your wedding \u00b7 Alex Claudio Photography')}` }, 'Reply by email') : null,
             h('button', { type: 'button', onclick: copyGuideLink }, 'Copy guide link'),
@@ -519,14 +576,19 @@
         h('section', { class: 'detail-notes', 'aria-labelledby': 'notes-title' },
           h('h3', { id: 'notes-title' }, 'Private notes'),
           h('p', { class: 'muted small' }, 'Only you see these.'),
-          noteForm, noteList)));
+          noteForm, noteList,
+          h('h3', { class: 'sub-title' }, 'Tasks'),
+          taskForm(inq.id, loadWork),
+          taskList,
+          h('h3', { class: 'sub-title' }, 'History'),
+          history)));
   }
 
   /* ---------- Add or edit ---------- */
 
   function openEditor(inq) {
     const isNew = !inq;
-    const values = inq || { status: 'new' };
+    const values = inq || { stage: 'new' };
     const shown = (name) => (values[name] === null || values[name] === undefined ? '' : String(values[name]));
     const field = (name, label, options = {}) => {
       const id = `e-${name}`;
@@ -538,15 +600,15 @@
         });
       return h('label', { class: options.span || null, for: id }, label, control);
     };
-    const status = h('select', { id: 'e-status', name: 'status' }, STATUSES.map(([value, label]) => h('option', { value }, label)));
-    status.value = values.status || 'new';
+    const status = h('select', { id: 'e-status', name: 'stage' }, STAGE_OPTIONS.map(([value, label]) => h('option', { value }, label)));
+    status.value = values.stage || values.status || 'new';
     const error = h('p', { class: 'error-text', role: 'alert' });
     const submit = h('button', { class: 'primary', type: 'submit' }, isNew ? 'Add inquiry' : 'Save changes');
 
     const form = h('form', { class: 'editor-form', novalidate: true },
       h('div', { class: 'form-grid' },
         field('names', 'Couple\u2019s names', { span: 'span2' }),
-        h('label', { for: 'e-status' }, 'Status', status),
+        h('label', { for: 'e-status' }, 'Stage', status),
         field('email', 'Email', { type: 'email' }),
         field('phone', 'Phone', { type: 'tel' }),
         field('wedding_date', 'Wedding date', { type: 'date', min: '2000-01-01', max: '2100-12-31' }),
@@ -568,7 +630,7 @@
       error.textContent = '';
       const body = {};
       for (const name of TEXT_FIELDS) body[name] = form.elements[name].value.trim();
-      body.status = status.value;
+      body.stage = status.value;
       const dateField = form.elements.wedding_date;
       if (!dateField.validity.valid) {
         error.textContent = 'Use a wedding date between 2000 and 2100, or clear it.';
@@ -615,6 +677,312 @@
       form);
     if (!editor.open) editor.showModal();
     form.elements.names.focus();
+  }
+
+  /* ---------- Today ---------- */
+
+  const countdown = (days) => (days === null || days === undefined ? ''
+    : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days === -1 ? 'Yesterday'
+      : days > 0 ? `In ${plural(days, 'day', 'days')}` : `${plural(-days, 'day', 'days')} ago`);
+  const daysFromToday = (iso) => Math.round((localDate(iso) - localDate(isoOf(new Date()))) / 86400000);
+  const fmtAgo = (stamp) => {
+    const minutes = Math.round((Date.now() - new Date(stamp)) / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (minutes < 1440) return `${Math.round(minutes / 60)} h ago`;
+    const days = Math.round(minutes / 1440);
+    return days < 30 ? `${days} d ago` : fmtReceived(stamp);
+  };
+  const ACTOR_LABEL = { you: 'You', website: 'Website', assistant: 'Assistant' };
+  const dateBlock = (iso) => {
+    if (!iso) return h('div', { class: 'date-block is-empty' }, h('span', {}, 'No'), h('strong', {}, '—'), h('span', {}, 'date'));
+    const d = localDate(iso);
+    return h('div', { class: 'date-block' },
+      h('span', {}, d.toLocaleDateString('en-US', { month: 'short' })),
+      h('strong', {}, String(d.getDate())),
+      h('span', {}, String(d.getFullYear())));
+  };
+  const coupleLink = (id, names) => h('button', { class: 'link couple-link', type: 'button', onclick: () => openDetail(id) }, names || 'No name');
+
+  function renderToday(root, live) {
+    const now = new Date();
+    const head = h('div', { class: 'today-head' },
+      h('p', { class: 'eyebrow' }, now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })),
+      h('h1', {}, 'Today'));
+    const strip = h('div', { class: 'strip-wrap' });
+    const needs = h('div', {}, h('p', { class: 'muted' }, 'Loading…'));
+    const tasks = h('div');
+    const activity = h('div');
+    root.append(
+      head,
+      h('section', { class: 'today-section', 'aria-labelledby': 'up-title' },
+        h('div', { class: 'section-head' }, h('h2', { id: 'up-title' }, 'Coming up'), h('a', { href: '#calendar' }, 'Open the calendar')),
+        strip),
+      h('div', { class: 'today-grid' },
+        h('div', { class: 'today-col' },
+          h('section', { class: 'panel', 'aria-labelledby': 'needs-title' }, h('h2', { id: 'needs-title' }, 'Needs you'), needs),
+          h('section', { class: 'panel', 'aria-labelledby': 'activity-title' }, h('h2', { id: 'activity-title' }, 'Recent activity'), activity)),
+        h('section', { class: 'panel', 'aria-labelledby': 'tasks-title' },
+          h('h2', { id: 'tasks-title' }, 'Tasks and deadlines'),
+          h('p', { class: 'muted small' }, 'Booked weddings get a questionnaire, a timeline check and the gallery delivery on their own.'),
+          taskForm(null, () => load()),
+          tasks)));
+
+    async function load() {
+      let data;
+      try {
+        data = await api('/today');
+      } catch (error) {
+        if (live()) clear(needs).append(problem(error, 'The Today page fills in once the website has a volume to save to.'));
+        return;
+      }
+      if (!live()) return;
+      const next = data.upcoming[0];
+      clear(head).append(
+        h('p', { class: 'eyebrow' }, now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })),
+        h('h1', {}, next ? ['Next up: ', coupleLink(next.id, next.names)] : 'Nothing booked ahead yet'),
+        next ? h('p', { class: 'next-line' }, [countdown(next.days), fmtDay(next.wedding_date, true), next.location].filter(Boolean).join(' · ')) : null);
+      drawStrip(data.upcoming);
+      drawNeeds(data.needs);
+      drawTasks(tasks, data.tasks, load, true);
+      drawActivity(activity, data.activity, true);
+    }
+
+    function drawStrip(upcoming) {
+      clear(strip);
+      if (!upcoming.length) {
+        strip.append(h('p', { class: 'empty' }, 'Booked weddings with a date appear here.'));
+        return;
+      }
+      strip.append(h('ol', { class: 'strip' }, upcoming.map((w, index) => h('li', {},
+        h('button', { class: index === 0 ? 'strip-card is-next' : 'strip-card', type: 'button', onclick: () => openDetail(w.id) },
+          h('small', { class: 'strip-count' }, countdown(w.days)),
+          h('strong', { class: 'strip-date' }, localDate(w.wedding_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })),
+          h('small', {}, localDate(w.wedding_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric' })),
+          h('span', { class: 'strip-names' }, w.names),
+          w.location ? h('small', { class: 'strip-place' }, w.location) : null,
+          stageBadge(w.stage))))));
+    }
+
+    function drawNeeds(items) {
+      clear(needs);
+      if (!items.length) {
+        needs.append(h('p', { class: 'all-clear' }, 'All caught up. Nothing is waiting on you.'));
+        return;
+      }
+      needs.append(h('ul', { class: 'needs' }, items.map((item) => h('li', { class: `need need-${item.kind}` },
+        h('div', {}, coupleLink(item.inquiry_id, item.names), h('p', {}, item.text)),
+        item.action ? h('button', {
+          type: 'button',
+          onclick: async (event) => {
+            event.currentTarget.disabled = true;
+            try {
+              await api(`/inquiries/${item.inquiry_id}`, { method: 'PATCH', body: { stage: item.action.stage } });
+              say(`${item.names} moved to ${STAGE_LABEL[item.action.stage]}.`);
+              load();
+            } catch (error) { fail(error); }
+          }
+        }, item.action.label) : null))));
+    }
+
+    state.refresh = load;
+    load();
+  }
+
+  // A small form for a new task, for one couple or for the studio.
+  function taskForm(inquiryId, done) {
+    const title = h('input', { type: 'text', maxlength: 200, placeholder: inquiryId ? 'A task for this wedding…' : 'Add a task…', 'aria-label': 'New task' });
+    const due = h('input', { type: 'date', min: '2000-01-01', max: '2100-12-31', 'aria-label': 'Due date' });
+    const button = h('button', { type: 'submit' }, 'Add');
+    return h('form', {
+      class: 'task-form',
+      onsubmit: async (event) => {
+        event.preventDefault();
+        if (!title.value.trim()) { title.focus(); return; }
+        if (!due.validity.valid) { due.focus(); return; }
+        button.disabled = true;
+        try {
+          await api('/tasks', { method: 'POST', body: { title: title.value, due_date: due.value || null, inquiry_id: inquiryId } });
+          title.value = '';
+          due.value = '';
+          done();
+        } catch (error) { fail(error); }
+        button.disabled = false;
+      }
+    }, title, due, button);
+  }
+
+  function dueLabel(task) {
+    if (task.done) return 'Done';
+    if (!task.due_date) return 'No date';
+    const days = daysFromToday(task.due_date);
+    if (days < 0) return `Overdue by ${plural(-days, 'day', 'days')}`;
+    if (days === 0) return 'Due today';
+    if (days === 1) return 'Due tomorrow';
+    return `Due ${localDate(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: days > 300 ? 'numeric' : undefined })}`;
+  }
+
+  function drawTasks(wrap, tasks, reload, withNames) {
+    clear(wrap);
+    if (!tasks.length) {
+      wrap.append(h('p', { class: 'empty-note' }, withNames ? 'Nothing due in the next two months.' : 'No tasks for this wedding.'));
+      return;
+    }
+    wrap.append(h('ul', { class: 'tasks' }, tasks.map((task) => {
+      const overdue = !task.done && task.due_date && daysFromToday(task.due_date) < 0;
+      const box = h('input', {
+        type: 'checkbox', 'aria-label': `Done: ${task.title}`,
+        onchange: async () => {
+          box.disabled = true;
+          try {
+            await api(`/tasks/${task.id}`, { method: 'PATCH', body: { done: box.checked } });
+            if (box.checked) say(`Done: ${task.title}`);
+            reload();
+          } catch (error) { fail(error); box.checked = !box.checked; box.disabled = false; }
+        }
+      });
+      box.checked = task.done;
+      return h('li', { class: [task.done ? 'is-done' : '', overdue ? 'is-overdue' : ''].filter(Boolean).join(' ') || null },
+        box,
+        h('div', { class: 'task-text' },
+          h('span', {}, task.title),
+          h('small', {}, dueLabel(task), withNames && task.inquiry_id ? [' · ', coupleLink(task.inquiry_id, task.names)] : null)),
+        h('button', {
+          class: 'link', type: 'button', 'aria-label': `Remove the task ${task.title}`,
+          onclick: async () => {
+            if (!window.confirm(`Remove “${task.title}”?`)) return;
+            try { await api(`/tasks/${task.id}`, { method: 'DELETE' }); reload(); } catch (error) { fail(error); }
+          }
+        }, 'Remove'));
+    })));
+  }
+
+  function drawActivity(wrap, items, withNames) {
+    clear(wrap);
+    if (!items.length) {
+      wrap.append(h('p', { class: 'empty-note' }, 'Changes show up here as they happen.'));
+      return;
+    }
+    wrap.append(h('ul', { class: 'activity' }, items.map((item) => h('li', {},
+      h('span', { class: `actor actor-${item.actor}` }, ACTOR_LABEL[item.actor] || item.actor),
+      h('div', {},
+        h('p', {}, item.summary),
+        h('small', {}, fmtAgo(item.at), withNames && item.inquiry_id && item.names ? [' · ', coupleLink(item.inquiry_id, item.names)] : null))))));
+  }
+
+  /* ---------- Board ---------- */
+
+  const BOARD_COLUMNS = ['new', 'replied', 'booked', 'planning', 'editing', 'delivered'];
+  const boardState = { q: '' };
+
+  function renderBoard(root, live) {
+    const board = h('div', { class: 'board' }, h('p', { class: 'muted' }, 'Loading…'));
+    const search = h('input', { type: 'search', placeholder: 'Find a couple or a place…', 'aria-label': 'Filter the board', value: boardState.q });
+    let cards = [];
+    search.addEventListener('input', () => { boardState.q = search.value.trim().toLowerCase(); draw(); });
+    root.append(
+      h('div', { class: 'view-head' },
+        h('div', {}, h('p', { class: 'eyebrow' }, 'Every couple, by stage'), h('h1', {}, 'Board')),
+        h('button', { class: 'primary', type: 'button', onclick: () => openEditor(null) }, '+ Add an inquiry')),
+      h('div', { class: 'toolbar' }, search, h('p', { class: 'muted small board-hint' }, 'Open a card to change its stage, or drag it to another column.')),
+      board);
+
+    async function load() {
+      try {
+        ({ cards } = await api('/board'));
+      } catch (error) {
+        if (live()) clear(board).append(problem(error, 'The board fills in once the website has a volume to save to.'));
+        return;
+      }
+      if (live()) draw();
+    }
+
+    const move = async (id, stage) => {
+      const card = cards.find((c) => c.id === id);
+      if (!card || card.stage === stage) return;
+      const was = card.stage;
+      card.stage = stage;
+      draw();
+      try {
+        await api(`/inquiries/${id}`, { method: 'PATCH', body: { stage } });
+        say(`${card.names} moved to ${STAGE_LABEL[stage]}.`);
+        load();
+      } catch (error) {
+        card.stage = was;
+        draw();
+        fail(error);
+      }
+    };
+
+    function draw() {
+      const shown = boardState.q
+        ? cards.filter((c) => [c.names, c.location, c.event_date, ...(c.tags || [])].join(' ').toLowerCase().includes(boardState.q))
+        : cards;
+      const sortKey = (c) => c.wedding_date || '9999';
+      clear(board).append(...BOARD_COLUMNS.map((stage) => {
+        let list = shown.filter((c) => c.stage === stage);
+        list = stage === 'delivered'
+          ? list.sort((a, b) => (sortKey(b) < sortKey(a) ? -1 : 1))
+          : stage === 'new' || stage === 'replied'
+            ? list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+            : list.sort((a, b) => (sortKey(a) < sortKey(b) ? -1 : 1));
+        const column = h('section', { class: `column col-${stage}`, 'aria-label': STAGE_LABEL[stage] },
+          h('header', {}, h('span', { class: `dot-stage st-${stage}` }), h('h2', {}, STAGE_LABEL[stage]), h('small', {}, String(list.length))),
+          h('ol', {}, list.length
+            ? list.map((c) => h('li', {},
+              h('button', {
+                class: 'board-card', type: 'button', draggable: 'true',
+                'aria-label': [c.names, c.wedding_date ? fmtDay(c.wedding_date) : 'no date', c.location, STAGE_LABEL[c.stage]].filter(Boolean).join(', '),
+                onclick: () => openDetail(c.id),
+                ondragstart: (event) => { event.dataTransfer.setData('text/plain', c.id); event.dataTransfer.effectAllowed = 'move'; event.currentTarget.classList.add('dragging'); },
+                ondragend: (event) => event.currentTarget.classList.remove('dragging')
+              },
+              dateBlock(c.wedding_date),
+              h('span', { class: 'board-text' },
+                h('strong', {}, c.names),
+                c.location ? h('small', {}, c.location) : !c.wedding_date && c.event_date ? h('small', {}, `“${c.event_date}”`) : null,
+                c.days !== null && c.days !== undefined ? h('small', { class: 'board-count' }, countdown(c.days)) : null,
+                c.tags && c.tags.length ? h('span', { class: 'tag-row' }, c.tags.map((tag) => h('span', { class: 'tag' }, tag))) : null))))
+            : h('li', { class: 'column-empty' }, 'Nothing here')));
+        column.addEventListener('dragover', (event) => { event.preventDefault(); column.classList.add('drop'); });
+        column.addEventListener('dragleave', (event) => { if (!column.contains(event.relatedTarget)) column.classList.remove('drop'); });
+        column.addEventListener('drop', (event) => {
+          event.preventDefault();
+          column.classList.remove('drop');
+          move(event.dataTransfer.getData('text/plain'), stage);
+        });
+        return column;
+      }));
+    }
+
+    state.refresh = load;
+    load();
+  }
+
+  /* ---------- Phone calendar ---------- */
+
+  function phoneCalendar() {
+    const box = h('div', { class: 'feed', hidden: true });
+    const open = async (renew) => {
+      if (renew && !window.confirm('Make a new address? Phones using the old one stop getting updates until you add the new one.')) return;
+      try {
+        const { url } = await api('/calendar-feed', { method: renew ? 'POST' : 'GET' });
+        const webcal = url.replace(/^https:/, 'webcal:');
+        clear(box).append(
+          h('p', {}, 'Subscribe once and booked weddings and task due dates show up in your phone’s calendar, updated about every hour. Keep this address private: anyone with it can see the weddings.'),
+          h('div', { class: 'actions' },
+            h('a', { class: 'button primary', href: webcal }, 'Add to this device'),
+            h('button', {
+              type: 'button',
+              onclick: async () => {
+                try { await navigator.clipboard.writeText(url); say('Calendar address copied.'); } catch (error) { window.prompt('Copy the calendar address:', url); }
+              }
+            }, 'Copy the address'),
+            h('button', { class: 'quiet', type: 'button', onclick: () => open(true) }, 'Make a new address')));
+        box.hidden = false;
+      } catch (error) { fail(error); }
+    };
+    return h('div', {}, h('button', { class: 'quiet', type: 'button', onclick: () => (box.hidden ? open(false) : (box.hidden = true)) }, 'Phone calendar'), box);
   }
 
   /* ---------- Analytics ---------- */
@@ -1107,6 +1475,7 @@
           title,
           h('button', { type: 'button', 'aria-label': 'Next month', onclick: () => shift(1) }, '\u203a'),
           h('button', { class: 'quiet', type: 'button', onclick: () => go(thisMonth()) }, 'Today'))),
+      phoneCalendar(),
       h('p', { class: 'intro' }, 'Booked weddings are filled in; dashed ones are still being talked about. An inquiry shows up once it has a wedding date.'),
       h('div', { class: 'calendar-wrap' }, grid),
       agenda);
@@ -1139,7 +1508,7 @@
       agenda.append(h('ul', {}, inMonth.map((w) => h('li', {},
         h('button', { type: 'button', onclick: () => openDetail(w.id) },
           h('span', {}, h('strong', {}, fmtDay(w.wedding_date, true)), ` \u2014 ${coupleName(w)}${w.location ? ` \u00b7 ${w.location}` : ''}`),
-          statusBadge(w.status))))));
+          stageBadge(w.stage || w.status))))));
     }
 
     function drawGrid(start, first, weddings) {
@@ -1159,7 +1528,7 @@
           (byDay.get(iso) || []).map((w) => h('button', {
             class: `event s-${w.status}`,
             type: 'button',
-            title: `${coupleName(w)} \u00b7 ${STATUS_LABEL[w.status]}`,
+            title: `${coupleName(w)} \u00b7 ${STAGE_LABEL[w.stage || w.status]}`,
             onclick: () => openDetail(w.id)
           }, coupleName(w)))));
       }
