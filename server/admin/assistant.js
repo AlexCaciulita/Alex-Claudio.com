@@ -9,6 +9,8 @@ const { isValidIsoDate } = require('./dates');
 const { safeMessage } = require('./store');
 
 const MODEL = 'claude-opus-5-5';
+const OPENROUTER_MODEL = 'baidu/ernie-5.5-flash-preview:free';
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MAX_ROUNDS = 12;
 const MAX_TOKENS = 16000;
 const TURNS_PER_CONVERSATION = 40;
@@ -76,7 +78,7 @@ const TOOLS = [
       properties: {
         id: string('The couple’s id.'),
         stage: { type: 'string', enum: STAGES },
-        wedding_date: { type: ['string', 'null'], description: 'YYYY-MM-DD, or null to clear it.' },
+        wedding_date: string('YYYY-MM-DD, or an empty string to clear it.'),
         names: string('The couple’s names, e.g. "Jessica & Kyle".'),
         email: string('Email address.'),
         phone: string('Phone number.'),
@@ -157,12 +159,117 @@ class ToolError extends Error {}
 const seattleDay = (timeZone) => new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
 const textOf = (content) => content.filter((block) => block.type === 'text').map((block) => block.text).join('\n\n').trim();
 
-function createAssistant({ store, env = process.env, client = null } = {}) {
+class ProviderError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// Claude through Anthropic's API. Tool calls and results are content blocks, and the history is sent back
+// exactly as it came, so the cached prefix holds.
+function anthropicProvider(client, model) {
+  return {
+    name: 'anthropic',
+    model,
+    user: (text) => ({ role: 'user', content: [{ type: 'text', text }] }),
+    closing: (text) => ({ role: 'assistant', content: [{ type: 'text', text }] }),
+    results: (results) => [{
+      role: 'user',
+      content: results.map((r) => ({ type: 'tool_result', tool_use_id: r.id, content: r.content, ...(r.is_error ? { is_error: true } : {}) }))
+    }],
+    async send(messages) {
+      const response = await client.beta.messages.create({
+        model,
+        max_tokens: MAX_TOKENS,
+        system: SYSTEM,
+        tools: TOOLS,
+        messages,
+        cache_control: { type: 'ephemeral' },
+        output_config: { effort: 'medium' },
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default'
+      });
+      const calls = response.content.filter((block) => block.type === 'tool_use').map((block) => ({ id: block.id, name: block.name, input: block.input }));
+      const stop = response.stop_reason === 'refusal' ? 'refusal'
+        : response.stop_reason === 'pause_turn' ? 'pause'
+          : response.stop_reason === 'max_tokens' ? 'max_tokens'
+            : response.stop_reason === 'tool_use' && calls.length ? 'tools' : 'end';
+      // A declined turn may come back empty, and an empty turn can't be sent back later.
+      const content = response.content.length ? response.content : [{ type: 'text', text: 'I can’t help with that one.' }];
+      return { stop, calls, text: textOf(response.content), message: { role: 'assistant', content } };
+    }
+  };
+}
+
+// Any model on OpenRouter, through its OpenAI-style chat API. Tool calls arrive as function calls with
+// their arguments as a JSON string.
+function openRouterProvider(apiKey, model, fetchImpl) {
+  return {
+    name: 'openrouter',
+    model,
+    user: (text) => ({ role: 'user', content: text }),
+    closing: (text) => ({ role: 'assistant', content: text }),
+    results: (results) => results.map((r) => ({ role: 'tool', tool_call_id: r.id, content: r.is_error ? `Error: ${r.content}` : r.content })),
+    async send(messages) {
+      let res;
+      try {
+        res = await fetchImpl(OPENROUTER_URL, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'X-Title': 'Studio assistant' },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'system', content: SYSTEM }, ...messages],
+            tools: TOOLS.map((tool) => ({ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.input_schema } })),
+            tool_choice: 'auto',
+            max_tokens: MAX_TOKENS
+          }),
+          signal: AbortSignal.timeout(120000)
+        });
+      } catch (error) {
+        throw new ProviderError(503, `OpenRouter can't be reached: ${safeMessage(error)}`);
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        const status = res.ok ? Number(data.error.code) || 502 : res.status;
+        throw new ProviderError(status, `OpenRouter answered ${status}: ${String((data.error && data.error.message) || '').slice(0, 200)}`);
+      }
+      const choice = (data.choices || [])[0];
+      if (!choice || !choice.message) throw new ProviderError(502, 'OpenRouter sent no answer.');
+      const message = choice.message;
+      const calls = (message.tool_calls || []).map((call) => {
+        let input;
+        try { input = JSON.parse(call.function.arguments || '{}'); } catch (error) { input = null; }
+        return { id: call.id, name: call.function.name, input, badJson: input === null };
+      });
+      const kept = { role: 'assistant', content: message.content || '' };
+      if (message.tool_calls && message.tool_calls.length) {
+        kept.tool_calls = message.tool_calls.map((call) => ({ id: call.id, type: 'function', function: { name: call.function.name, arguments: call.function.arguments || '{}' } }));
+      }
+      const stop = calls.length ? 'tools' : choice.finish_reason === 'length' ? 'max_tokens' : choice.finish_reason === 'content_filter' ? 'refusal' : 'end';
+      return { stop, calls, text: String(message.content || '').trim(), message: kept };
+    }
+  };
+}
+
+// OpenRouter when OPENROUTER_API_KEY is set (or ASSISTANT_PROVIDER=openrouter), otherwise Claude.
+function chooseProvider(env, client, fetchImpl) {
+  const wanted = String(env.ASSISTANT_PROVIDER || '').toLowerCase();
+  if (client && wanted !== 'openrouter') return anthropicProvider(client, env.ASSISTANT_MODEL || MODEL);
+  if ((wanted === 'openrouter' || !wanted) && env.OPENROUTER_API_KEY) {
+    return openRouterProvider(env.OPENROUTER_API_KEY, env.ASSISTANT_MODEL || OPENROUTER_MODEL, fetchImpl || fetch);
+  }
+  if ((wanted === 'anthropic' || !wanted) && env.ANTHROPIC_API_KEY) {
+    return anthropicProvider(new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 2, timeout: 120000 }), env.ASSISTANT_MODEL || MODEL);
+  }
+  return null;
+}
+
+function createAssistant({ store, env = process.env, client = null, fetch: fetchImpl = null } = {}) {
   if (!store) return null;
-  const apiKey = env.ANTHROPIC_API_KEY;
-  if (!client && !apiKey) return { enabled: false };
-  const anthropic = client || new Anthropic({ apiKey, maxRetries: 2, timeout: 120000 });
-  const model = env.ASSISTANT_MODEL || MODEL;
+  const provider = chooseProvider(env, client, fetchImpl);
+  if (!provider) return { enabled: false };
+  const model = provider.model;
   const timeZone = env.STUDIO_TIMEZONE || 'America/Los_Angeles';
   const origin = (env.PUBLIC_ORIGIN || 'https://alex-claudio.com').replace(/\/$/, '');
   const triageDays = new Map();
@@ -289,16 +396,17 @@ function createAssistant({ store, env = process.env, client = null } = {}) {
     }
   };
 
-  async function callTool(block, events) {
-    const handler = run[block.name];
-    if (!handler) return { type: 'tool_result', tool_use_id: block.id, is_error: true, content: `There is no tool called ${block.name}.` };
+  async function callTool(call, events) {
+    const handler = run[call.name];
+    if (!handler) return { id: call.id, is_error: true, content: `There is no tool called ${call.name}.` };
+    if (call.badJson) return { id: call.id, is_error: true, content: 'The tool input was not valid JSON. Send it again.' };
     try {
-      const input = block.input && typeof block.input === 'object' && !Array.isArray(block.input) ? block.input : {};
+      const input = call.input && typeof call.input === 'object' && !Array.isArray(call.input) ? call.input : {};
       const result = await handler(input, events);
-      return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) };
+      return { id: call.id, content: JSON.stringify(result) };
     } catch (error) {
-      if (!(error instanceof ToolError)) console.error(`Assistant tool ${block.name} failed:`, safeMessage(error));
-      return { type: 'tool_result', tool_use_id: block.id, is_error: true, content: error instanceof ToolError ? error.message : 'That didn’t work because of a problem on the website.' };
+      if (!(error instanceof ToolError)) console.error(`Assistant tool ${call.name} failed:`, safeMessage(error));
+      return { id: call.id, is_error: true, content: error instanceof ToolError ? error.message : 'That didn’t work because of a problem on the website.' };
     }
   }
 
@@ -306,46 +414,32 @@ function createAssistant({ store, env = process.env, client = null } = {}) {
   // The history is saved only when the exchange finishes, so it is only ever added to.
   async function exchange(conversation, text, who = 'you') {
     const history = await store.history(conversation);
-    const user = { role: 'user', content: [{ type: 'text', text: `Today is ${seattleDay(timeZone)} in Seattle.\n\n${text}` }] };
-    const added = [user];
+    const added = [provider.user(`Today is ${seattleDay(timeZone)} in Seattle.\n\n${text}`)];
     const events = [];
     let reply = '';
     for (let round = 0; round < MAX_ROUNDS; round += 1) {
-      const response = await anthropic.beta.messages.create({
-        model,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM,
-        tools: TOOLS,
-        messages: [...history, ...added],
-        cache_control: { type: 'ephemeral' },
-        output_config: { effort: 'medium' },
-        betas: ['server-side-fallback-2026-07-01'],
-        fallbacks: 'default'
-      });
-      if (response.stop_reason === 'refusal') {
+      const answer = await provider.send([...history, ...added]);
+      added.push(answer.message);
+      if (answer.stop === 'refusal') {
         reply = 'I can’t help with that one.';
-        // A declined turn may come back empty, and an empty turn can't be sent back later.
-        added.push({ role: 'assistant', content: response.content.length ? response.content : [{ type: 'text', text: reply }] });
         break;
       }
-      added.push({ role: 'assistant', content: response.content });
-      if (response.stop_reason === 'pause_turn') continue;
-      const uses = response.content.filter((block) => block.type === 'tool_use');
-      if (response.stop_reason === 'max_tokens') {
-        reply = textOf(response.content) || 'That answer ran too long. Try asking for less at once.';
+      if (answer.stop === 'pause') continue;
+      if (answer.stop === 'max_tokens') {
+        reply = answer.text || 'That answer ran too long. Try asking for less at once.';
         break;
       }
-      if (response.stop_reason !== 'tool_use' || !uses.length) {
-        reply = textOf(response.content);
+      if (answer.stop !== 'tools') {
+        reply = answer.text;
         break;
       }
       const results = [];
-      for (const block of uses) results.push(await callTool(block, events));
-      added.push({ role: 'user', content: results });
+      for (const call of answer.calls) results.push(await callTool(call, events));
+      added.push(...provider.results(results));
       if (round === MAX_ROUNDS - 1) reply = 'I stopped there because it was taking many steps. Tell me if I should carry on.';
     }
-    // The history must end with Claude's turn, so a cut-off exchange gets a closing line.
-    if (added[added.length - 1].role === 'user') added.push({ role: 'assistant', content: [{ type: 'text', text: reply }] });
+    // The history must end with the assistant's turn, so a cut-off exchange gets a closing line.
+    if (added[added.length - 1].role !== 'assistant') added.push(provider.closing(reply));
     await store.saveExchange(conversation, added, [
       { who, text, events: [] },
       { who: 'assistant', text: reply || 'Done.', events }
@@ -362,21 +456,22 @@ function createAssistant({ store, env = process.env, client = null } = {}) {
 
   return {
     enabled: true,
+    provider: provider.name,
     model,
 
     chat: (message) => serial(async () => {
       const text = String(message || '').trim().slice(0, MESSAGE_LIMIT);
       if (!text) throw new ToolError('Write something first.');
-      let conversation = await store.conversation();
+      let conversation = await store.conversation(false, provider.name);
       // A long conversation starts afresh, so each message stays quick and cheap.
-      if (await store.userTurns(conversation) >= TURNS_PER_CONVERSATION) conversation = await store.conversation(true);
+      if (await store.userTurns(conversation) >= TURNS_PER_CONVERSATION) conversation = await store.conversation(true, provider.name);
       return { conversation, ...(await exchange(conversation, text)) };
     }),
 
-    newConversation: () => store.conversation(true),
+    newConversation: () => store.conversation(true, provider.name),
 
     transcript: async () => {
-      const conversation = await store.conversation();
+      const conversation = await store.conversation(false, provider.name);
       return { conversation, turns: await store.turns(conversation) };
     },
 
@@ -387,7 +482,7 @@ function createAssistant({ store, env = process.env, client = null } = {}) {
       if (count >= TRIAGE_PER_DAY) return null;
       triageDays.clear();
       triageDays.set(day, count + 1);
-      const conversation = await store.triageConversation(inquiryId);
+      const conversation = await store.triageConversation(inquiryId, provider.name);
       return exchange(conversation, TRIAGE(inquiryId), 'website');
     })
   };

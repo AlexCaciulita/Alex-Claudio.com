@@ -47,6 +47,9 @@ function migrateAssistant(db) {
   db.exec(ASSISTANT_MIGRATION);
   const have = new Set(db.prepare('PRAGMA table_info(activity)').all().map((column) => column.name));
   if (!have.has('undone_at')) db.exec('ALTER TABLE activity ADD COLUMN undone_at TEXT');
+  // Each conversation belongs to one model service, because each keeps its history in its own shape.
+  const columns = new Set(db.prepare('PRAGMA table_info(conversations)').all().map((column) => column.name));
+  if (!columns.has('provider')) db.exec("ALTER TABLE conversations ADD COLUMN provider TEXT NOT NULL DEFAULT 'anthropic'");
 }
 
 const mapDraft = (row) => ({ id: String(row.id), inquiry_id: String(row.inquiry_id), created_at: row.created_at, subject: row.subject, body: row.body, names: row.names || undefined });
@@ -55,15 +58,15 @@ const toDollars = (cents) => (cents === null || cents === undefined ? null : Num
 function assistantMethods({ use, timeZone }) {
   return {
     // The chat conversation in use: the newest one, or a new one when asked or when there is none.
-    conversation: (fresh = false) => use((db) => {
+    conversation: (fresh = false, provider = 'anthropic') => use((db) => {
       if (!fresh) {
-        const row = db.prepare("SELECT id FROM conversations WHERE kind = 'chat' ORDER BY id DESC LIMIT 1").get();
+        const row = db.prepare("SELECT id FROM conversations WHERE kind = 'chat' AND provider = ? ORDER BY id DESC LIMIT 1").get(provider);
         if (row) return row.id;
       }
-      return Number(db.prepare("INSERT INTO conversations (kind) VALUES ('chat') RETURNING id").get().id);
+      return Number(db.prepare("INSERT INTO conversations (kind, provider) VALUES ('chat', ?) RETURNING id").get(provider).id);
     }),
 
-    triageConversation: (inquiryId) => use((db) => Number(db.prepare("INSERT INTO conversations (kind, inquiry_id) VALUES ('triage', ?) RETURNING id").get(Number(inquiryId)).id)),
+    triageConversation: (inquiryId, provider = 'anthropic') => use((db) => Number(db.prepare("INSERT INTO conversations (kind, inquiry_id, provider) VALUES ('triage', ?, ?) RETURNING id").get(Number(inquiryId), provider).id)),
 
     history: (conversation) => use((db) => db.prepare('SELECT role, content FROM assistant_messages WHERE conversation = ? ORDER BY id')
       .all(Number(conversation)).map((row) => ({ role: row.role, content: JSON.parse(row.content) }))),
