@@ -75,7 +75,7 @@ test('without an API key the assistant explains how to turn it on', async () => 
     assert.deepEqual(await (await call('GET', '/assistant')).json(), { enabled: false, turns: [] });
     const res = await call('POST', '/assistant', { message: 'hello' });
     assert.equal(res.status, 503);
-    assert.match((await res.json()).error, /ANTHROPIC_API_KEY/);
+    assert.match((await res.json()).error, /OPENROUTER_API_KEY/);
   });
 });
 
@@ -206,5 +206,76 @@ test('a refusal or a long run ends the exchange cleanly', async () => {
     const history = await store.history(await store.conversation());
     assert.equal(history.at(-1).role, 'assistant', 'the saved history always ends with Claude’s turn');
     assert.equal(client.requests.length, 13);
+  });
+});
+
+// A stand-in for OpenRouter's chat API: answers each request with the next scripted reply.
+function fakeOpenRouter(script) {
+  const requests = [];
+  let at = 0;
+  const fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    requests.push({ url, headers: init.headers, body });
+    const next = script[at++];
+    if (!next) throw new Error('The script ran out.');
+    const reply = typeof next === 'function' ? next(body) : next;
+    return { ok: (reply.status || 200) < 400, status: reply.status || 200, json: async () => reply.json || reply };
+  };
+  return { requests, fetch };
+}
+const call = (id, name, args) => ({ id, type: 'function', function: { name, arguments: typeof args === 'string' ? args : JSON.stringify(args) } });
+const choice = (message, finish = 'stop') => ({ choices: [{ message: { role: 'assistant', content: null, ...message }, finish_reason: finish }] });
+
+test('with an OpenRouter key the assistant uses ERNIE through OpenRouter, with the same tools and limits', async () => {
+  let id;
+  const router = fakeOpenRouter([
+    () => choice({ tool_calls: [call('c1', 'find_couples', { query: 'Renee' })] }, 'tool_calls'),
+    () => choice({ tool_calls: [
+      call('c2', 'update_couple', { id, stage: 'planning', wedding_date: '2027-05-01' }),
+      call('c3', 'add_note', '{"id": '),
+      call('c4', 'propose_payment', { id, received_total: 1200, why: 'Retainer paid.' })
+    ] }, 'tool_calls'),
+    () => choice({ content: 'Renee & Alan are in Planning for May 1, 2027. The $1,200 retainer is waiting for your click.' }),
+    () => choice({ content: 'Planning.' })
+  ]);
+  await withSite(null, async ({ store }) => {
+    id = await store.insertInquiry('contact', { names: 'Renee & Alan', email: 'ra@example.com' });
+    await store.updateInquiry(id, { status: 'booked', price: 4000 });
+    const assistant = createAssistant({ store, env: { OPENROUTER_API_KEY: 'test-key', ANTHROPIC_API_KEY: 'also-set' }, fetch: router.fetch });
+    assert.equal(assistant.provider, 'openrouter');
+    assert.equal(assistant.model, 'baidu/ernie-5.5-flash-preview:free');
+
+    const { reply, events } = await assistant.chat('Renee and Alan paid the retainer, wedding is May 1 next year');
+    assert.match(reply, /waiting for your click/);
+    assert.deepEqual(events.map((e) => e.type), ['change', 'proposal']);
+    const { inquiry } = await store.getInquiry(id);
+    assert.equal(inquiry.stage, 'planning');
+    assert.equal(inquiry.wedding_date, '2027-05-01');
+    assert.equal(inquiry.paid, null, 'money still waits for Alex');
+
+    const [first, , third] = router.requests;
+    assert.equal(first.url, 'https://openrouter.ai/api/v1/chat/completions');
+    assert.equal(first.headers.Authorization, 'Bearer test-key');
+    assert.equal(first.body.model, 'baidu/ernie-5.5-flash-preview:free');
+    assert.equal(first.body.messages[0].role, 'system');
+    assert.ok(first.body.tools.every((tool) => tool.type === 'function' && tool.function.parameters.type === 'object'));
+    assert.ok(!first.body.tools.some((tool) => /delete|send/.test(tool.function.name)));
+    const results = third.body.messages.filter((m) => m.role === 'tool');
+    assert.match(results.find((m) => m.tool_call_id === 'c3').content, /^Error: The tool input was not valid JSON/);
+
+    // The next message carries the earlier exchange in front of it, in OpenRouter's own shape.
+    await assistant.chat('What stage are they in?');
+    const fourth = router.requests[3].body.messages;
+    assert.deepEqual(fourth.slice(1, third.body.messages.length + 1).map((m) => m.role), [...third.body.messages.slice(1).map((m) => m.role), 'assistant']);
+    assert.equal(fourth.at(-1).role, 'user');
+  });
+});
+
+test('an OpenRouter error is reported with its status and saves nothing', async () => {
+  const router = fakeOpenRouter([{ status: 401, json: { error: { code: 401, message: 'No auth credentials found' } } }]);
+  await withSite(null, async ({ store }) => {
+    const assistant = createAssistant({ store, env: { OPENROUTER_API_KEY: 'bad' }, fetch: router.fetch });
+    await assert.rejects(assistant.chat('hello'), (error) => error.status === 401);
+    assert.deepEqual(await store.history(await store.conversation(false, 'openrouter')), []);
   });
 });

@@ -29,7 +29,8 @@ const SETTINGS = [
   ['CONTACT_TO_EMAIL', 'Inquiry email recipient'],
   ['GOOGLE_SHEET_ID', 'Google Sheet for inquiries'],
   ['R2_BUCKET_NAME', 'Client gallery storage'],
-  ['ANTHROPIC_API_KEY', 'Studio assistant (Claude)']
+  ['OPENROUTER_API_KEY', 'Studio assistant (OpenRouter)'],
+  ['ANTHROPIC_API_KEY', 'Studio assistant (Claude, used when there is no OpenRouter key)']
 ];
 const SHOW_VALUE = new Set(['CONTACT_TO_EMAIL', 'RAILWAY_VOLUME_MOUNT_PATH', 'STUDIO_DB_PATH', 'DATABASE_PATH']);
 
@@ -458,10 +459,10 @@ function createAdminRouter({ store = null, env = process.env, assistant = null }
     res.status(204).end();
   });
 
-  // The studio assistant. Without ANTHROPIC_API_KEY it says how to turn it on.
+  // The studio assistant. Without an OpenRouter or Anthropic key it says how to turn it on.
   const assistantReady = (res) => {
     if (assistant && assistant.enabled) return true;
-    res.status(503).json({ error: 'The assistant isn\u2019t set up yet. Add an ANTHROPIC_API_KEY variable to the website service on Railway.', code: 'no-assistant' });
+    res.status(503).json({ error: 'The assistant isn\u2019t set up yet. Add an OPENROUTER_API_KEY (or ANTHROPIC_API_KEY) variable to the website service on Railway.', code: 'no-assistant' });
     return false;
   };
   api.get('/assistant', async (req, res) => {
@@ -478,8 +479,8 @@ function createAdminRouter({ store = null, env = process.env, assistant = null }
     } catch (error) {
       console.error('Studio assistant failed:', safeMessage(error));
       const status = error && error.status;
-      res.status(502).json({ error: status === 401 ? 'The ANTHROPIC_API_KEY on Railway was refused. Check it in the Claude Console.'
-        : status === 429 ? 'Claude is busy or the account hit its limit. Try again in a minute.'
+      res.status(502).json({ error: status === 401 ? 'The assistant\u2019s API key on Railway was refused. Check it.'
+        : status === 429 ? 'The model is busy or the account hit its limit. Try again in a minute.'
           : 'The assistant couldn\u2019t answer just now. Try again.' });
     }
   });

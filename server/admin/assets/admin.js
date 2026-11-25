@@ -1099,7 +1099,7 @@
     const form = h('form', { class: 'chat-form' }, input, h('div', { class: 'chat-buttons' }, mic, send));
     const panel = h('aside', { class: 'assistant', 'aria-label': 'Studio assistant', hidden: true },
       h('div', { class: 'assistant-head' },
-        h('div', {}, h('p', { class: 'eyebrow' }, 'Claude'), h('h2', {}, 'Assistant')),
+        h('div', {}, h('p', { class: 'eyebrow' }, 'Studio'), h('h2', {}, 'Assistant')),
         h('button', { class: 'quiet', type: 'button', onclick: fresh }, 'New conversation'),
         h('button', { class: 'close', type: 'button', 'aria-label': 'Close the assistant', onclick: () => toggle(false) }, '\u00d7')),
       log, form);
@@ -1125,7 +1125,7 @@
         enabled = data.enabled;
         if (!enabled) {
           log.append(h('li', { class: 'msg msg-assistant' },
-            h('p', {}, 'The assistant isn\u2019t turned on yet. Add an ANTHROPIC_API_KEY variable to the website service on Railway (create the key in the Claude Console), and it starts working after the site redeploys.')));
+            h('p', {}, 'The assistant isn\u2019t turned on yet. Add an OPENROUTER_API_KEY variable (or ANTHROPIC_API_KEY) to the website service on Railway, and it starts working after the site redeploys.')));
           input.disabled = true;
           send.disabled = true;
           return;
