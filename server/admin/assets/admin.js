@@ -154,6 +154,16 @@
     const wanted = location.hash.replace(/^#/, '');
     const token = ++state.token;
     // A couple's own page: #couple/12.
+    const contractPage = /^contract\/(\d{1,18})$/.exec(wanted);
+    if (contractPage) {
+      for (const link of Object.values(navLinks)) link.removeAttribute('aria-current');
+      state.refresh = null;
+      clear(main);
+      if (detail.open) detail.close();
+      renderContract(main, () => token === state.token, contractPage[1]);
+      window.scrollTo(0, 0);
+      return;
+    }
     const couple = /^couple\/(\d{1,18})$/.exec(wanted);
     if (couple) {
       for (const link of Object.values(navLinks)) link.removeAttribute('aria-current');
@@ -1237,7 +1247,7 @@
     root.append(
       h('a', { class: 'back-link', href: '#board' }, '\u2190 Board'),
       hero,
-      h('div', { class: 'couple-grid' }, timeline, h('div', {}, payments, gallery)));
+      h('div', { class: 'couple-grid' }, timeline, h('div', {}, contractsPanel(id), payments, gallery)));
 
     let inq = null;
     let project = null;
@@ -1444,7 +1454,7 @@
               }
             }, 'Make the usual schedule'),
             h('p', { class: 'muted small' }, price
-              ? `${fmtMoney(Math.round(price * 30) / 100)} retainer (30%) now, the balance two weeks before the wedding. Every line can be changed.`
+              ? `${fmtMoney(Math.round(price * 30) / 100)} retainer (30%) now, the balance a week before the wedding, as in your contract. Every line can be changed.`
               : 'Set the agreed price in Details first.'))
           : h('ul', { class: 'tasks payments' }, rows),
         list.length && gap ? h('p', { class: 'schedule-gap' }, gap > 0
@@ -1512,6 +1522,230 @@
 
     state.refresh = reloadProject;
     load();
+  }
+
+  /* ---------- Contracts ---------- */
+
+  const CONTRACT_STATUS = { draft: 'Draft', sent: 'Waiting for their signature', signed: 'Signed' };
+  const contractLink = (contract) => `${location.origin}/contract/${contract.token}`;
+
+  // Your own signature: drawn once here, put on every contract you send.
+  function signatureDialog(onSaved) {
+    const dialog = h('dialog', { class: 'sheet sig-dialog', 'aria-labelledby': 'sig-title' });
+    const pad = window.SignaturePad({ label: 'Draw your signature' });
+    const error = h('p', { class: 'error-text', role: 'alert' });
+    const save = h('button', {
+      class: 'primary', type: 'button',
+      onclick: async () => {
+        const signature = pad.toDataURL();
+        if (!signature) { error.textContent = 'Draw your signature first.'; return; }
+        save.disabled = true;
+        try {
+          await api('/signature', { method: 'PUT', body: { signature } });
+          dialog.close();
+          say('Signature saved. It goes on every contract you send.');
+          onSaved(signature);
+        } catch (err) { error.textContent = err.message; save.disabled = false; }
+      }
+    }, 'Save my signature');
+    dialog.append(
+      h('div', { class: 'sheet-head' },
+        h('div', {}, h('p', { class: 'eyebrow' }, 'Once, for every contract'), h('h2', { id: 'sig-title' }, 'Your signature')),
+        h('button', { class: 'close', type: 'button', 'aria-label': 'Close', onclick: () => dialog.close() }, '\u00d7')),
+      h('div', { class: 'sig-body' }, pad.element, error, h('div', { class: 'actions' }, save)));
+    dialog.addEventListener('close', () => dialog.remove());
+    document.body.append(dialog);
+    dialog.showModal();
+  }
+
+  function renderContract(root, live, id) {
+    const panel = h('aside', { class: 'contract-fields', 'aria-label': 'Fields to fill in' });
+    const paper = h('article', { class: 'contract-paper' });
+    const bar = h('div', { class: 'contract-bar' });
+    root.append(bar, h('div', { class: 'contract-layout' }, panel, h('div', { class: 'contract-preview' }, paper)));
+
+    let contract = null;
+    let couple = null;
+    let mySignature = null;
+    let saveTimer = 0;
+    let saving = Promise.resolve();
+    const savedNote = h('small', { class: 'save-note', 'aria-live': 'polite' });
+
+    async function load() {
+      try {
+        const [one, sig] = await Promise.all([api(`/contracts/${encodeURIComponent(id)}`), api('/signature')]);
+        if (!live()) return;
+        contract = one.contract;
+        couple = one.couple;
+        mySignature = sig.signature;
+        document.title = `Contract \u00b7 ${coupleName(couple || {})} \u00b7 Studio`;
+        drawBar();
+        drawFields();
+        drawPaper();
+      } catch (error) {
+        if (live()) append(clear(root), [problem(error, 'Contracts appear here once the website has a volume to save to.')]);
+      }
+    }
+
+    const drawPaper = () => {
+      window.ContractDoc.render(paper, contract.fields, {
+        photographer: contract.status === 'draft' ? { signature: mySignature, signed_at: null } : contract.photographer,
+        client: contract.client
+      });
+    };
+
+    const saveSoon = () => {
+      clearTimeout(saveTimer);
+      savedNote.textContent = 'Saving\u2026';
+      saveTimer = setTimeout(() => {
+        saving = saving.then(async () => {
+          try {
+            ({ contract } = await api(`/contracts/${contract.id}`, { method: 'PATCH', body: { fields: contract.fields } }));
+            savedNote.textContent = 'Saved';
+          } catch (error) { savedNote.textContent = ''; fail(error); }
+        });
+      }, 600);
+    };
+    const flush = async () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = 0;
+        saving = saving.then(async () => { ({ contract } = await api(`/contracts/${contract.id}`, { method: 'PATCH', body: { fields: contract.fields } })); });
+      }
+      await saving;
+    };
+
+    function drawFields() {
+      const locked = contract.status !== 'draft';
+      const missing = new Set(window.ContractDoc.missing(contract.fields));
+      const groups = {};
+      for (const field of window.ContractDoc.FIELDS) (groups[field.group] = groups[field.group] || []).push(field);
+      const words = () => window.ContractDoc.words(contract.fields);
+      const totals = h('dl', { class: 'contract-totals' });
+      const drawTotals = () => {
+        const w = words();
+        append(clear(totals), [
+          h('div', {}, h('dt', {}, 'Total fee'), h('dd', {}, w.total)),
+          h('div', {}, h('dt', {}, 'Balance'), h('dd', {}, w.balance)),
+          h('div', {}, h('dt', {}, 'Balance due'), h('dd', {}, w.balance_due))]);
+      };
+      drawTotals();
+      append(clear(panel), [
+        locked ? h('p', { class: 'contract-locked' }, contract.status === 'signed'
+          ? 'Signed, so nothing here can change.'
+          : 'Sent to the couple. Take it back to change anything.') : null,
+        ...Object.entries(groups).map(([group, fields]) => h('fieldset', { class: 'contract-group', disabled: locked },
+          h('legend', {}, group),
+          fields.map((field) => {
+            const value = contract.fields[field.key];
+            let control;
+            if (field.type === 'yesno') {
+              control = h('select', {}, h('option', { value: 'Yes' }, 'Yes'), h('option', { value: 'No' }, 'No'));
+              control.value = value;
+            } else {
+              control = h('input', {
+                type: field.type === 'date' ? 'date' : 'text',
+                inputmode: field.type === 'money' || field.type === 'number' ? 'decimal' : null,
+                value: value === null || value === undefined ? '' : String(value),
+                placeholder: field.client ? 'They can fill this in when signing' : null
+              });
+            }
+            const label = h('label', { class: missing.has(field.key) ? 'is-missing' : null }, field.label + (field.type === 'money' ? ' ($)' : ''), control);
+            control.addEventListener('input', () => {
+              let next = control.value;
+              if (field.type === 'money' || field.type === 'number') next = next.replace(/[$,\s]/g, '');
+              contract.fields = window.ContractDoc.clean({ ...contract.fields, [field.key]: next === '' && field.type !== 'text' && field.type !== 'date' ? '' : next });
+              label.classList.toggle('is-missing', window.ContractDoc.missing(contract.fields).includes(field.key));
+              drawPaper();
+              drawTotals();
+              saveSoon();
+            });
+            return label;
+          }),
+          group === 'Fees' ? totals : null))]);
+    }
+
+    function drawBar() {
+      const status = h('span', { class: `badge contract-status cs-${contract.status}` }, CONTRACT_STATUS[contract.status]);
+      const actions = [];
+      if (contract.status === 'draft') {
+        actions.push(h('button', { type: 'button', class: 'quiet', onclick: () => signatureDialog((sig) => { mySignature = sig; drawPaper(); }) }, mySignature ? 'Redraw my signature' : 'Add my signature'));
+        actions.push(h('button', {
+          type: 'button', class: 'primary',
+          onclick: async () => {
+            await flush();
+            if (!mySignature) { signatureDialog((sig) => { mySignature = sig; drawPaper(); }); return; }
+            if (!window.confirm(`Sign this contract and make the link for ${coupleName(couple || {})}? You can take it back until they sign.`)) return;
+            try {
+              ({ contract } = await api(`/contracts/${contract.id}/send`, { method: 'POST' }));
+              say('Signed by you. Copy the link and send it to the couple.');
+              drawBar(); drawFields(); drawPaper();
+            } catch (error) { fail(error); }
+          }
+        }, 'Sign and get the link'));
+        actions.push(h('button', {
+          type: 'button', class: 'danger',
+          onclick: async () => {
+            if (!window.confirm('Delete this draft contract?')) return;
+            try { await api(`/contracts/${contract.id}`, { method: 'DELETE' }); location.hash = `couple/${contract.inquiry_id}`; } catch (error) { fail(error); }
+          }
+        }, 'Delete draft'));
+      } else {
+        const url = contractLink(contract);
+        actions.push(h('button', {
+          type: 'button', class: contract.status === 'sent' ? 'primary' : null,
+          onclick: async () => { try { await navigator.clipboard.writeText(url); say('Link copied.'); } catch (error) { window.prompt('Copy the contract link:', url); } }
+        }, 'Copy their link'));
+        if (contract.status === 'sent' && couple && couple.email && LINKABLE_EMAIL.test(couple.email)) {
+          const body = `Hi ${(couple.names || '').split(/\s*&\s*|\s+and\s+/)[0] || 'there'},\n\nHere is our agreement to read and sign online:\n${url}\n\nOnce it's signed, the ${window.ContractDoc.words(contract.fields).retainer} retainer reserves your date. Let me know if anything should change.\n\nAlex`;
+          actions.push(h('a', { class: 'button', href: `mailto:${couple.email}?subject=${encodeURIComponent('Our agreement for your wedding')}&body=${encodeURIComponent(body)}` }, 'Email it to them'));
+        }
+        actions.push(h('a', { class: 'button quiet', href: url, target: '_blank', rel: 'noopener' }, 'See their page'));
+        if (contract.status === 'sent') {
+          actions.push(h('button', {
+            type: 'button', class: 'quiet',
+            onclick: async () => {
+              if (!window.confirm('Take the contract back to change it? Their link stops working until you sign and send it again.')) return;
+              try { ({ contract } = await api(`/contracts/${contract.id}/take-back`, { method: 'POST' })); drawBar(); drawFields(); drawPaper(); } catch (error) { fail(error); }
+            }
+          }, 'Take back to edit'));
+        }
+      }
+      const audit = contract.status === 'signed'
+        ? h('p', { class: 'contract-audit' }, `Signed by ${contract.client.name} on ${fmtStamp(contract.client.signed_at)}${contract.client.ip ? ` from ${contract.client.ip}` : ''}. Fingerprint ${contract.document_hash.slice(0, 16)}\u2026`)
+        : contract.status === 'sent'
+          ? h('p', { class: 'contract-audit' }, `Sent ${fmtStamp(contract.sent_at)} \u00b7 ${contract.viewed_at ? `opened ${fmtStamp(contract.viewed_at)}` : 'not opened yet'}`)
+          : null;
+      append(clear(bar), [
+        h('a', { class: 'back-link', href: `#couple/${contract.inquiry_id}` }, `\u2190 ${coupleName(couple || {})}`),
+        h('div', { class: 'contract-bar-row' },
+          h('h1', {}, 'Contract'), status, contract.status === 'draft' ? savedNote : null,
+          h('div', { class: 'actions' }, actions)),
+        audit]);
+    }
+
+    state.refresh = null;
+    load();
+  }
+
+  // The Contract panel on a couple's page.
+  function contractsPanel(inquiryId) {
+    const wrap = h('section', { class: 'panel', 'aria-labelledby': 'ct-title' }, h('h2', { id: 'ct-title' }, 'Contract'));
+    (async () => {
+      let contracts = [];
+      try { ({ contracts } = await api(`/inquiries/${inquiryId}/contracts`)); } catch (error) { wrap.append(h('p', { class: 'error-text' }, error.message)); return; }
+      append(wrap, [
+        contracts.length ? h('ul', { class: 'contract-list' }, contracts.map((c) => h('li', {},
+          h('a', { href: `#contract/${c.id}` }, `Agreement started ${fmtReceived(c.created_at)}`),
+          h('span', { class: `badge contract-status cs-${c.status}` }, CONTRACT_STATUS[c.status])))) : h('p', { class: 'muted small' }, 'No contract yet. A new one fills in from this couple\u2019s details.'),
+        h('button', {
+          type: 'button', class: contracts.length ? 'quiet' : 'primary',
+          onclick: async () => {
+            try { const { contract } = await api(`/inquiries/${inquiryId}/contracts`, { method: 'POST' }); location.hash = `contract/${contract.id}`; } catch (error) { fail(error); }
+          }
+        }, contracts.length ? 'New contract' : 'Make the contract')]);
+    })();
+    return wrap;
   }
 
   /* ---------- Analytics ---------- */

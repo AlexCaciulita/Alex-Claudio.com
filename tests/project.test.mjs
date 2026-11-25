@@ -47,7 +47,7 @@ test('the usual payment schedule splits the price, counts what was paid, and kee
 
     const project = await store.startSchedule(id);
     assert.deepEqual(project.payments.map((p) => [p.label, p.amount, p.due_date, p.paid]), [
-      ['Retainer (30%)', 1710, inDays(0), true], ['Balance', 3990, inDays(46), false]
+      ['Retainer (30%)', 1710, inDays(0), true], ['Balance', 3990, inDays(53), false]
     ]);
     assert.equal(project.schedule.unscheduled, 0);
     assert.deepEqual(await store.startSchedule(id), { error: 'This couple already has a payment schedule.' });

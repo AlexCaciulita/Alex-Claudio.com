@@ -9,6 +9,7 @@ const { ANALYTICS_MIGRATION, analyticsMethods } = require('./analytics');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
 const { migrateAssistant, assistantMethods } = require('./assistant-store');
 const { migrateProject, projectMethods } = require('./project');
+const { migrateContracts, contractMethods } = require('./contracts');
 const { migrateWork, workMethods, syncTasks, logActivity, describeChange, stageOf, parseTags } = require('./work');
 
 const STATUSES = ['new', 'replied', 'booked', 'not_booked'];
@@ -203,6 +204,7 @@ function createStore(env = process.env, sqlite) {
       handle.exec(ANALYTICS_MIGRATION);
       migrateWork(handle);
       migrateProject(handle);
+      migrateContracts(handle);
       migrateAssistant(handle);
     } catch (error) {
       handle.close();
@@ -592,6 +594,7 @@ function createStore(env = process.env, sqlite) {
     ...workMethods({ use, timeZone: paths.timeZone }),
     ...assistantMethods({ use, timeZone: paths.timeZone }),
     ...projectMethods({ use, timeZone: paths.timeZone }),
+    ...contractMethods({ use }),
 
     close: async () => {
       if (timer) clearInterval(timer);

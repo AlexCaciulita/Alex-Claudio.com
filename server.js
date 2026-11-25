@@ -16,6 +16,7 @@ const SUBMISSION_LIMIT = 10;
 const VISIT_LIMIT = 300;
 const VISIT_WINDOW_MS = 10 * 60 * 1000;
 const GALLERY_SLUG = /^\/gallery\/([a-z0-9-]{6,64})\/?$/;
+const CONTRACT_PAGE = /^\/contract\/([A-Za-z0-9_-]{32})\/?$/;
 const PUBLIC_PAGES = new Set([
   '/', '/portfolio/', '/links/', '/lead/', '/guide/', '/blog/', '/privacy/',
   '/blog/seattle-wedding-rain-plan/',
@@ -275,6 +276,49 @@ function createApp(options = {}) {
 
   // Short Instagram bio link: alex-claudio.com/ig -> inquiry form, tagged for attribution.
   app.get('/ig', (req, res) => res.redirect(302, '/?utm_source=instagram&utm_medium=social&utm_campaign=bio#contact'));
+
+  // A couple's contract, shared as /contract/<code>. They read it and sign it there. Never cached or indexed.
+  const contractHeaders = (res) => res.set({
+    'Cache-Control': 'no-store',
+    'X-Robots-Tag': 'noindex, nofollow',
+    'Referrer-Policy': 'no-referrer',
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  app.get(CONTRACT_PAGE, (req, res) => {
+    contractHeaders(res);
+    res.set('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+    res.sendFile(path.join(ROOT, 'contract', 'index.html'));
+  });
+  app.get('/api/contract/:token', async (req, res) => {
+    contractHeaders(res);
+    if (!store) return res.status(404).json({ error: 'Not found.' });
+    try {
+      const contract = await store.contractForClient(req.params.token);
+      if (!contract) return res.status(404).json({ error: 'This link isn\u2019t active. Ask Alex for a new one.' });
+      res.json({ contract });
+    } catch (error) {
+      console.error('Opening a contract failed:', safeMessage(error));
+      res.status(500).json({ error: 'The contract couldn\u2019t be opened. Please try again.' });
+    }
+  });
+  app.post('/api/contract/:token/sign', createSubmissionLimiter(), express.json({ limit: '512kb' }), async (req, res) => {
+    contractHeaders(res);
+    if (!store) return res.status(404).json({ error: 'Not found.' });
+    const body = req.body || {};
+    try {
+      const result = await store.signContract(req.params.token, {
+        name: body.name, signature: body.signature, address: body.address, phone: body.phone, agree: body.agree,
+        ip: req.ip || '', agent: String(req.get('user-agent') || '')
+      });
+      if (!result) return res.status(404).json({ error: 'This link isn\u2019t active. Ask Alex for a new one.' });
+      if (result.error) return res.status(result.status || 400).json({ error: result.error });
+      res.json(result);
+    } catch (error) {
+      console.error('Signing a contract failed:', safeMessage(error));
+      res.status(500).json({ error: 'The signature couldn\u2019t be saved. Please try again.' });
+    }
+  });
 
   // Client galleries shared as /gallery/<code>; the page reads the code from its own path.
   app.get(GALLERY_SLUG, (req, res) => {

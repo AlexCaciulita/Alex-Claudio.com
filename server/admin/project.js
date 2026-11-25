@@ -9,7 +9,8 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 // Seattle, for sunset times. Venues are a short drive away, so the minute barely moves.
 const SEATTLE = { lat: 47.6062, lng: -122.3321 };
 const RETAINER_SHARE = 0.3;
-const BALANCE_DAYS_BEFORE = 14;
+// Alex's contract: the balance is due 7 days before the event.
+const BALANCE_DAYS_BEFORE = 7;
 
 const PROJECT_MIGRATION = `
 CREATE TABLE IF NOT EXISTS timeline_items (
@@ -220,7 +221,7 @@ function projectMethods({ use, timeZone }) {
       return true;
     }),
 
-    // The usual schedule: a 30% retainer due now and the balance two weeks before the wedding. What was
+    // The usual schedule: a 30% retainer due now and the balance a week before the wedding. What was
     // already received counts toward the retainer. Needs an agreed price and an empty schedule.
     startSchedule: (inquiryId, actor = 'you') => use((db) => {
       const couple = db.prepare('SELECT wedding_date, price_cents, paid_cents FROM inquiries WHERE id = ?').get(Number(inquiryId));

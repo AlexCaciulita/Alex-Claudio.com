@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Your agreement | Alex Claudio Photography</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/assets/fonts/the-day.css">
+<link rel="stylesheet" href="/contract/contract.css?v=1">
+<script src="/contract/contract-doc.js?v=1" defer></script>
+<script src="/contract/signature-pad.js?v=1" defer></script>
+<script src="/contract/contract.js?v=1" defer></script>
+</head>
+<body class="contract-page">
+<header class="cp-top">
+  <a class="cp-brand" href="/">Alex Claudio <small>Photography</small></a>
+  <button class="cp-print" type="button" id="print" hidden>Print or save as PDF</button>
+</header>
+<main class="cp-main">
+  <p class="cp-status" id="status" role="status">Loading your agreement&hellip;</p>
+  <article class="cp-paper" id="doc" hidden></article>
+  <section class="cp-sign" id="sign" aria-labelledby="sign-title" hidden>
+    <h2 id="sign-title">Sign the agreement</h2>
+    <p>Read it through first. If anything needs changing, reply to my email before signing and I&rsquo;ll send an updated one.</p>
+    <form id="sign-form" novalidate>
+      <div class="cp-fill" id="fill"></div>
+      <label for="signer">Your full name
+        <input id="signer" name="name" type="text" autocomplete="name" maxlength="200" required>
+      </label>
+      <p class="cp-label" id="pad-label">Your signature</p>
+      <div id="pad"></div>
+      <label class="cp-agree"><input type="checkbox" id="agree" aria-describedby="agree-text"> <span id="agree-text">I have read this agreement and agree to its terms. I agree to sign it electronically, and that my electronic signature is as binding as a handwritten one.</span></label>
+      <p class="cp-error" id="error" role="alert"></p>
+      <button class="cp-button" type="submit" id="submit">Sign the agreement</button>
+    </form>
+  </section>
+  <section class="cp-done" id="done" hidden></section>
+</main>
+<noscript><p class="cp-status">This page needs JavaScript to show and sign the agreement.</p></noscript>
+</body>
+</html>
