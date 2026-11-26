@@ -4,6 +4,7 @@
 const crypto = require('node:crypto');
 const ContractDoc = require('../../contract/contract-doc');
 const { logActivity } = require('./work');
+const { localDay } = require('./analytics');
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
 const TOKEN = /^[A-Za-z0-9_-]{32}$/;
@@ -87,6 +88,30 @@ const mapContract = (row, { withSignatures = true, withAudit = true } = {}) => (
   },
   document_hash: row.document_hash || null
 });
+
+// Once a couple signs, the payments in the contract become the payment schedule (unless one was made
+// already): the retainer due now and the balance the contract's number of days before the event.
+function scheduleFromContract(db, inquiryId, fields) {
+  if (db.prepare('SELECT count(*) AS n FROM payments WHERE inquiry_id = ?').get(Number(inquiryId)).n) return;
+  const w = ContractDoc.words(fields);
+  const cents = (money) => Math.round(Number(String(money).replace(/[$,]/g, '')) * 100);
+  const total = cents(w.total);
+  const retainer = cents(w.retainer);
+  if (!total) return;
+  const today = localDay(process.env.STUDIO_TIMEZONE || 'America/Los_Angeles');
+  let balanceDue = null;
+  if (fields.event_date) {
+    const [y, m, d] = fields.event_date.split('-').map(Number);
+    balanceDue = new Date(Date.UTC(y, m - 1, d - (Number(fields.balance_days) || 0))).toISOString().slice(0, 10);
+    if (balanceDue < today) balanceDue = today;
+  }
+  const insert = db.prepare('INSERT INTO payments (inquiry_id, label, amount_cents, due_date) VALUES (?, ?, ?, ?)');
+  if (retainer) insert.run(Number(inquiryId), 'Retainer', retainer, today);
+  if (total - retainer > 0) insert.run(Number(inquiryId), 'Balance', total - retainer, balanceDue);
+  const couple = db.prepare('SELECT price_cents FROM inquiries WHERE id = ?').get(Number(inquiryId));
+  if (couple && couple.price_cents === null) db.prepare('UPDATE inquiries SET price_cents = ? WHERE id = ?').run(total, Number(inquiryId));
+  logActivity(db, { inquiryId, actor: 'website', kind: 'payment', summary: `Made the payment schedule from the signed contract: ${w.retainer} retainer, ${w.balance} balance` });
+}
 
 function contractMethods({ use }) {
   const get = (db, id) => db.prepare('SELECT * FROM contracts WHERE id = ?').get(Number(id));
@@ -201,7 +226,19 @@ function contractMethods({ use }) {
         .run(JSON.stringify(fields), signature, signedName, String(ip).slice(0, 100), String(agent).slice(0, 300), text, hash, row.id);
       if (!result.changes) return { error: 'This contract is already signed.', status: 409 };
       logActivity(db, { inquiryId: row.inquiry_id, actor: 'website', kind: 'contract', summary: `${signedName} signed the contract` });
+      scheduleFromContract(db, row.inquiry_id, fields);
       return { ok: true, document_hash: hash };
+    }),
+
+    // For the couple's page once signed: their payments, and what's needed to start a card payment.
+    contractPayments: (token) => use((db) => {
+      if (!TOKEN.test(String(token || ''))) return null;
+      const row = db.prepare("SELECT c.inquiry_id, c.fields, i.names, i.email FROM contracts c JOIN inquiries i ON i.id = c.inquiry_id WHERE c.token = ? AND c.status = 'signed'").get(String(token));
+      if (!row) return null;
+      const fields = ContractDoc.clean(JSON.parse(row.fields || '{}'));
+      const payments = db.prepare('SELECT id, label, amount_cents, due_date, paid_at, method FROM payments WHERE inquiry_id = ? ORDER BY due_date IS NULL, due_date, id').all(row.inquiry_id)
+        .map((p) => ({ id: String(p.id), label: p.label, amount: p.amount_cents / 100, amount_cents: p.amount_cents, due_date: p.due_date, paid: Boolean(p.paid_at), paid_at: p.paid_at || null, method: p.method || null }));
+      return { inquiry_id: String(row.inquiry_id), names: row.names || fields.client_name, email: row.email || fields.client_email, event_date: fields.event_date, methods: fields.payment_methods, payments };
     }),
 
     // Couples whose contract went out and isn't signed yet, for the Today page.

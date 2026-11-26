@@ -1406,7 +1406,7 @@
           }
         });
         box.checked = payment.paid;
-        const status = payment.paid ? `Paid ${fmtReceived(payment.paid_at)}`
+        const status = payment.paid ? `Paid ${fmtReceived(payment.paid_at)}${payment.method === 'card' ? ' by card (Stripe)' : ''}`
           : !payment.due_date ? 'No due date'
             : payment.overdue ? `Overdue since ${fmtDay(payment.due_date)}` : `Due ${fmtDay(payment.due_date)}`;
         return h('li', { class: [payment.paid ? 'is-paid' : '', payment.overdue ? 'is-overdue' : ''].filter(Boolean).join(' ') || null },

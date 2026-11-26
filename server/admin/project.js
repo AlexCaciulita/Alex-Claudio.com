@@ -1,6 +1,6 @@
 // One couple's wedding in detail: the day's timeline, the payment schedule and the gallery it belongs to.
 // Kept in the dashboard's own SQLite file.
-const { logActivity, addDays } = require('./work');
+const { logActivity, addDays, syncTasks } = require('./work');
 const { localDay } = require('./analytics');
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
@@ -39,6 +39,10 @@ function migrateProject(db) {
   db.exec(PROJECT_MIGRATION);
   const have = new Set(db.prepare('PRAGMA table_info(inquiries)').all().map((column) => column.name));
   if (!have.has('gallery_slug')) db.exec('ALTER TABLE inquiries ADD COLUMN gallery_slug TEXT');
+  // How a payment was made (card, through Stripe) and the Checkout session that collected it.
+  const paymentColumns = new Set(db.prepare('PRAGMA table_info(payments)').all().map((column) => column.name));
+  if (!paymentColumns.has('method')) db.exec('ALTER TABLE payments ADD COLUMN method TEXT');
+  if (!paymentColumns.has('stripe_session')) db.exec('ALTER TABLE payments ADD COLUMN stripe_session TEXT');
 }
 
 const rad = (deg) => (deg * Math.PI) / 180;
@@ -102,6 +106,7 @@ const mapPayment = (row, today) => ({
   due_date: row.due_date,
   paid: Boolean(row.paid_at),
   paid_at: row.paid_at || null,
+  method: row.method || null,
   overdue: !row.paid_at && Boolean(row.due_date) && row.due_date < today
 });
 const fmtDollars = (cents) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
@@ -247,6 +252,29 @@ function projectMethods({ use, timeZone }) {
       return db.prepare(`SELECT p.*, i.names, i.email FROM payments p JOIN inquiries i ON i.id = p.inquiry_id
           WHERE p.paid_at IS NULL AND p.due_date <= ? AND i.status = 'booked' ORDER BY p.due_date`).all(addDays(day, 7))
         .map((row) => ({ ...mapPayment(row, day), inquiry_id: String(row.inquiry_id), names: row.names || row.email }));
+    }),
+
+    // Marks a scheduled payment paid by card, once Stripe has confirmed it. The amount must be the one
+    // scheduled; a payment already paid stays as it is. A couple who has signed and pays the retainer is booked.
+    markPaidOnline: (paymentId, { session, amountCents }) => use((db) => {
+      const payment = db.prepare('SELECT * FROM payments WHERE id = ?').get(Number(paymentId));
+      if (!payment) return { error: 'Unknown payment.' };
+      if (payment.paid_at) return { ok: true, already: true };
+      if (payment.amount_cents !== amountCents) {
+        logActivity(db, { inquiryId: payment.inquiry_id, actor: 'website', kind: 'payment', summary: `A card payment of ${fmtDollars(amountCents)} didn't match ${payment.label} (${fmtDollars(payment.amount_cents)}). Check Stripe.` });
+        return { error: 'The amount paid doesn\u2019t match.' };
+      }
+      db.prepare(`UPDATE payments SET paid_at = ${NOW}, method = 'card', stripe_session = ? WHERE id = ?`).run(session, payment.id);
+      logActivity(db, { inquiryId: payment.inquiry_id, actor: 'website', kind: 'payment', summary: `Paid ${payment.label} by card, ${fmtDollars(payment.amount_cents)}` });
+      syncReceived(db, payment.inquiry_id, 'website');
+      const couple = db.prepare('SELECT status FROM inquiries WHERE id = ?').get(payment.inquiry_id);
+      const signed = db.prepare("SELECT 1 FROM contracts WHERE inquiry_id = ? AND status = 'signed'").get(payment.inquiry_id);
+      if (couple && signed && ['new', 'replied'].includes(couple.status)) {
+        db.prepare(`UPDATE inquiries SET status = 'booked', progress = NULL, updated_at = ${NOW} WHERE id = ?`).run(payment.inquiry_id);
+        logActivity(db, { inquiryId: payment.inquiry_id, actor: 'website', kind: 'change', summary: 'Moved to Booked (signed and paid)', before: { status: couple.status }, after: { status: 'booked' } });
+        syncTasks(db, payment.inquiry_id, today());
+      }
+      return { ok: true };
     }),
 
     paymentInquiry: (id) => use((db) => {
