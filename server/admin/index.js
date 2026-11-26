@@ -369,7 +369,7 @@ function createAdminRouter({ store = null, env = process.env, assistant = null, 
 
   router.get('/', (req, res) => {
     res.send(page('Studio · Alex Claudio', 'studio', '<div id="app"></div>\n<noscript><p class="noscript">The studio dashboard needs JavaScript.</p></noscript>',
-      `<meta name="csrf" content="${escapeHtml(req.studio.csrf)}">\n<script src="/contract/contract-doc.js?v=1" defer></script>\n<script src="/contract/signature-pad.js?v=1" defer></script>\n<script src="/admin/assets/admin.js" defer></script>`));
+      `<meta name="csrf" content="${escapeHtml(req.studio.csrf)}">\n<script src="/contract/contract-doc.js?v=1" defer></script>\n<script src="/contract/signature-pad.js?v=1" defer></script>\n<script src="/portal/questions.js?v=1" defer></script>\n<script src="/admin/assets/admin.js" defer></script>`));
   });
 
   const api = express.Router();
@@ -726,6 +726,24 @@ function createAdminRouter({ store = null, env = process.env, assistant = null, 
     if (!result) return res.status(404).json({ error: 'Not found.' });
     if (result.error) return res.status(409).json({ error: result.error });
     res.status(204).end();
+  });
+
+  // The couple's own page: its link, and their questionnaire answers.
+  api.get('/inquiries/:id/portal', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const link = await store.portalLink(id);
+    if (!link) return res.status(404).json({ error: 'Not found.' });
+    res.json({ url: `https://${req.hostname}/couple/${link.token}`, viewed_at: link.viewed_at, questionnaire: await store.questionnaire(id) });
+  });
+
+  api.post('/inquiries/:id/portal/timeline', async (req, res) => {
+    const id = idParam(req, res);
+    if (!id) return;
+    const result = await store.timelineFromQuestionnaire(id);
+    if (result.exists) return res.status(409).json({ error: 'The timeline already has moments. Remove them first to draft it from their answers.' });
+    if (result.error) return res.status(409).json({ error: result.error });
+    res.json(result);
   });
 
   // Your own signature, drawn once and put on every contract you send.

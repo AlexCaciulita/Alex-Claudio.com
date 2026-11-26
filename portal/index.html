@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Your wedding | Alex Claudio Photography</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/assets/fonts/the-day.css">
+<link rel="stylesheet" href="/portal/portal.css?v=1">
+<script src="/portal/questions.js?v=1" defer></script>
+<script src="/portal/portal.js?v=1" defer></script>
+</head>
+<body>
+<header class="pt-top">
+  <a class="pt-brand" href="/">Alex Claudio <small>Photography</small></a>
+</header>
+<main class="pt-main">
+  <p class="pt-status" id="status" role="status">Loading your page&hellip;</p>
+  <div id="page" hidden>
+    <section class="pt-hero">
+      <p class="pt-eyebrow" id="for"></p>
+      <h1 id="date"></h1>
+      <p class="pt-line" id="line"></p>
+      <p class="pt-light" id="light" hidden></p>
+      <nav class="pt-nav" aria-label="On this page">
+        <a href="#questions">Questionnaire</a><a href="#day">Your day</a><a href="#agreement">Agreement</a><a href="#payments">Payments</a><a href="#gallery" id="gallery-link" hidden>Gallery</a>
+      </nav>
+    </section>
+    <section class="pt-card" id="questions" aria-labelledby="q-title">
+      <div class="pt-head"><h2 id="q-title">Questionnaire</h2><span class="pt-progress" id="progress"></span></div>
+      <p class="pt-intro" id="q-intro">A few questions so I can plan your day with you. Your answers save as you type, so you can come back any time. Send them to me when you&rsquo;re done.</p>
+      <form id="q-form" novalidate></form>
+      <div class="pt-send">
+        <button type="button" class="pt-button" id="send">Send to Alex</button>
+        <span class="pt-saved" id="saved" aria-live="polite"></span>
+      </div>
+      <p class="pt-error" id="q-error" role="alert"></p>
+    </section>
+    <section class="pt-card" id="day" aria-labelledby="day-title">
+      <h2 id="day-title">Your day</h2>
+      <div id="day-body"></div>
+    </section>
+    <section class="pt-card" id="agreement" aria-labelledby="ag-title">
+      <h2 id="ag-title">Agreement</h2>
+      <div id="ag-body"></div>
+    </section>
+    <section class="pt-card" id="payments" aria-labelledby="pay-title">
+      <h2 id="pay-title">Payments</h2>
+      <div id="pay-body"></div>
+      <p class="pt-error" id="pay-error" role="alert"></p>
+    </section>
+    <section class="pt-card" id="gallery" aria-labelledby="gal-title" hidden>
+      <h2 id="gal-title">Your gallery</h2>
+      <p>Your photographs are ready.</p>
+      <a class="pt-button" id="gallery-open" href="#">Open your gallery</a>
+    </section>
+  </div>
+</main>
+<noscript><p class="pt-status">This page needs JavaScript.</p></noscript>
+</body>
+</html>

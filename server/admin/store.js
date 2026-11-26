@@ -10,6 +10,7 @@ const { isValidIsoDate, parseWeddingDate } = require('./dates');
 const { migrateAssistant, assistantMethods } = require('./assistant-store');
 const { migrateProject, projectMethods } = require('./project');
 const { migrateContracts, contractMethods } = require('./contracts');
+const { migratePortal, portalMethods } = require('./portal');
 const { migrateWork, workMethods, syncTasks, logActivity, describeChange, stageOf, parseTags } = require('./work');
 
 const STATUSES = ['new', 'replied', 'booked', 'not_booked'];
@@ -205,6 +206,7 @@ function createStore(env = process.env, sqlite) {
       migrateWork(handle);
       migrateProject(handle);
       migrateContracts(handle);
+      migratePortal(handle);
       migrateAssistant(handle);
     } catch (error) {
       handle.close();
@@ -595,6 +597,7 @@ function createStore(env = process.env, sqlite) {
     ...assistantMethods({ use, timeZone: paths.timeZone }),
     ...projectMethods({ use, timeZone: paths.timeZone }),
     ...contractMethods({ use }),
+    ...portalMethods({ use, timeZone: paths.timeZone }),
 
     close: async () => {
       if (timer) clearInterval(timer);
