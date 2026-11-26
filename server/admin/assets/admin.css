@@ -800,3 +800,25 @@ label { gap: 4px; font-size: 10.5px; }
   .board { grid-auto-columns: minmax(230px, 82vw); }
   .card strong { font-size: 20px; }
 }
+
+/* Board card stage menu */
+.board-item { position: relative; }
+.board-item .board-card { padding-right: 26px; }
+.card-menu {
+  position: absolute; top: 3px; right: 3px; z-index: 2; width: 24px; min-height: 22px; height: 22px; padding: 0;
+  border: 0; border-radius: 5px; background: transparent; color: var(--ink3); font-size: 15px; line-height: 1;
+}
+.card-menu:hover, .card-menu[aria-expanded="true"] { background: rgba(23, 20, 18, .08); color: var(--ink); }
+.stage-menu {
+  position: fixed; z-index: 50; min-width: 150px; padding: 4px;
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); box-shadow: 0 10px 28px rgba(23, 20, 18, .16);
+}
+.menu-title { margin: 2px 6px 4px; font: 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); }
+.stage-menu button {
+  display: flex; align-items: center; justify-content: flex-start; gap: 7px; width: 100%; min-height: 28px; padding: 4px 8px;
+  border: 0; border-radius: 5px; background: transparent; font: 13px var(--serif); text-align: left;
+}
+.stage-menu button:hover, .stage-menu button:focus-visible { background: rgba(23, 20, 18, .06); outline: none; }
+.stage-menu button[aria-checked="true"] { font-weight: 600; }
+.stage-menu button.is-off { margin-top: 3px; border-top: 1px solid var(--rule); border-radius: 0 0 5px 5px; color: var(--ink3); }
+.menu-check { margin-left: auto; color: var(--green); }

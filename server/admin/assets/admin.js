@@ -919,7 +919,7 @@
       h('div', { class: 'view-head' },
         h('div', {}, h('p', { class: 'eyebrow' }, 'Every couple, by stage'), h('h1', {}, 'Board')),
         h('button', { class: 'primary', type: 'button', onclick: () => openEditor(null) }, '+ Add an inquiry')),
-      h('div', { class: 'toolbar' }, search, h('p', { class: 'muted small board-hint' }, 'Open a card for the couple\u2019s page, or drag it to another stage.')),
+      h('div', { class: 'toolbar' }, search, h('p', { class: 'muted small board-hint' }, 'Open a card for the couple\u2019s page. Use \u22ef on a card, or drag it, to change its stage.')),
       board);
 
     async function load() {
@@ -964,7 +964,8 @@
         const column = h('section', { class: `column col-${stage}`, 'aria-label': STAGE_LABEL[stage] },
           h('header', {}, h('span', { class: `dot-stage st-${stage}` }), h('h2', {}, STAGE_LABEL[stage]), h('small', {}, String(list.length))),
           h('ol', {}, list.length
-            ? list.map((c) => h('li', {},
+            ? list.map((c) => h('li', { class: 'board-item' },
+              stageMenu(c, move),
               h('button', {
                 class: 'board-card', type: 'button', draggable: 'true',
                 'aria-label': [c.names, c.wedding_date ? fmtDay(c.wedding_date) : 'no date', c.location, STAGE_LABEL[c.stage]].filter(Boolean).join(', '),
@@ -992,6 +993,63 @@
 
     state.refresh = load;
     load();
+  }
+
+  // The "..." button on a board card: a short menu of stages, so a couple can be moved without dragging.
+  let openMenu = null;
+  const closeMenu = (focusButton) => {
+    if (!openMenu) return;
+    const { menu, button } = openMenu;
+    menu.remove();
+    button.setAttribute('aria-expanded', 'false');
+    if (focusButton) button.focus();
+    openMenu = null;
+  };
+  document.addEventListener('click', (event) => {
+    if (openMenu && !openMenu.menu.contains(event.target) && event.target !== openMenu.button) closeMenu(false);
+  });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && openMenu) closeMenu(true); });
+  window.addEventListener('scroll', () => closeMenu(false), true);
+  window.addEventListener('resize', () => closeMenu(false));
+  window.addEventListener('hashchange', () => closeMenu(false));
+
+  function stageMenu(card, move) {
+    const button = h('button', {
+      class: 'card-menu', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false',
+      'aria-label': `Change the stage for ${card.names}`
+    }, h('span', { 'aria-hidden': 'true' }, '\u22ef'));
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (openMenu && openMenu.button === button) { closeMenu(true); return; }
+      closeMenu(false);
+      const items = STAGE_OPTIONS.map(([value, label]) => h('button', {
+        type: 'button', role: 'menuitemradio', 'aria-checked': String(card.stage === value),
+        class: value === 'not_booked' ? 'is-off' : null,
+        onclick: (e) => {
+          e.stopPropagation();
+          closeMenu(true);
+          if (value !== card.stage) move(card.id, value);
+        }
+      }, h('span', { class: `dot-stage st-${value}` }), label, card.stage === value ? h('span', { class: 'menu-check', 'aria-hidden': 'true' }, '\u2713') : null));
+      const menu = h('div', { class: 'stage-menu', role: 'menu', 'aria-label': `Move ${card.names} to` },
+        h('p', { class: 'menu-title' }, 'Move to'), items);
+      menu.addEventListener('keydown', (e) => {
+        const list = [...menu.querySelectorAll('[role="menuitemradio"]')];
+        const at = list.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown') { e.preventDefault(); list[(at + 1) % list.length].focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); list[(at - 1 + list.length) % list.length].focus(); }
+      });
+      // Placed over the page, by the button, so the board's own scrolling never cuts it off.
+      document.body.append(menu);
+      button.setAttribute('aria-expanded', 'true');
+      openMenu = { menu, button };
+      const at = button.getBoundingClientRect();
+      const box = menu.getBoundingClientRect();
+      menu.style.left = `${Math.max(8, Math.min(at.right - box.width, window.innerWidth - box.width - 8))}px`;
+      menu.style.top = `${at.bottom + 4 + box.height > window.innerHeight - 8 ? Math.max(8, at.top - 4 - box.height) : at.bottom + 4}px`;
+      (menu.querySelector('[aria-checked="true"]') || menu.querySelector('[role="menuitemradio"]')).focus();
+    });
+    return button;
   }
 
   /* ---------- Phone calendar ---------- */
