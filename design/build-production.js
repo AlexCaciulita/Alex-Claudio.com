@@ -42,6 +42,24 @@ const ARTICLES = {
     description: 'Build a wedding photography timeline with a first-look decision, manageable family portraits, daylight planning, and time to spend with your guests.',
     image: '/assets/blog/reception-table.jpg', published: '2026-09-16T20:12:52-07:00', modified: '2026-09-22T14:30:00-07:00',
     crumb: 'A wedding timeline with time for your guests.'
+  },
+  'seattle-wedding-sunset-times': {
+    title: 'Seattle Wedding Sunset Times by Month | Alex Claudio',
+    description: 'Seattle sunset and golden hour times for your wedding date and venue, when to step out for portraits, and how to time the ceremony to keep good light.',
+    image: '/assets/responsive/portfolio-62-1200.webp', published: '2026-11-16T12:00:00-08:00', modified: '2026-11-16T12:00:00-08:00',
+    crumb: 'Sunset times for a Seattle wedding.'
+  },
+  'wedding-family-photo-list': {
+    title: 'Wedding Family Photo List: A Sample | Alex Claudio',
+    description: 'A sample family photo list of twelve groups for your wedding, the order to take them in, how long they need, and how to keep the list moving on the day.',
+    image: '/assets/responsive/portfolio-09-1200.webp', published: '2026-11-17T09:00:00-08:00', modified: '2026-11-17T09:00:00-08:00',
+    crumb: 'A family photo list for your wedding day.'
+  },
+  'wedding-first-look': {
+    title: 'First Look or Wait for the Aisle? | Alex Claudio Photography',
+    description: 'What a first look changes in a wedding day: when the portraits happen, how early you start, and why a winter wedding in Seattle may need one.',
+    image: '/assets/responsive/portfolio-49-1200.webp', published: '2026-11-17T09:00:00-08:00', modified: '2026-11-17T09:00:00-08:00',
+    crumb: 'First look, or wait for the aisle?'
   }
 };
 
