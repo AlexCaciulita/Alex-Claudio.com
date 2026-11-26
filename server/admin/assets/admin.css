@@ -822,3 +822,22 @@ label { gap: 4px; font-size: 10.5px; }
 .stage-menu button[aria-checked="true"] { font-weight: 600; }
 .stage-menu button.is-off { margin-top: 3px; border-top: 1px solid var(--rule); border-radius: 0 0 5px 5px; color: var(--ink3); }
 .menu-check { margin-left: auto; color: var(--green); }
+
+/* Reminder emails on Today */
+.reminder-status { margin: 0 0 8px; }
+.reminders { list-style: none; margin: 0 0 10px; padding: 0; }
+.reminder { display: flex; gap: 9px; padding: 7px 0; border-top: 1px solid var(--rule); }
+.reminder:first-child { border-top: 0; }
+.reminder-icon {
+  flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%;
+  background: rgba(23, 20, 18, .07); font: 600 11px var(--mono); color: var(--ink2);
+}
+.reminder.is-failed .reminder-icon { background: rgba(170, 50, 40, .12); color: #9a2f25; }
+.reminder.is-failed small { color: #9a2f25; }
+.reminder-body { flex: 1; min-width: 0; }
+.reminder-body p { margin: 0; }
+.reminder-body small { color: var(--ink3); }
+.reminder-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 5px; }
+.reminder.is-upcoming .reminder-actions { margin-top: 2px; }
+.reminder-preview { margin-top: 6px; padding: 8px 10px; border-radius: 6px; background: rgba(23, 20, 18, .04); }
+.reminder-subject { font-weight: 600; margin: 2px 0 6px !important; }

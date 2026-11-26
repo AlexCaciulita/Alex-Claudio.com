@@ -8,6 +8,7 @@ const { GUIDE_CODE, pricePackage, readChoice } = require('./server/guide');
 const { createAdminRouter } = require('./server/admin');
 const { createAssistant } = require('./server/admin/assistant');
 const { createPayments } = require('./server/payments');
+const { createMailer, startReminders } = require('./server/admin/reminders');
 const { createStore, safeMessage } = require('./server/admin/store');
 const { createRateLimit, isBot, readGuideEvent, readTime, readView } = require('./server/analytics');
 
@@ -466,7 +467,7 @@ function createApp(options = {}) {
   });
 
   // The private studio dashboard: sign-in, inquiries, calendar and older records.
-  app.use('/admin', createAdminRouter({ store, env, assistant }));
+  app.use('/admin', createAdminRouter({ store, env, assistant, mailer: options.mailer }));
 
   app.use(express.static(ROOT, {
     dotfiles: 'ignore',
@@ -493,7 +494,16 @@ if (require.main === module) {
   });
   if (store) {
     store.ready()
-      .then(() => console.log('Studio database ready'))
+      .then(() => {
+        console.log('Studio database ready');
+        // Reminder emails to couples. Without a sender on the studio's domain they wait on the Today page.
+        const mailer = createMailer({ env: process.env });
+        if (!mailer.ready) console.log(`Reminder emails wait for you on Today: ${mailer.reason}`);
+        startReminders({
+          store, mailer, origin: (process.env.PUBLIC_ORIGIN || 'https://alex-claudio.com').replace(/\/$/, ''),
+          canPay: Boolean(process.env.STRIPE_SECRET_KEY), timeZone: process.env.STUDIO_TIMEZONE || 'America/Los_Angeles'
+        });
+      })
       .catch((error) => console.error('Studio database is not ready yet:', safeMessage(error)));
   }
 
