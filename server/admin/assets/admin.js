@@ -724,7 +724,7 @@
     const days = Math.round(minutes / 1440);
     return days < 30 ? `${days} d ago` : fmtReceived(stamp);
   };
-  const ACTOR_LABEL = { you: 'You', website: 'Website', assistant: 'Assistant' };
+  const ACTOR_LABEL = { you: 'You', website: 'Website', assistant: 'Assistant', reminders: 'Reminder' };
   const dateBlock = (iso) => {
     if (!iso) return h('div', { class: 'date-block is-empty' }, h('span', {}, 'No'), h('strong', {}, '\u2014'), h('span', {}, 'date'));
     const d = localDate(iso);
@@ -744,6 +744,7 @@
     const needs = h('div', {}, h('p', { class: 'muted' }, 'Loading\u2026'));
     const tasks = h('div');
     const activity = h('div');
+    const reminders = h('div');
     root.append(
       head,
       h('section', { class: 'today-section', 'aria-labelledby': 'up-title' },
@@ -752,6 +753,7 @@
       h('div', { class: 'today-grid' },
         h('div', { class: 'today-col' },
           h('section', { class: 'panel', 'aria-labelledby': 'needs-title' }, h('h2', { id: 'needs-title' }, 'Needs you'), needs),
+          h('section', { class: 'panel', 'aria-labelledby': 'rem-title' }, h('h2', { id: 'rem-title' }, 'Emails to couples'), reminders),
           h('section', { class: 'panel', 'aria-labelledby': 'activity-title' }, h('h2', { id: 'activity-title' }, 'Recent activity'), activity)),
         h('section', { class: 'panel', 'aria-labelledby': 'tasks-title' },
           h('h2', { id: 'tasks-title' }, 'Tasks and deadlines'),
@@ -777,6 +779,7 @@
       drawNeeds(data.needs);
       drawTasks(tasks, data.tasks, load, true);
       drawActivity(activity, data.activity, true);
+      remindersPanel(reminders, load);
     }
 
     function drawStrip(upcoming) {
@@ -819,6 +822,81 @@
 
     state.refresh = load;
     load();
+  }
+
+  // Reminder emails: the questionnaire nudges, payment heads-ups and gallery notes. They go out on their
+  // own once email can be sent from the studio's domain; until then each one waits here to send by hand.
+  const openPreviews = new Set();
+  const shortDay = (iso) => localDate(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const REMINDER_ICON = { questionnaire: 'Q', questionnaire_again: 'Q', payment: '$', gallery: 'G' };
+  async function remindersPanel(wrap, reload) {
+    let data;
+    try { data = await api('/reminders'); } catch (error) { append(clear(wrap), [h('p', { class: 'error-text' }, error.message)]); return; }
+    const act = (action, item) => async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        await api(`/reminders/${action}`, { method: 'POST', body: { inquiry_id: item.inquiry_id, kind: item.kind, ref: item.ref } });
+        say(action === 'skip' ? `Skipped: ${item.label.toLowerCase()} for ${item.names}.` : action === 'send' ? `Emailed ${item.names}.` : `Marked as sent to ${item.names}.`);
+      } catch (error) { fail(error); }
+      reload();
+    };
+    const when = (item, upcoming) => {
+      if (item.failed) return `Didn\u2019t go out: ${item.error || 'unknown error'}`;
+      const days = daysFromToday(item.day);
+      if (upcoming) return `Goes out ${days === 1 ? 'tomorrow' : shortDay(item.day)}`;
+      return days === 0 ? 'Due today' : `Due since ${shortDay(item.day)}`;
+    };
+    const row = (item, upcoming) => {
+      const preview = h('div', { class: 'reminder-preview', hidden: !openPreviews.has(item.key) },
+        h('p', { class: 'mini-label' }, `To ${item.email || 'no email on file'}`),
+        h('p', { class: 'reminder-subject' }, item.email_preview.subject),
+        h('p', { class: 'pre' }, item.email_preview.text));
+      const mailto = item.email && LINKABLE_EMAIL.test(item.email)
+        ? `mailto:${item.email}?subject=${encodeURIComponent(item.email_preview.subject)}&body=${encodeURIComponent(item.email_preview.text)}` : null;
+      const buttons = [];
+      if (!upcoming) {
+        if (data.sending.ready && item.can_email) buttons.push(h('button', { type: 'button', class: 'primary', onclick: act('send', item) }, 'Send now'));
+        else if (mailto) {
+          buttons.push(h('a', { class: 'button primary', href: mailto }, 'Email it'));
+          buttons.push(h('button', { type: 'button', onclick: act('sent', item) }, 'Mark sent'));
+        }
+      }
+      buttons.push(h('button', {
+        type: 'button', class: 'link',
+        onclick: (event) => {
+          preview.hidden = !preview.hidden;
+          if (preview.hidden) openPreviews.delete(item.key); else openPreviews.add(item.key);
+          event.currentTarget.textContent = preview.hidden ? 'Read it' : 'Hide';
+        }
+      }, openPreviews.has(item.key) ? 'Hide' : 'Read it'));
+      buttons.push(h('button', { type: 'button', class: 'link', onclick: act('skip', item) }, 'Skip'));
+      return h('li', { class: `reminder${item.failed ? ' is-failed' : ''}${upcoming ? ' is-upcoming' : ''}` },
+        h('span', { class: `reminder-icon ri-${item.kind}`, 'aria-hidden': 'true' }, REMINDER_ICON[item.kind] || '\u2022'),
+        h('div', { class: 'reminder-body' },
+          h('p', {}, coupleLink(item.inquiry_id, item.names), ' \u00b7 ', item.label),
+          h('small', {}, when(item, upcoming)),
+          h('div', { class: 'reminder-actions' }, buttons),
+          preview));
+    };
+    const status = data.paused
+      ? 'Paused. Nothing goes out until you turn reminders back on.'
+      : data.sending.ready
+        ? `They go out on their own from ${data.sending.from}, mornings from 9.`
+        : `They wait here for you to send. ${data.sending.reason}`;
+    const toggle = h('button', {
+      type: 'button', class: 'link',
+      onclick: async () => {
+        try { await api('/reminders/settings', { method: 'PUT', body: { paused: !data.paused } }); say(data.paused ? 'Reminders are on.' : 'Reminders are paused.'); } catch (error) { fail(error); }
+        reload();
+      }
+    }, data.paused ? 'Turn on' : 'Pause');
+    const waiting = [...data.failed, ...data.due];
+    append(clear(wrap), [
+      h('p', { class: 'muted small reminder-status' }, status, ' ', data.sending.ready || data.paused ? toggle : null),
+      waiting.length ? h('ul', { class: 'reminders' }, waiting.map((item) => row(item, false))) : h('p', { class: 'empty-note' }, 'Nothing to send today.'),
+      data.upcoming.length ? h('p', { class: 'mini-label' }, 'This week') : null,
+      data.upcoming.length ? h('ul', { class: 'reminders' }, data.upcoming.map((item) => row(item, true))) : null
+    ]);
   }
 
   // A small form for a new task, for one couple or for the studio.

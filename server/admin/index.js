@@ -10,6 +10,7 @@ const { GALLERY_SLUG } = require('./project');
 const { getGallery: loadGallery } = require('../gallery');
 const { calendarFeed } = require('./ical');
 const { isValidIsoDate, parseWeddingDate } = require('./dates');
+const { KINDS: REMINDER_KINDS, compose: composeReminder, createMailer } = require('./reminders');
 
 const ASSETS = path.join(__dirname, 'assets');
 const SESSION_IDLE_MS = 8 * 60 * 60 * 1000;
@@ -29,7 +30,8 @@ const SETTINGS = [
   ['RAILWAY_VOLUME_MOUNT_PATH', 'Railway volume (where the dashboard keeps its file)'],
   ['STUDIO_DB_PATH', 'Another location for the dashboard\u2019s file (optional)'],
   ['DATABASE_PATH', 'The earlier dashboard\u2019s file (read only)'],
-  ['RESEND_API_KEY', 'Inquiry emails (Resend)'],
+  ['RESEND_API_KEY', 'Inquiry and reminder emails (Resend)'],
+  ['STUDIO_FROM_EMAIL', 'Sender for emails to couples (an address on your domain)'],
   ['CONTACT_TO_EMAIL', 'Inquiry email recipient'],
   ['GOOGLE_SHEET_ID', 'Google Sheet for inquiries'],
   ['R2_BUCKET_NAME', 'Client gallery storage'],
@@ -38,7 +40,7 @@ const SETTINGS = [
   ['OPENROUTER_API_KEY', 'Studio assistant (OpenRouter)'],
   ['ANTHROPIC_API_KEY', 'Studio assistant (Claude, used when there is no OpenRouter key)']
 ];
-const SHOW_VALUE = new Set(['CONTACT_TO_EMAIL', 'RAILWAY_VOLUME_MOUNT_PATH', 'STUDIO_DB_PATH', 'DATABASE_PATH']);
+const SHOW_VALUE = new Set(['CONTACT_TO_EMAIL', 'STUDIO_FROM_EMAIL', 'RAILWAY_VOLUME_MOUNT_PATH', 'STUDIO_DB_PATH', 'DATABASE_PATH']);
 
 const sha256 = (value) => crypto.createHash('sha256').update(String(value), 'utf8').digest();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -192,7 +194,9 @@ function loginPage(message, disabled) {
 </main>`);
 }
 
-function createAdminRouter({ store = null, env = process.env, assistant = null, getGallery = loadGallery } = {}) {
+function createAdminRouter({ store = null, env = process.env, assistant = null, getGallery = loadGallery, mailer = null } = {}) {
+  const mail = mailer || createMailer({ env });
+  const publicOrigin = (req) => (env.PUBLIC_ORIGIN || `https://${req.hostname}`).replace(/\/$/, '');
   const photoOrigin = (() => {
     const value = String(env.R2_PUBLIC_DOMAIN || '').trim().replace(/\/$/, '');
     if (!value) return '';
@@ -744,6 +748,55 @@ function createAdminRouter({ store = null, env = process.env, assistant = null, 
     if (result.exists) return res.status(409).json({ error: 'The timeline already has moments. Remove them first to draft it from their answers.' });
     if (result.error) return res.status(409).json({ error: result.error });
     res.json(result);
+  });
+
+  // Reminder emails to couples: what's due, what failed and what goes out this week, each with the
+  // email it would send, so it can also go out by hand from your own mail app.
+  const withEmails = (req, list) => {
+    const options = { origin: publicOrigin(req), canPay: Boolean(env.STRIPE_SECRET_KEY) };
+    const add = (item) => ({ ...item, portal_token: undefined, email_preview: composeReminder(item, options) });
+    return { ...list, due: list.due.map(add), failed: list.failed.map(add), upcoming: list.upcoming.map(add) };
+  };
+  const reminderList = async (req) => {
+    let list = await store.reminders();
+    const needLinks = [...list.due, ...list.failed, ...list.upcoming].filter((item) => item.kind !== 'gallery' && !item.portal_token).map((item) => item.inquiry_id);
+    if (needLinks.length) { await store.ensurePortalLinks(needLinks); list = await store.reminders(); }
+    return withEmails(req, list);
+  };
+  api.get('/reminders', async (req, res) => {
+    res.json({ sending: { ready: mail.ready, from: mail.from, reason: mail.reason }, ...(await reminderList(req)) });
+  });
+  api.put('/reminders/settings', async (req, res) => {
+    if (!req.body || typeof req.body.paused !== 'boolean') return res.status(400).json({ error: 'Say whether reminders are paused.' });
+    res.json({ paused: await store.setRemindersPaused(req.body.paused) });
+  });
+  // Skip one, mark one sent by hand, or send one now. Only a reminder on the current list can be acted on.
+  api.post('/reminders/:action', async (req, res) => {
+    const action = req.params.action;
+    if (!['skip', 'sent', 'send'].includes(action)) return res.status(404).json({ error: 'Not found.' });
+    const { inquiry_id: inquiryId, kind, ref = '' } = req.body || {};
+    if (!ID.test(String(inquiryId || '')) || !REMINDER_KINDS[kind] || typeof ref !== 'string') return res.status(400).json({ error: 'Which reminder?' });
+    const list = await reminderList(req);
+    const item = [...list.due, ...list.failed, ...list.upcoming].find((entry) => entry.inquiry_id === String(inquiryId) && entry.kind === kind && entry.ref === ref);
+    if (!item) return res.status(404).json({ error: 'That reminder isn’t waiting any more.' });
+    if (action === 'skip') {
+      await store.recordReminder(inquiryId, kind, ref, 'skipped');
+      return res.json({ ok: true });
+    }
+    if (action === 'sent') {
+      await store.recordReminder(inquiryId, kind, ref, 'sent', { to: item.email, subject: item.email_preview.subject, actor: 'you' });
+      return res.json({ ok: true });
+    }
+    if (!mail.ready) return res.status(409).json({ error: mail.reason });
+    if (!item.can_email) return res.status(409).json({ error: 'There’s no email address for this couple.' });
+    try {
+      await mail.send({ to: item.email, ...item.email_preview });
+    } catch (error) {
+      await store.recordReminder(inquiryId, kind, ref, 'failed', { to: item.email, subject: item.email_preview.subject, error: safeMessage(error) });
+      return res.status(502).json({ error: 'The email didn’t go out. Try again in a moment.' });
+    }
+    await store.recordReminder(inquiryId, kind, ref, 'sent', { to: item.email, subject: item.email_preview.subject, actor: 'you' });
+    res.json({ ok: true });
   });
 
   // Your own signature, drawn once and put on every contract you send.
