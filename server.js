@@ -448,7 +448,7 @@ function createApp(options = {}) {
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
   const store = createStore(process.env);
-  createApp({ store }).listen(port, '0.0.0.0', () => {
+  const server = createApp({ store }).listen(port, '0.0.0.0', () => {
     console.log(`Alex Claudio site listening on port ${port}`);
   });
   if (store) {
@@ -456,6 +456,28 @@ if (require.main === module) {
       .then(() => console.log('Studio database ready'))
       .catch((error) => console.error('Studio database is not ready yet:', safeMessage(error)));
   }
+
+  // A promise that fails with nobody waiting on it is logged instead of stopping the whole site.
+  process.on('unhandledRejection', (error) => console.error('Unhandled promise rejection:', safeMessage(error)));
+
+  // Railway stops the old copy with SIGTERM when a new deploy takes over. Finish the requests in
+  // flight, close the studio database, and exit cleanly, so a normal stop isn't logged as a failure.
+  let stopping = false;
+  const stop = (signal) => {
+    if (stopping) return;
+    stopping = true;
+    console.log(`${signal} received, stopping`);
+    const force = setTimeout(() => process.exit(0), 10000);
+    force.unref();
+    server.close(() => {
+      Promise.resolve(store && store.close())
+        .catch((error) => console.error('Closing the studio database failed:', safeMessage(error)))
+        .finally(() => { console.log('Stopped'); process.exit(0); });
+    });
+    server.closeIdleConnections();
+  };
+  process.on('SIGTERM', () => stop('SIGTERM'));
+  process.on('SIGINT', () => stop('SIGINT'));
 }
 
 module.exports = { createApp };
