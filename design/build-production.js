@@ -42,6 +42,12 @@ const ARTICLES = {
     description: 'Build a wedding photography timeline with a first-look decision, manageable family portraits, daylight planning, and time to spend with your guests.',
     image: '/assets/blog/reception-table.jpg', published: '2026-09-16T20:12:52-07:00', modified: '2026-09-22T14:30:00-07:00',
     crumb: 'A wedding timeline with time for your guests.'
+  },
+  'seattle-wedding-sunset-times': {
+    title: 'Seattle Wedding Sunset Times by Month | Alex Claudio',
+    description: 'Seattle sunset and golden hour times for your wedding date and venue, when to step out for portraits, and how to time the ceremony to keep good light.',
+    image: '/assets/responsive/portfolio-62-1200.webp', published: '2026-11-16T12:00:00-08:00', modified: '2026-11-16T12:00:00-08:00',
+    crumb: 'Sunset times for a Seattle wedding.'
   }
 };
 

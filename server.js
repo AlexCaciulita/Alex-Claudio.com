@@ -24,7 +24,8 @@ const PUBLIC_PAGES = new Set([
   '/blog/how-many-hours-wedding-photography/',
   '/blog/wedding-photography-timeline/',
   '/blog/wedding-day-photography-tips/',
-  '/blog/seattle-engagement-photos/'
+  '/blog/seattle-engagement-photos/',
+  '/blog/seattle-wedding-sunset-times/'
 ]);
 const PRIVATE_PATHS = new Set([
   'ads',
