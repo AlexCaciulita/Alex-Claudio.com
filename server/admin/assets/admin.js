@@ -1244,10 +1244,11 @@
     const timeline = h('section', { class: 'panel', 'aria-labelledby': 'tl-title' });
     const payments = h('section', { class: 'panel', 'aria-labelledby': 'pay-title' });
     const gallery = h('section', { class: 'panel', 'aria-labelledby': 'gal-title' });
+    const portalSlot = h('div');
     root.append(
       h('a', { class: 'back-link', href: '#board' }, '\u2190 Board'),
       hero,
-      h('div', { class: 'couple-grid' }, timeline, h('div', {}, contractsPanel(id), payments, gallery)));
+      h('div', { class: 'couple-grid' }, timeline, h('div', {}, portalSlot, contractsPanel(id), payments, gallery)));
 
     let inq = null;
     let project = null;
@@ -1259,6 +1260,7 @@
         inq = one.inquiry;
         project = proj;
         document.title = `${coupleName(inq)} \u00b7 Studio \u00b7 Alex Claudio`;
+        clear(portalSlot).append(portalPanel(inq.id, inq, reloadProject));
         drawHero();
         drawTimeline();
         drawPayments();
@@ -1744,6 +1746,63 @@
             try { const { contract } = await api(`/inquiries/${inquiryId}/contracts`, { method: 'POST' }); location.hash = `contract/${contract.id}`; } catch (error) { fail(error); }
           }
         }, contracts.length ? 'New contract' : 'Make the contract')]);
+    })();
+    return wrap;
+  }
+
+  /* ---------- The couple's page (portal) ---------- */
+
+  // The "Their page" panel on a couple's page: the private link, whether they opened it, and their questionnaire.
+  function portalPanel(inquiryId, couple, onTimeline) {
+    const wrap = h('section', { class: 'panel', 'aria-labelledby': 'pt-title' }, h('h2', { id: 'pt-title' }, 'Their page'));
+    (async () => {
+      let info;
+      try { info = await api(`/inquiries/${inquiryId}/portal`); } catch (error) { wrap.append(h('p', { class: 'error-text' }, error.message)); return; }
+      const q = info.questionnaire;
+      const Q = window.Questionnaire;
+      const first = (couple.names || '').split(/\s*&\s*|\s+and\s+/)[0] || 'there';
+      const mail = couple.email && LINKABLE_EMAIL.test(couple.email)
+        ? `mailto:${couple.email}?subject=${encodeURIComponent('Your wedding page')}&body=${encodeURIComponent(`Hi ${first},\n\nHere is your page for the wedding:\n${info.url}\n\nThere's a short questionnaire there about the day. Your answers save as you go, so you can fill it in over a few evenings. Once it's in, I'll draft a plan for the day and we'll go over it together.\n\nAlex`)}`
+        : null;
+      const status = !q ? 'Questionnaire not started'
+        : q.status === 'submitted' ? `Questionnaire sent ${fmtReceived(q.submitted_at)}`
+          : `Questionnaire in progress: ${q.answered} of ${q.of} answered`;
+      const answers = h('div', { class: 'portal-answers', hidden: true });
+      if (q && Q) {
+        append(answers, Q.SECTIONS.map((section) => {
+          const rows = section.questions.filter((question) => q.answers[question.key] !== '' && q.answers[question.key] !== undefined);
+          if (!rows.length) return null;
+          return h('div', {},
+            h('p', { class: 'mini-label' }, section.title),
+            h('dl', { class: 'facts' }, rows.map((question) => h('div', {},
+              h('dt', {}, question.label),
+              h('dd', {}, h('span', { class: 'pre' }, question.type === 'time' ? fmtClock(q.answers[question.key]) : String(q.answers[question.key])))))));
+        }));
+      }
+      append(wrap, [
+        h('p', { class: 'muted small' }, `${info.viewed_at ? `Opened ${fmtReceived(info.viewed_at)}` : 'Not opened yet'} \u00b7 ${status}`),
+        h('div', { class: 'actions' },
+          h('button', {
+            type: 'button', class: 'primary',
+            onclick: async () => { try { await navigator.clipboard.writeText(info.url); say('Their page link copied.'); } catch (error) { window.prompt('Copy their page link:', info.url); } }
+          }, 'Copy their link'),
+          mail ? h('a', { class: 'button', href: mail }, 'Email it') : null,
+          h('a', { class: 'button quiet', href: info.url, target: '_blank', rel: 'noopener' }, 'See it')),
+        q && q.answered ? h('button', {
+          type: 'button', class: 'link portal-toggle',
+          onclick: (event) => { answers.hidden = !answers.hidden; event.currentTarget.textContent = answers.hidden ? 'Read their answers' : 'Hide their answers'; }
+        }, 'Read their answers') : null,
+        q && q.answers.ceremony_time ? h('button', {
+          type: 'button', class: 'link portal-toggle',
+          onclick: async () => {
+            try {
+              const result = await api(`/inquiries/${inquiryId}/portal/timeline`, { method: 'POST' });
+              say(`Drafted ${result.count} moments from their answers.`);
+              onTimeline();
+            } catch (error) { fail(error); }
+          }
+        }, 'Draft the day from their answers') : null,
+        answers]);
     })();
     return wrap;
   }

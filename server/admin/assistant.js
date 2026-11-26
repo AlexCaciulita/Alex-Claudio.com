@@ -335,7 +335,7 @@ function createAssistant({ store, env = process.env, client = null, fetch: fetch
     get_couple: async ({ id }) => {
       const found = await couple(id);
       const project = typeof store.project === 'function' ? await store.project(id) : null;
-      return { ...found, drafts: await store.drafts(id), activity: found.activity.slice(0, 10), day: project && { timeline: project.timeline, light: project.light }, payments: project && project.payments, gallery: project && project.gallery_slug };
+      return { ...found, drafts: await store.drafts(id), activity: found.activity.slice(0, 10), day: project && { timeline: project.timeline, light: project.light }, payments: project && project.payments, gallery: project && project.gallery_slug, questionnaire: typeof store.questionnaire === 'function' ? await store.questionnaire(id) : null };
     },
 
     check_date: async ({ date }) => {

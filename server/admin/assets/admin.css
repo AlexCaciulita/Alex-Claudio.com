@@ -677,3 +677,8 @@ button, .button { min-height: 34px; padding: 6px 13px; }
   .contract-fields { position: static; max-height: none; }
 }
 .sig-dialog .sig-pad { max-width: 520px; }
+
+/* Their page (portal) */
+.portal-toggle { display: block; margin-top: 10px; font-size: 12px; }
+.portal-answers { margin-top: 8px; display: grid; gap: 8px; }
+.portal-answers .facts { margin: 0; }

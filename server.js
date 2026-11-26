@@ -18,6 +18,7 @@ const VISIT_LIMIT = 300;
 const VISIT_WINDOW_MS = 10 * 60 * 1000;
 const GALLERY_SLUG = /^\/gallery\/([a-z0-9-]{6,64})\/?$/;
 const CONTRACT_PAGE = /^\/contract\/([A-Za-z0-9_-]{32})\/?$/;
+const COUPLE_PAGE = /^\/couple\/([A-Za-z0-9_-]{32})\/?$/;
 const PUBLIC_PAGES = new Set([
   '/', '/portfolio/', '/links/', '/lead/', '/guide/', '/blog/', '/privacy/',
   '/blog/seattle-wedding-rain-plan/',
@@ -387,6 +388,45 @@ function createApp(options = {}) {
     } catch (error) {
       console.error('A Stripe webhook failed:', safeMessage(error));
       res.status(500).json({ error: 'Not processed.' });
+    }
+  });
+
+  // The couple's own page, /couple/<code>: their day, contract, payments, questionnaire and gallery.
+  app.get(COUPLE_PAGE, (req, res) => {
+    contractHeaders(res);
+    res.set('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+    res.sendFile(path.join(ROOT, 'portal', 'index.html'));
+  });
+  app.get('/api/couple/:token', async (req, res) => {
+    contractHeaders(res);
+    if (!store) return res.status(404).json({ error: 'Not found.' });
+    try {
+      const portal = await store.portalForCouple(req.params.token);
+      if (!portal) return res.status(404).json({ error: 'This link isn\u2019t active. Ask Alex for a new one.' });
+      const { inquiry_id: inquiryId, gallery_slug: slug, ...shown } = portal;
+      res.json({
+        ...shown,
+        gallery: slug && portal.delivered ? { url: `/gallery/${slug}` } : null,
+        can_pay: Boolean(payments.enabled && portal.contract && portal.contract.status === 'signed')
+      });
+    } catch (error) {
+      console.error('Opening a couple page failed:', safeMessage(error));
+      res.status(500).json({ error: 'This page couldn\u2019t be opened. Please try again.' });
+    }
+  });
+  app.put('/api/couple/:token/questionnaire', createSubmissionLimiter(), express.json({ limit: '64kb' }), async (req, res) => {
+    contractHeaders(res);
+    if (!store) return res.status(404).json({ error: 'Not found.' });
+    const body = req.body || {};
+    if (!body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) return res.status(400).json({ error: 'Invalid request.' });
+    try {
+      const result = await store.saveQuestionnaire(req.params.token, body.answers, body.send === true);
+      if (!result) return res.status(404).json({ error: 'This link isn\u2019t active.' });
+      if (result.error) return res.status(400).json(result);
+      res.json(result);
+    } catch (error) {
+      console.error('Saving a questionnaire failed:', safeMessage(error));
+      res.status(500).json({ error: 'Your answers couldn\u2019t be saved. Please try again.' });
     }
   });
 
