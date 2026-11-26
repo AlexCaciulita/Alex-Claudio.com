@@ -24,8 +24,18 @@
 html.js .item:not(.in) img { filter: sepia(.6) brightness(1.45) contrast(.5) saturate(.25) blur(5px); }
 .gallery.book .item:hover img { transform: scale(1.035); }
 .item .fno { display: none; }
-.pcap { position: absolute; margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--fg3); max-width: 80ch; transition: opacity .5s var(--ease); }
-.pcap b { color: var(--fg); font-weight: 500; margin-right: 8px; }
+
+/* Book: each chapter holds a photograph and its title on the left while its frames scroll past on the right. */
+.work-gallery.bleed { padding: 0; }
+.chapter { position: absolute; left: 0; top: 0; width: 50%; pointer-events: none; }
+.chapter[hidden] { display: none; }
+.chapter-pane { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; place-items: center; background: #1d1a17; color: #efe8dc; text-align: center; }
+.chapter-pane img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.06) brightness(.6); }
+.chapter-pane::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 62% 34% at 50% 50%, rgba(14, 13, 12, .5), rgba(14, 13, 12, 0)); }
+.chapter-text { position: relative; z-index: 1; padding: 0 8%; opacity: 0; transform: translate3d(0, 22px, 0); transition: opacity 1.2s var(--ease) .15s, transform 1.4s var(--ease) .15s; }
+.chapter-pane.in .chapter-text { opacity: 1; transform: none; }
+.chapter-text h2 { font-size: clamp(44px, 5.4vw, 96px); }
+.chapter-text p { margin-top: 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .02em; color: rgba(239, 232, 220, .72); }
 
 .gallery.sheet .item { overflow: visible; background: transparent; }
 .gallery.sheet .item img { height: calc(100% - 18px); background: #1d1a17; }
@@ -48,6 +58,8 @@ html.js .item:not(.in) img { filter: sepia(.6) brightness(1.45) contrast(.5) sat
 .frame-count b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .frame-count span { color: var(--fg3); }
 .frame-count.off { opacity: 0; }
+.frame-count.on-photo { color: #efe8dc; }
+.frame-count.on-photo span { color: rgba(239, 232, 220, .62); }
 html.lb-on .frame-count { opacity: 0; }
 
 @media (max-width: 900px) {
@@ -59,10 +71,13 @@ html.lb-on .frame-count { opacity: 0; }
   .filters button { white-space: nowrap; }
   .work-gallery { padding: 0 var(--gut) 10vh; }
   .work-cta { padding: 12vh var(--gut) 10vh; }
+  .chapter { width: 100%; }
+  .chapter-pane { position: relative; height: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gallery, .item img { transition: none; }
+  .gallery, .item img, .chapter-text { transition: none; }
+  .chapter-text { opacity: 1; transform: none; }
   html.js .item:not(.in) img { filter: none; }
   .strip { animation: none; }
 }

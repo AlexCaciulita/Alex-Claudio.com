@@ -44,7 +44,7 @@ const b = homeJs.indexOf("  $$('[data-split]').forEach(split);");
 if (a < 0 || b < 0 || b <= a) throw new Error('engine markers not found in the-day.js');
 const ink = homeJs.slice(a, b);
 
-// The 64 portfolio photographs, in the live portfolio's order.
+// The 46 portfolio photographs, in the live portfolio's order.
 const ORIGIN = 'https://alex-claudio.com';
 const work = [];
 const figRe = /<figure class="portfolio-photo[^>]*><a href="([^"]+)"[^>]*><img src="([^"]+)" alt="([^"]*)" width="(\d+)" height="(\d+)" srcset="([^"]+)"/g;
@@ -64,7 +64,7 @@ while ((m = figRe.exec(portfolio))) {
     full: sizes[sizes.length - 1].u
   });
 }
-if (work.length !== 64) throw new Error('expected 64 photographs, found ' + work.length);
+if (work.length !== 46) throw new Error('expected 46 photographs, found ' + work.length);
 
 const need = (s, token) => { if (!s.includes(token)) throw new Error('missing ' + token); };
 need(js, '/*__INK__*/');

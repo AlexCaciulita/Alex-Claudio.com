@@ -212,7 +212,7 @@ and privacy notice (`/privacy/`) are generated. Edit the sources in `design/`, n
 HTML files they produce:
 
 - `design/the-day.*` — homepage structure, styles and motion (shared by every page)
-- `design/work.*` and `design/portfolio-source.html` — the portfolio and its 64 photographs
+- `design/work.*` and `design/portfolio-source.html` — the portfolio and its 46 photographs
 - `design/journal.*`, `design/journal-src/` and `design/build-journal.js` — the Journal articles and privacy notice
 - `design/fonts.json` — the two single-line handwriting fonts (see `design/FONTS-OFL.txt`)
 
